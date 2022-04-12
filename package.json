@@ -1,0 +1,21 @@
+{
+  "name": "service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.5.1",
+    "express": "^4.17.1",
+    "express-ws": "^5.0.2",
+    "ganache": "^6.4.5",
+    "ganache-cli": "^6.12.2",
+    "truffle-contract": "^4.0.31",
+    "truffle-contract-size": "^2.0.1",
+    "web3": "^1.6.0"
+  }
+}

@@ -1,0 +1,158 @@
+<html>
+
+<head>
+    <title>Vpool tester</title>
+    <link href="./main.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="statePanel">
+    </div>
+    <div class="actionsPanel">
+        <ul>
+            <li id="initPools">Init pool</li>
+            <li id="calculateReserveRatio">Reserve ratio</li>
+            <li id="calculateThreshold">Below threshold</li>
+            <li id="calculateVpools">Virtual pools</li>
+            <li id="refreshPools">Refresh Pools</li>
+            <li id="showSwap">Swap</li>
+            <li id="exchangeReserves">Exchange Reserves</li>
+            <li id="IndirectCost">Uniswap Indirect</li>
+            <li id="directCost">Uniswap Direct</li>
+            <li id="virtuswapCost">Virtuswap Direct</li>
+            <li id="clearLog">Clear log</li>
+        </ul>
+    </div>
+    <div class="pools">
+        <div class="rPools pool">
+            <div class="header">
+                Real pools
+            </div>
+            <table id="rPools">
+                <thead>
+                    <td style="width: 50px;">
+                        Id
+                    </td>
+                    <td style="width: 170px;">
+                        Pair
+                    </td>
+                    <td style="width: 195px;">
+                        Balances
+                    </td>
+                    <td>
+                        bReserve
+                    </td>
+                    <td>
+                        fee
+                    </td>
+                   
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div class="vPools pool">
+            <div class="header">
+                Virtual pools
+            </div>
+            <table id="vPools">
+                <thead>
+                    <td style="width: 50px;">
+                        Id
+                    </td>
+                    <td style="width: 150px;">
+                        Pair
+                    </td>
+                    <td style="width: 340px;">
+                        Balances
+                    </td>
+                    <td>
+                        fee
+                    </td>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div class="tPools pool">
+            <div class="header">
+                Total pools
+            </div>
+            <table id="tPools">
+                <thead>
+                    <td style="width: 50px;">
+                        Id
+                    </td>
+                    <td style="width: 240px;">
+                        Balances
+                    </td>
+                    <td>
+                        fee
+                    </td>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- <div class="reserves" style="margin-left: 294px;width: 159px;border: 1px solid black;margin-top: -81px;padding: 10px;width: 159px;">
+        <div class="header">
+            Pool reserves
+        </div>
+        <table id="poolReservesTbl">
+            <thead>
+                <td style="width: 50px;">
+                    Name
+                </td>
+                <td style="width: 50px;">
+                    Balance
+                </td>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div> -->
+    <div class="contractLogs">
+        <div class="header">
+            Smart contract logs
+        </div>
+        <textarea id="textArea"></textarea>
+    </div>
+
+    <div class="overlay">
+        <div class="overlay__inner">
+            <div class="overlay__content"><span class="spinner"></span></div>
+        </div>
+    </div>
+
+    <div class="swapPopup">
+        <div class="currency">
+            <select id="currencyIn">
+            <option selected value="0x8d6a3aB7332557878a94757b1F4F2f30B7be4f38">A</option>
+            <option value="0x801a666431Ac9e2515634e3A1Beb1f7932112921">B</option>
+            <option value="0x9Ae29319e97dA618382A87E367c8e7E7a96FAd81">C</option>
+            <option value="0xa589332749DB4b0181FeBB4B2Dfcd81410a7D8e6">D</option>
+        </select>
+            <input type="number" id="amountIn">
+        </div>
+        <div class="currency">
+            <select id="currencyOut">
+            <option  value="0x8d6a3aB7332557878a94757b1F4F2f30B7be4f38">A</option>
+            <option selected value="0x801a666431Ac9e2515634e3A1Beb1f7932112921">B</option>
+            <option value="0x9Ae29319e97dA618382A87E367c8e7E7a96FAd81">C</option>
+            <option value="0xa589332749DB4b0181FeBB4B2Dfcd81410a7D8e6">D</option>
+                </select>
+            <input type="number" id="amountOut">
+        </div>
+        <button id="swapBtn">Swap</button>
+        <button id="quoteBtn">Quote</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="./main.js"></script>
+</body>
+
+</html>
