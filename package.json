@@ -14,6 +14,7 @@
     "express-ws": "^5.0.2",
     "ganache": "^6.4.5",
     "ganache-cli": "^6.12.2",
+    "mysql": "^2.18.1",
     "truffle-contract": "^4.0.31",
     "truffle-contract-size": "^2.0.1",
     "web3": "^1.6.0"
