@@ -23,10 +23,12 @@ async function connectDB() {
   });
 }
 
-async function query(sql) {
+async function queryDB(sql) {
   return new Promise((resolve, rej) => {
     con.query(sql, function (err, result) {
       if (err) rej(err);
+
+      console.log("Updated versions table");
       resolve({});
     });
   });
@@ -39,11 +41,13 @@ module.exports = async function (deployer) {
   await deployer.link(ComputationsLibrary, vPoolsManager);
   await deployer.deploy(vPoolsManager);
 
-  await query(
-    "INSERT INTO `vswap`.`versions` (`address`, `abi`) VALUES (" +
-      vPoolsManager.networks[80001].address +
-      "," +
-      JSON.stringify(vPoolsManager.abi) +
-      ");"
-  );
+  //update last version on DB.
+  var sql =
+    "INSERT INTO `vswap`.`versions` (`address`, `abi`) VALUES ('" +
+    vPoolsManager.networks[80001].address +
+    "','" +
+    JSON.stringify(vPoolsManager.abi) +
+    "');";
+
+    await queryDB(sql);
 };
