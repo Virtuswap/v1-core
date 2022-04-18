@@ -6,7 +6,7 @@ import "./ERC20/IERC20.sol";
 import "./ERC20/ERC20.sol";
 import "./vPoolCalculations.sol";
 import "./IvPoolReserveManager.sol";
-import "./new/vPair.sol";
+import "./vPair.sol";
 
 contract vPoolsManager {
     uint256 public constant MINIMUM_LIQUIDITY = 10**3;
@@ -42,44 +42,6 @@ contract vPoolsManager {
         // reserveManager = IvPoolReserveManager(vPoolReserveManager);
         // rPools.push(); //push first empty pool to allocate 0 index
     }
-
-    // function getPoolIndex(address tokenA, address tokenB)
-    //     public
-    //     view
-    //     returns (uint256)
-    // {
-    //     return getRPoolIndex(tokenA, tokenB);
-    // }
-
-    // function getRPoolIndex(address tokenA, address tokenB)
-    //     internal
-    //     view
-    //     returns (uint256)
-    // {
-    //     string memory key = vPoolCalculations.appendAddresses(tokenA, tokenB);
-    //     return poolKeys[key];
-    // }
-
-    //temporary function. will be refactored
-    // function getRPools() public view returns (PoolVM[] memory) {
-    //     PoolVM[] memory temp = new PoolVM[](rPools.length);
-
-    //     // int256[] memory reserveRatio = _calculateReserveRatio();
-    //     // int256[] memory belowReserve = _calculateBelowThreshold();
-
-    //     for (uint256 i = 0; i < rPools.length; i++) {
-    //         temp[i].tokenA = rPools[i].tokenA;
-    //         temp[i].tokenB = rPools[i].tokenB;
-    //         temp[i].fee = rPools[i].fee;
-    //         temp[i].tokenABalance = rPools[i].tokenABalance;
-    //         temp[i].tokenBBalance = rPools[i].tokenBBalance;
-    //     }
-    //     return temp;
-    // }
-
-    // function getRPools() public view returns (address[] memory) {
-    //     return rPools;
-    // }
 
     function _calculateVirtualPool(address[] memory ks, address[] memory js)
         public
@@ -326,24 +288,6 @@ contract vPoolsManager {
     //     );
 
     //     //calculate below threshold for rPool
-    // }
-
-    // function calculateUniswapIndirect(
-    //     uint256[] memory ks,
-    //     uint256[] memory js,
-    //     int256 amount
-    // ) public view returns (int256) {
-    //     return
-    //         vPoolCalculations.calculateUniswapIndirect(rPools, ks, js, amount);
-    // }
-
-    // function calculateVswapCost(
-    //     uint256[] memory ks,
-    //     uint256[] memory js,
-    //     int256 amount
-    // ) public view returns (int256) {
-    //     VirtualPool memory tPool = getTotalPool(ks, js);
-    //     return vPoolCalculations.calculateVswapCost(tPool, amount);
     // }
 
     function getPoolsForPair(address tokenA, address tokenB)

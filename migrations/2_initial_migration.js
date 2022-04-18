@@ -1,6 +1,8 @@
 const vPoolsManager = artifacts.require("vPoolsManager");
+const vPair = artifacts.require("vPair");
 const VPoolReserveManager = artifacts.require("vPoolReserveManager");
 const ComputationsLibrary = artifacts.require("vPoolCalculations");
+const utils = require("./utils");
 
 const mysql = require("mysql");
 
@@ -9,8 +11,6 @@ const con = mysql.createConnection({
   user: "backend",
   password: "V!rtuSw@pp243",
 });
-
-// const Migrations = artifacts.require("vPool");
 
 async function connectDB() {
   return new Promise((resolve, rej) => {
@@ -36,18 +36,19 @@ async function queryDB(sql) {
 
 module.exports = async function (deployer) {
   await connectDB();
-  // await deployer.deploy(VPoolReserveManager);
+
   await deployer.deploy(ComputationsLibrary);
   await deployer.link(ComputationsLibrary, vPoolsManager);
   await deployer.deploy(vPoolsManager);
 
-  //update last version on DB.
-  var sql =
-    "INSERT INTO `vswap`.`versions` (`address`, `abi`) VALUES ('" +
-    vPoolsManager.networks[80001].address +
-    "','" +
-    JSON.stringify(vPoolsManager.abi) +
-    "');";
+  var sql = utils.generateVersionsSQL(
+    vPoolsManager.networks[80001].address,
+    vPoolsManager.abi,
+    "vmanager"
+  );
+  await queryDB(sql);
 
-    await queryDB(sql);
+  sql = utils.generateVersionsSQL("", vPair.abi, "vpair");
+  //update last version on DB.
+  await queryDB(sql);
 };

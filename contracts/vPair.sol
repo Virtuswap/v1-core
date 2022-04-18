@@ -1,7 +1,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
-import "../Types256.sol";
-import "../ERC20/IERC20.sol";
+import "./Types256.sol";
+import "./ERC20/IERC20.sol";
 
 contract vPair {
     address owner;

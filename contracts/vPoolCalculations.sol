@@ -1,7 +1,7 @@
 import "./Types256.sol";
 import "./ERC20/IERC20.sol";
 import "./ERC20/ERC20.sol";
-import "./new/vPair.sol";
+import "./vPair.sol";
 
 library vPoolCalculations {
     function max(int256 a, int256 b) internal pure returns (int256) {
@@ -201,35 +201,7 @@ library vPoolCalculations {
         return cost;
     }
 
-    // function costUniswapDirect(
-    //     Pool[] storage rPools,
-    //     address buy_currency,
-    //     address sell_currency,
-    //     int256 amount
-    // ) public view returns (int256) {
-    //     uint256 tradePoolIndex = getPoolIndex(
-    //         rPools,
-    //         buy_currency,
-    //         sell_currency
-    //     );
-
-    //     int256 lagRTokenABalance = rPools[tradePoolIndex].tokenABalance;
-    //     int256 lagRTokenBBalance = rPools[tradePoolIndex].tokenBBalance;
-
-    //     // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
-    //     int256 tradePoolTokenBBalance = (lagRTokenABalance *
-    //         lagRTokenBBalance) / (lagRTokenABalance - amount);
-
-    //     int256 calcA = tradePoolTokenBBalance - lagRTokenBBalance;
-    //     int256 calcB = (amount * lagRTokenBBalance) / lagRTokenABalance;
-    //     int256 calcD = (calcA - calcB);
-
-    //     calcD = calcD * 10000;
-    //     int256 cost = calcD / calcB;
-    //     return cost;
-    // }
-
-    function calculateVswapCost(VirtualPool memory tPool, int256 amount)
+      function calculateVswapCost(VirtualPool memory tPool, int256 amount)
         public
         view
         returns (int256)
@@ -312,120 +284,6 @@ library vPoolCalculations {
         int256 finalQuote = tPool.tokenBBalance - lagTTokenBBalance;
 
         return finalQuote;
-    }
-
-    function calculateUniswapIndirect(
-        Pool[] storage rPools,
-        uint256[] memory ks,
-        uint256[] memory js,
-        int256 amount
-    ) public view returns (int256) {
-        int256[] memory res = new int256[](ks.length);
-
-        for (uint256 i = 0; i < ks.length; i++) {
-            if (amount > rPools[js[i]].tokenABalance) continue;
-
-            /*
-            R_uni_indirect(buy_currency,k,buy_currency,time)=lag_R(buy_currency,k,buy_currency)-Buy*(1-fee_R(buy_currency,k));
-            R_uni_indirect(buy_currency,k,k,time)=lag_R(buy_currency,k,buy_currency)*lag_R(buy_currency,k,k)/(lag_R(buy_currency,k,buy_currency)-Buy);
-            */
-
-            // int256 indirectTokenA = rPools[buy_k_poolIndex].tokenABalance -
-            //     (amount - (rPools[buy_k_poolIndex].fee * amount) / 1 ether);
-
-            int256 indirectTokenB = (rPools[ks[i]].tokenABalance *
-                rPools[ks[i]].tokenBBalance) /
-                (rPools[ks[i]].tokenABalance - amount);
-
-            // emit Debug("indirectTokenA", indirectTokenA);
-            // emit Debug("indirectTokenB", indirectTokenB);
-
-            /*Sell=R_uni_indirect(buy_currency,k,k,time)-lag_R(buy_currency,k,k);*/
-
-            int256 sell = indirectTokenB - rPools[ks[i]].tokenBBalance;
-
-            /*
-            /*R_uni_indirect(k,sell_currency,k,time)=lag_R(k,sell_currency,k)-Sell*(1- fee_R(k,sell_currency));
-            */
-            // int256 kSellTokenABalance = rPools[k_sell_poolIndex].tokenABalance -
-            //     sell * (rPools[buy_k_poolIndex].fee * amount / 1 ether);
-
-            // emit Debug("kSellTokenABalance", kSellTokenABalance);
-
-            /*
-            R_uni_indirect(k,sell_currency,sell_currency,time)=lag_R(k,sell_currency,k)*lag_R(k,sell_currency,sell_currency)/(lag_R(k,sell_currency,k)-Sell*(1+fee_R(k,sell_currency)));
-            */
-            int256 kSellTokenBBalance = (rPools[js[i]].tokenABalance *
-                rPools[js[i]].tokenBBalance) /
-                (rPools[js[i]].tokenABalance - sell);
-
-            // emit Debug("kSellTokenBBalance", kSellTokenBBalance);
-
-            /*
-            Cost_uni_indirect_leg1(buy_currency,k,time)= ((R_uni_indirect(buy_currency,k,k,time)- lag_R(buy_currency,k,k))-
-
-            Buy* lag_R(buy_currency,k,k)/ lag_R(buy_currency,k,buy_currency))/
-
-            (Buy* lag_R(buy_currency,k,k)/ lag_R(buy_currency,k,buy_currency))+ lag_fee_R(buy_currency,k)
-            */
-
-            int256 leg1 = (((indirectTokenB - rPools[ks[i]].tokenBBalance) -
-                (amount * rPools[ks[i]].tokenBBalance) /
-                rPools[ks[i]].tokenABalance) * 1 ether) /
-                ((amount * rPools[ks[i]].tokenBBalance) /
-                    rPools[ks[i]].tokenABalance) +
-                rPools[ks[i]].fee;
-
-            // emit Debug("leg1", leg1);
-            /*
-            Cost_uni_indirect_leg2(k,sell_currency,time)= ((R_virtuswap(k,sell_currency,sell_currency,time)- lag_R(k,sell_currency,sell_currency))-
-
-            Sell* lag_R(k,sell_currency,sell_currency)/ lag_R(k,sell_currency,k))/
-
-            (Sell* lag_R(k,sell_currency,sell_currency)/ lag_R(k,sell_currency,k))+ lag_fee_R(k,sell_currency)
-            */
-            // emit Debug("amount", amount);
-            // emit Debug("kSellTokenBBalance", kSellTokenBBalance);
-            // emit Debug(
-            //     "rPools[k_sell_poolIndex].tokenBBalance",
-            //     rPools[k_sell_poolIndex].tokenBBalance
-            // );
-            // emit Debug(
-            //     "rPools[k_sell_poolIndex].tokenABalance",
-            //     rPools[k_sell_poolIndex].tokenABalance
-            // );
-            // emit Debug(
-            //     "rPools[k_sell_poolIndex].fee",
-            //     rPools[k_sell_poolIndex].fee
-            // );
-
-            // emit Debug("sell", sell);
-
-            int256 leg2 = (((kSellTokenBBalance - rPools[js[i]].tokenBBalance) -
-                (sell * rPools[js[i]].tokenBBalance) /
-                rPools[js[i]].tokenABalance) * 1 ether) /
-                ((sell * rPools[js[i]].tokenBBalance) /
-                    rPools[js[i]].tokenABalance) +
-                rPools[js[i]].fee;
-
-            // emit Debug("leg2", leg2);
-
-            // Cost_uni_indirect(buy_currency,sell_currency,time)= Cost_uni_indirect_leg1(buy_currency,k,time)+ Cost_uni_indirect_leg2(k,sell_currency,time)
-
-            res[i] = leg1 + leg2;
-            // emit Debug("res[i]", res[i]);
-            i++;
-        }
-
-        //take min
-        int256 minValue = res[0];
-        for (uint256 j = 0; j < res.length; j++) {
-            if (res[j] < minValue) {
-                minValue = res[j];
-            }
-        }
-
-        return minValue;
     }
 
     // function exchageReserves(Pool[] storage rPools, address[] memory tokens)
