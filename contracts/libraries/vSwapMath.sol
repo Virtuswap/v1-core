@@ -57,6 +57,24 @@ library vSwapMath {
         return vPool;
     }
 
+    function calculateLPTokens(
+        uint256 token0Amount,
+        uint256 totalSupply,
+        uint256 token0Balance,
+        uint256 reserveRatio
+    ) public pure returns (uint256) {
+        /* t(add_currency_base,add_currency_quote,LP)=
+                lag_t(add_currency_base,add_currency_quote,LP)+Add*
+                sum(lag_t(add_currency_base,add_currency_quote,:))/
+                (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
+                (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
+                
+        uint256 lpAmount = ((token0Amount * totalSupply) / token0Balance) *
+            (1 + reserveRatio);
+
+        return lpAmount;
+    }
+
     function calculateReserveRatio(
         uint256 reserveBalance,
         uint256 ikTokenABalance,
@@ -70,8 +88,8 @@ library vSwapMath {
             (reserveBalance *
                 Math.max(
                     (ikTokenABalance / Math.max(ikTokenBBalance, EPSILON)),
-                    (jkTokenABalance / Math.max(jkTokenBBalance, EPSILON) *
-                        ijtokenABalance / Math.max(ijtokenBBalance, EPSILON))
+                    (((jkTokenABalance / Math.max(jkTokenBBalance, EPSILON)) *
+                        ijtokenABalance) / Math.max(ijtokenBBalance, EPSILON))
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
     }
 

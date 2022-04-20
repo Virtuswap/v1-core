@@ -112,6 +112,7 @@ contract vPair is IvPair, vSwapERC20 {
                     address(this)
                 );
                 emit Debug("ijTokenBBalance ", ijTokenBBalance);
+               
                 uint256 cRR = vSwapMath.calculateReserveRatio(
                     reserveBalance,
                     ikTokenABalance,
@@ -151,21 +152,18 @@ contract vPair is IvPair, vSwapERC20 {
 
         emit LiquidityChange(address(this), token0Amount, token1Amount);
 
-        /* t(add_currency_base,add_currency_quote,LP)=
-                lag_t(add_currency_base,add_currency_quote,LP)+Add*
-                sum(lag_t(add_currency_base,add_currency_quote,:))/
-                (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
-                (1+reserve_ratio(add_currency_base,add_currency_quote)));
 */
-        //* removed this calculation
-        //  (1+Add/lag_R(add_currency_base,add_currency_quote,add_currency_base))*/
         uint256 lpAmount = 10000 ether;
         uint256 token0Balance = IERC20(token0).balanceOf(address(this));
+        
         if (token0Balance > token0Amount) {
-            lpAmount =
-                ((token0Amount * IERC20(address(this)).totalSupply()) /
-                    token0Balance) *
-                (1 + reserveRatio);
+        
+            lpAmount = vSwapMath.calculateLPTokens(
+                token0Amount,
+                IERC20(address(this)).totalSupply(),
+                token0Balance,
+                reserveRatio
+            );
         }
 
         _mint(msg.sender, lpAmount);
