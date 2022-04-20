@@ -13,8 +13,6 @@ contract vSwapERC20 is IvSwapERC20 {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    mapping(address => uint256) public nonces;
-
     constructor() {}
 
     function _mint(address to, uint256 value) internal {

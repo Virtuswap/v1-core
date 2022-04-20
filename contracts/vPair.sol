@@ -1,35 +1,27 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "./Types256.sol";
+import "./interfaces/IvPair.sol";
 import "./ERC20/IERC20.sol";
 import "./vPairFactory.sol";
 import "./libraries/Math.sol";
 import "./vSwapERC20.sol";
 import "./libraries/vSwapMath.sol";
 
-contract vPair is vSwapERC20 {
+contract vPair is IvPair, vSwapERC20 {
     address owner;
     address factory;
-    address public tokenA;
-    address public tokenB;
+    address public token0;
+    address public token1;
     address[] whitelist;
 
     bytes4 private constant SELECTOR =
         bytes4(keccak256(bytes("transfer(address,uint256)")));
 
-    uint256 epsilon = 1 wei;
-
-    int256 public belowReserve;
+    uint256 public belowReserve;
     uint256 reserveRatio;
-    int256 fee;
-    int256 maxReserveRatio;
-
-    event LiquidityChange(
-        address poolAddress,
-        uint256 tokenABalance,
-        uint256 tokenBBalance
-    );
-
+    uint256 fee;
+    uint256 maxReserveRatio;
     mapping(address => bool) whitelistAllowance;
 
     modifier onlyOwner() {
@@ -54,8 +46,8 @@ contract vPair is vSwapERC20 {
         owner = _owner;
         factory = _factory;
         whitelist = _whitelist;
-        tokenA = _tokenA;
-        tokenB = _tokenB;
+        token0 = _tokenA;
+        token1 = _tokenB;
         belowReserve = 1;
         maxReserveRatio = 0.02 ether;
     }
@@ -74,28 +66,28 @@ contract vPair is vSwapERC20 {
 
             if (reserveBalance > 0) {
                 address ikAddress = vPairFactory(factory).getPairAddress(
-                    tokenA,
+                    token0,
                     whitelist[i]
                 );
 
                 address jkAddress = vPairFactory(factory).getPairAddress(
-                    tokenB,
+                    token1,
                     whitelist[i]
                 );
 
-                uint256 ikTokenABalance = IERC20(tokenA).balanceOf(ikAddress);
+                uint256 ikTokenABalance = IERC20(token0).balanceOf(ikAddress);
                 uint256 ikTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     ikAddress
                 );
 
-                uint256 jkTokenABalance = IERC20(tokenB).balanceOf(jkAddress);
+                uint256 jkTokenABalance = IERC20(token1).balanceOf(jkAddress);
                 uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     jkAddress
                 );
-                uint256 ijTokenABalance = IERC20(tokenA).balanceOf(
+                uint256 ijTokenABalance = IERC20(token0).balanceOf(
                     address(this)
                 );
-                uint256 ijTokenBBalance = IERC20(tokenB).balanceOf(
+                uint256 ijTokenBBalance = IERC20(token1).balanceOf(
                     address(this)
                 );
 
@@ -120,7 +112,7 @@ contract vPair is vSwapERC20 {
 
     function collect(uint256 tokenAAmount, uint256 tokenBAmount) public {
         require(
-            IERC20(tokenA).transferFrom(
+            IERC20(token0).transferFrom(
                 msg.sender,
                 address(this),
                 tokenAAmount
@@ -128,7 +120,7 @@ contract vPair is vSwapERC20 {
             "Could not transfer token A"
         );
         require(
-            IERC20(tokenB).transferFrom(
+            IERC20(token1).transferFrom(
                 msg.sender,
                 address(this),
                 tokenBAmount
@@ -164,7 +156,7 @@ contract vPair is vSwapERC20 {
         );
         require(
             success && (data.length == 0 || abi.decode(data, (bool))),
-            "UniswapV2: TRANSFER_FAILED"
+            "vSwap: TRANSFER_FAILED"
         );
     }
 
@@ -185,7 +177,7 @@ contract vPair is vSwapERC20 {
     function withdrawal() public onlyOwner {}
 
     function setWhitelistAllowance(address reserveToken, bool activateReserve)
-        public
+        external
         onlyOwner
     {
         whitelistAllowance[reserveToken] = activateReserve;

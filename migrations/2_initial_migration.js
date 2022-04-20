@@ -1,7 +1,7 @@
 const vPoolsManager = artifacts.require("vPoolsManager");
 const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
-const ComputationsLibrary = artifacts.require("vPoolCalculations");
+const vSwapMath = artifacts.require("vSwapMath");
 const utils = require("./utils");
 
 const mysql = require("mysql");
@@ -37,13 +37,12 @@ async function queryDB(sql) {
 module.exports = async function (deployer) {
   await connectDB();
 
-  await deployer.deploy(ComputationsLibrary);
-  await deployer.link(ComputationsLibrary, vPoolsManager);
+  await deployer.deploy(vSwapMath);
+  await deployer.link(vSwapMath, vPoolsManager);
   await deployer.deploy(vPoolsManager);
 
-  await deployer.link(ComputationsLibrary, vPairFactory);
+  await deployer.link(vSwapMath, vPairFactory);
   await deployer.deploy(vPairFactory);
-  
 
   var sql = utils.generateVersionsSQL(
     vPoolsManager.networks[80001].address,

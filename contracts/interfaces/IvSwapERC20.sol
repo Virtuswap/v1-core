@@ -32,6 +32,4 @@ interface IvSwapERC20 {
         address to,
         uint256 value
     ) external returns (bool);
-
-    function nonces(address owner) external view returns (uint256);
 }

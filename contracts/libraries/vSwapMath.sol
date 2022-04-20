@@ -1,7 +1,8 @@
 import "../Types256.sol";
 import "../ERC20/IERC20.sol";
 import "../ERC20/ERC20.sol";
-import "../vPair.sol";
+import "./Math.sol";
+import "../interfaces/IvPair.sol";
 
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
@@ -14,26 +15,26 @@ library vSwapMath {
         VirtualPool memory vPool;
         vPool.fee = 0.003 ether;
 
-        vPool.tokenA = vPair(ks[0]).tokenA();
-        vPool.tokenB = vPair(js[0]).tokenB();
+        vPool.tokenA = IvPair(ks[0]).token0();
+        vPool.tokenB = IvPair(js[0]).token1();
 
         for (uint256 i = 0; i < ks.length; i++) {
             address ikIndex = ks[i];
             address jkIndex = js[i];
 
-            uint256 belowReserveIK = vPair(ikIndex).getBelowReserve();
-            uint256 belowReserveJK = vPair(jkIndex).getBelowReserve();
+            uint256 belowReserveIK = IvPair(ikIndex).getBelowReserve();
+            uint256 belowReserveJK = IvPair(jkIndex).getBelowReserve();
 
-            uint256 ikIndexTokenABalance = IERC20(vPair(ikIndex).tokenA())
+            uint256 ikIndexTokenABalance = IERC20(IvPair(ikIndex).token0())
                 .balanceOf(ikIndex);
 
-            uint256 ikIndexTokenBBalance = IERC20(vPair(ikIndex).tokenB())
+            uint256 ikIndexTokenBBalance = IERC20(IvPair(ikIndex).token1())
                 .balanceOf(ikIndex);
 
-            uint256 jkIndexTokenABalance = IERC20(vPair(jkIndex).tokenA())
+            uint256 jkIndexTokenABalance = IERC20(IvPair(jkIndex).token0())
                 .balanceOf(ikIndex);
 
-            uint256 jkIndexTokenBBalance = IERC20(vPair(jkIndex).tokenB())
+            uint256 jkIndexTokenBBalance = IERC20(IvPair(jkIndex).token1())
                 .balanceOf(ikIndex);
 
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
@@ -74,38 +75,38 @@ library vSwapMath {
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
     }
 
-    function getTotalPool(Pool[] storage rPools, VirtualPool memory vPool)
-        public
-        view
-        returns (VirtualPool memory)
-    {
-        VirtualPool memory tPool = vPool;
+    // function getTotalPool(Pool[] storage rPools, VirtualPool memory vPool)
+    //     public
+    //     view
+    //     returns (VirtualPool memory)
+    // {
+    //     VirtualPool memory tPool = vPool;
 
-        uint256 rPoolTokenABalance = 0;
-        uint256 rPoolTokenBBalance = 0;
-        uint256 rPoolFee = 0;
+    //     uint256 rPoolTokenABalance = 0;
+    //     uint256 rPoolTokenBBalance = 0;
+    //     uint256 rPoolFee = 0;
 
-        if (vPool.rPoolIndex > 0) {
-            rPoolTokenABalance = rPools[vPool.rPoolIndex].tokenABalance;
-            rPoolTokenBBalance = rPools[vPool.rPoolIndex].tokenBBalance;
-            rPoolFee = rPools[vPool.rPoolIndex].fee;
-        }
+    //     if (vPool.rPoolIndex > 0) {
+    //         rPoolTokenABalance = rPools[vPool.rPoolIndex].tokenABalance;
+    //         rPoolTokenBBalance = rPools[vPool.rPoolIndex].tokenBBalance;
+    //         rPoolFee = rPools[vPool.rPoolIndex].fee;
+    //     }
 
-        tPool.tokenABalance = rPoolTokenABalance + vPool.tokenABalance;
+    //     tPool.tokenABalance = rPoolTokenABalance + vPool.tokenABalance;
 
-        tPool.tokenBBalance = rPoolTokenBBalance + vPool.tokenBBalance;
+    //     tPool.tokenBBalance = rPoolTokenBBalance + vPool.tokenBBalance;
 
-        if (vPool.tokenABalance > 0) {
-            tPool.fee =
-                (rPoolFee *
-                    rPoolTokenABalance +
-                    vPool.fee *
-                    vPool.tokenABalance) /
-                vPool.tokenABalance;
-        }
+    //     if (vPool.tokenABalance > 0) {
+    //         tPool.fee =
+    //             (rPoolFee *
+    //                 rPoolTokenABalance +
+    //                 vPool.fee *
+    //                 vPool.tokenABalance) /
+    //             vPool.tokenABalance;
+    //     }
 
-        return tPool;
-    }
+    //     return tPool;
+    // }
 
     // function _calculateBelowThreshold(
     //     Pool[] storage rPools,
