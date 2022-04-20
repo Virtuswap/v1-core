@@ -69,9 +69,9 @@ library vSwapMath {
         return
             (reserveBalance *
                 Math.max(
-                    ikTokenABalance / Math.max(ikTokenBBalance, EPSILON),
-                    ((jkTokenABalance / Math.max(jkTokenBBalance, EPSILON)) *
-                        ijtokenABalance) / Math.max(ijtokenBBalance, EPSILON)
+                    (ikTokenABalance / Math.max(ikTokenBBalance, EPSILON)),
+                    (jkTokenABalance / Math.max(jkTokenBBalance, EPSILON) *
+                        ijtokenABalance / Math.max(ijtokenBBalance, EPSILON))
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
     }
 

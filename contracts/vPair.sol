@@ -19,10 +19,13 @@ contract vPair is IvPair, vSwapERC20 {
         bytes4(keccak256(bytes("transfer(address,uint256)")));
 
     uint256 public belowReserve;
-    uint256 reserveRatio;
+    uint256 public reserveRatio;
     uint256 fee;
     uint256 maxReserveRatio;
     mapping(address => bool) whitelistAllowance;
+
+    event Debug(string message, uint256 value);
+    event DebugA(string message, address value);
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -50,9 +53,12 @@ contract vPair is IvPair, vSwapERC20 {
         token1 = _tokenB;
         belowReserve = 1;
         maxReserveRatio = 0.02 ether;
+
+        //mint first token to blackhole
+        _mint(address(0), 1 ether);
     }
 
-    function getBelowReserve() public view returns (uint256) {
+    function getBelowReserve() public pure returns (uint256) {
         return 1;
     }
 
@@ -64,33 +70,48 @@ contract vPair is IvPair, vSwapERC20 {
                 address(this)
             );
 
+            emit Debug("Reserve balance: ", reserveBalance);
+
             if (reserveBalance > 0) {
                 address ikAddress = vPairFactory(factory).getPairAddress(
                     token0,
                     whitelist[i]
                 );
 
+                emit DebugA("ikAddress ", ikAddress);
+
                 address jkAddress = vPairFactory(factory).getPairAddress(
                     token1,
                     whitelist[i]
                 );
 
+                emit DebugA("jkAddress ", jkAddress);
+
                 uint256 ikTokenABalance = IERC20(token0).balanceOf(ikAddress);
+
+                emit Debug("ikTokenABalance ", ikTokenABalance);
+
                 uint256 ikTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     ikAddress
                 );
 
+                emit Debug("ikTokenBBalance ", ikTokenBBalance);
+
                 uint256 jkTokenABalance = IERC20(token1).balanceOf(jkAddress);
+                emit Debug("jkTokenABalance ", jkTokenABalance);
+
                 uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     jkAddress
                 );
+                emit Debug("jkTokenBBalance ", jkTokenBBalance);
                 uint256 ijTokenABalance = IERC20(token0).balanceOf(
                     address(this)
                 );
+                emit Debug("ijTokenABalance ", ijTokenABalance);
                 uint256 ijTokenBBalance = IERC20(token1).balanceOf(
                     address(this)
                 );
-
+                emit Debug("ijTokenBBalance ", ijTokenBBalance);
                 uint256 cRR = vSwapMath.calculateReserveRatio(
                     reserveBalance,
                     ikTokenABalance,
@@ -100,7 +121,7 @@ contract vPair is IvPair, vSwapERC20 {
                     ijTokenABalance,
                     ijTokenBBalance
                 );
-
+                emit Debug("cRR ", cRR);
                 _reserveRatio = _reserveRatio + cRR;
             }
         }
@@ -110,12 +131,12 @@ contract vPair is IvPair, vSwapERC20 {
 
     function _mint() internal {}
 
-    function collect(uint256 tokenAAmount, uint256 tokenBAmount) public {
+    function collect(uint256 token0Amount, uint256 token1Amount) public {
         require(
             IERC20(token0).transferFrom(
                 msg.sender,
                 address(this),
-                tokenAAmount
+                token0Amount
             ),
             "Could not transfer token A"
         );
@@ -123,12 +144,12 @@ contract vPair is IvPair, vSwapERC20 {
             IERC20(token1).transferFrom(
                 msg.sender,
                 address(this),
-                tokenBAmount
+                token1Amount
             ),
             "Could not transfer token B"
         );
 
-        emit LiquidityChange(address(this), tokenAAmount, tokenBAmount);
+        emit LiquidityChange(address(this), token0Amount, token1Amount);
 
         /* t(add_currency_base,add_currency_quote,LP)=
                 lag_t(add_currency_base,add_currency_quote,LP)+Add*
@@ -138,12 +159,16 @@ contract vPair is IvPair, vSwapERC20 {
 */
         //* removed this calculation
         //  (1+Add/lag_R(add_currency_base,add_currency_quote,add_currency_base))*/
+        uint256 lpAmount = 10000 ether;
+        uint256 token0Balance = IERC20(token0).balanceOf(address(this));
+        if (token0Balance > token0Amount) {
+            lpAmount =
+                ((token0Amount * IERC20(address(this)).totalSupply()) /
+                    token0Balance) *
+                (1 + reserveRatio);
+        }
 
-        // uint256 lp = ((tokenAAmount * IERC20(LPToken).totalSupply()) /
-        //     IERC20(tokenA).balanceOf(address(this))) * (1 + reserveRatio);
-
-        // //issue LP tokens
-        // ERC20(rPools[poolIndex].LPToken)._mint(msg.sender, tokenAAmount);
+        _mint(msg.sender, lpAmount);
     }
 
     function _safeTransfer(
