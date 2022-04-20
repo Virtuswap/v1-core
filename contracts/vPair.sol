@@ -4,17 +4,21 @@ import "./Types256.sol";
 import "./ERC20/IERC20.sol";
 import "./vPairFactory.sol";
 import "./libraries/Math.sol";
+import "./vSwapERC20.sol";
+import "./libraries/vSwapMath.sol";
 
-contract vPair {
+contract vPair is vSwapERC20 {
     address owner;
     address factory;
     address public tokenA;
     address public tokenB;
     address[] whitelist;
 
+    bytes4 private constant SELECTOR =
+        bytes4(keccak256(bytes("transfer(address,uint256)")));
+
     uint256 epsilon = 1 wei;
 
-    address LPToken;
     int256 public belowReserve;
     uint256 reserveRatio;
     int256 fee;
@@ -56,7 +60,7 @@ contract vPair {
         maxReserveRatio = 0.02 ether;
     }
 
-    function getBelowReserve() public view returns (uint) {
+    function getBelowReserve() public view returns (uint256) {
         return 1;
     }
 
@@ -88,21 +92,24 @@ contract vPair {
                 uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     jkAddress
                 );
-                uint256 tokenABalance = IERC20(tokenA).balanceOf(address(this));
-                uint256 tokenBBalance = IERC20(tokenB).balanceOf(address(this));
+                uint256 ijTokenABalance = IERC20(tokenA).balanceOf(
+                    address(this)
+                );
+                uint256 ijTokenBBalance = IERC20(tokenB).balanceOf(
+                    address(this)
+                );
 
-                _reserveRatio =
-                    _reserveRatio +
-                    (reserveBalance *
-                        Math.max(
-                            ikTokenABalance /
-                                Math.max(ikTokenBBalance, epsilon),
-                            ((jkTokenABalance /
-                                Math.max(jkTokenBBalance, epsilon)) *
-                                tokenABalance) /
-                                Math.max(tokenBBalance, epsilon)
-                        )) /
-                    (2 * Math.max(tokenABalance, epsilon));
+                uint256 cRR = vSwapMath.calculateReserveRatio(
+                    reserveBalance,
+                    ikTokenABalance,
+                    ikTokenBBalance,
+                    jkTokenABalance,
+                    jkTokenBBalance,
+                    ijTokenABalance,
+                    ijTokenBBalance
+                );
+
+                _reserveRatio = _reserveRatio + cRR;
             }
         }
 
@@ -140,11 +147,25 @@ contract vPair {
         //* removed this calculation
         //  (1+Add/lag_R(add_currency_base,add_currency_quote,add_currency_base))*/
 
-        uint256 lp = ((tokenAAmount * IERC20(LPToken).totalSupply()) /
-            IERC20(tokenA).balanceOf(address(this))) * (1 + reserveRatio);
+        // uint256 lp = ((tokenAAmount * IERC20(LPToken).totalSupply()) /
+        //     IERC20(tokenA).balanceOf(address(this))) * (1 + reserveRatio);
 
         // //issue LP tokens
         // ERC20(rPools[poolIndex].LPToken)._mint(msg.sender, tokenAAmount);
+    }
+
+    function _safeTransfer(
+        address token,
+        address to,
+        uint256 value
+    ) private {
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(SELECTOR, to, value)
+        );
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))),
+            "UniswapV2: TRANSFER_FAILED"
+        );
     }
 
     function swap(
@@ -170,11 +191,7 @@ contract vPair {
         whitelistAllowance[reserveToken] = activateReserve;
     }
 
-    function isReserveAllowed(uint256 rPoolIndex, address reserveToken)
-        public
-        view
-        returns (bool)
-    {
+    function isReserveAllowed(address reserveToken) public view returns (bool) {
         return whitelistAllowance[reserveToken];
     }
 }

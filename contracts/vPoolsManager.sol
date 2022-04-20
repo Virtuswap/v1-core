@@ -4,7 +4,7 @@ pragma solidity >=0.4.22 <0.9.0;
 import "./Types256.sol";
 import "./ERC20/IERC20.sol";
 import "./ERC20/ERC20.sol";
-import "./vPoolCalculations.sol";
+import "./libraries/vSwapMath.sol";
 import "./vPair.sol";
 
 contract vPoolsManager {
@@ -31,7 +31,7 @@ contract vPoolsManager {
         view
         returns (VirtualPool memory)
     {
-        VirtualPool memory vPool = vPoolCalculations._calculateVirtualPool(
+        VirtualPool memory vPool = vSwapMath._calculateVirtualPool(
             ks,
             js
         );

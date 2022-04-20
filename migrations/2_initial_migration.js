@@ -40,6 +40,8 @@ module.exports = async function (deployer) {
   await deployer.deploy(ComputationsLibrary);
   await deployer.link(ComputationsLibrary, vPoolsManager);
   await deployer.deploy(vPoolsManager);
+
+  await deployer.link(ComputationsLibrary, vPairFactory);
   await deployer.deploy(vPairFactory);
   
 
