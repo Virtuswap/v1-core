@@ -7,12 +7,12 @@ struct Token {
 }
 
 struct VirtualPool {
-    int256 fee;
+    uint256 fee;
     uint256 rPoolIndex;
     address tokenA;
     address tokenB;
-    int256 tokenABalance;
-    int256 tokenBBalance;
+    uint256 tokenABalance;
+    uint256 tokenBBalance;
     bool balanced;
 }
 
@@ -29,11 +29,11 @@ struct Pool {
     address tokenA;
     address tokenB;
     address LPToken;
-    int256 belowReserve;
-    int256 fee;
-    int256 tokenABalance;
-    int256 tokenBBalance;
-    int256 maxReserveRatio;
+    uint256 belowReserve;
+    uint256 fee;
+    uint256 tokenABalance;
+    uint256 tokenBBalance;
+    uint256 maxReserveRatio;
     uint256 reversePoolIndex;
     address owner;
 }
@@ -53,11 +53,4 @@ struct PoolVM {
     int256 tokenBBalance;
     int256 maxReserveRatio;
     bool valid;
-}
-
-struct PoolReserve {
-    mapping(address => bool) whitelist;
-    uint numberOfActivatedWL;
-    mapping(address => int256) reserveBalance;
-    address owner;
 }

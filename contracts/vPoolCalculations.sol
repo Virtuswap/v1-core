@@ -4,20 +4,12 @@ import "./ERC20/ERC20.sol";
 import "./vPair.sol";
 
 library vPoolCalculations {
-    function max(int256 a, int256 b) internal pure returns (int256) {
-        return a >= b ? a : b;
-    }
-
-    function min(int256 a, int256 b) internal pure returns (int256) {
-        return a < b ? a : b;
-    }
-
     function sumVirtualPoolsArray(VirtualPool[] memory vPools)
         public
         view
-        returns (int256)
+        returns (uint256)
     {
-        int256 sum = 0;
+        uint256 sum = 0;
         for (uint256 i = 0; i < vPools.length; i++) {
             sum += vPools[i].tokenABalance;
         }
@@ -30,42 +22,48 @@ library vPoolCalculations {
         view
         returns (VirtualPool memory)
     {
-        int256 epsilon = 1 wei;
+        uint256 epsilon = 1 wei;
 
         VirtualPool memory vPool;
         vPool.fee = 0.003 ether;
-        
-        vPool.tokenA = vPair(ks[0]).getTokenA();
-        vPool.tokenB = vPair(js[0]).getTokenA();
+
+        vPool.tokenA = vPair(ks[0]).tokenA();
+        vPool.tokenB = vPair(js[0]).tokenB();
 
         for (uint256 i = 0; i < ks.length; i++) {
             address ikIndex = ks[i];
             address jkIndex = js[i];
 
-            int256 belowReserveIK = vPair(ikIndex).getBelowReserve();
-            int256 belowReserveJK = vPair(jkIndex).getBelowReserve();
+            uint256 belowReserveIK = vPair(ikIndex).getBelowReserve();
+            uint256 belowReserveJK = vPair(jkIndex).getBelowReserve();
+
+            uint256 ikIndexTokenABalance = IERC20(vPair(ikIndex).tokenA())
+                .balanceOf(ikIndex);
+
+            uint256 ikIndexTokenBBalance = IERC20(vPair(ikIndex).tokenB())
+                .balanceOf(ikIndex);
+
+            uint256 jkIndexTokenABalance = IERC20(vPair(jkIndex).tokenA())
+                .balanceOf(ikIndex);
+
+            uint256 jkIndexTokenBBalance = IERC20(vPair(jkIndex).tokenB())
+                .balanceOf(ikIndex);
 
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
             vPool.tokenABalance =
                 vPool.tokenABalance +
                 (belowReserveIK *
-                    vPair(ikIndex).tokenABalance() *
-                    min(
-                        vPair(ikIndex).tokenBBalance(),
-                        vPair(jkIndex).tokenBBalance()
-                    )) /
-                max(vPair(ikIndex).tokenBBalance(), epsilon);
+                    ikIndexTokenABalance *
+                    Math.min(ikIndexTokenBBalance, jkIndexTokenBBalance)) /
+                Math.min(ikIndexTokenBBalance, epsilon);
 
             //  V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
             vPool.tokenBBalance =
                 vPool.tokenBBalance +
                 (belowReserveJK *
-                    vPair(jkIndex).tokenABalance() *
-                    min(
-                        vPair(ikIndex).tokenBBalance(),
-                        vPair(jkIndex).tokenBBalance()
-                    )) /
-                max(vPair(jkIndex).tokenBBalance(), epsilon);
+                    jkIndexTokenABalance *
+                    Math.min(ikIndexTokenBBalance, jkIndexTokenBBalance)) /
+                Math.min(jkIndexTokenBBalance, epsilon);
         }
 
         return vPool;
@@ -78,9 +76,9 @@ library vPoolCalculations {
     {
         VirtualPool memory tPool = vPool;
 
-        int256 rPoolTokenABalance = 0;
-        int256 rPoolTokenBBalance = 0;
-        int256 rPoolFee = 0;
+        uint256 rPoolTokenABalance = 0;
+        uint256 rPoolTokenBBalance = 0;
+        uint256 rPoolFee = 0;
 
         if (vPool.rPoolIndex > 0) {
             rPoolTokenABalance = rPools[vPool.rPoolIndex].tokenABalance;
@@ -171,65 +169,6 @@ library vPoolCalculations {
         return false;
     }
 
-    function costVirtuswap(
-        Pool[] storage rPools,
-        VirtualPool memory tPool,
-        int256 amount
-    ) public view returns (int256) {
-        int256 lagTTokenABalance = tPool.tokenABalance;
-        int256 lagTTokenBBalance = tPool.tokenBBalance;
-
-        /*
-        T_virtuswap(buy_currency,sell_currency,buy_currency,time)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-lag_fee_T(buy_currency,sell_currency));
-        */
-        tPool.tokenABalance =
-            lagTTokenABalance -
-            (amount - ((tPool.fee * amount) / 1 ether));
-
-        // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
-        tPool.tokenBBalance =
-            (lagTTokenABalance * lagTTokenBBalance) /
-            (lagTTokenABalance - amount);
-
-        int256 calcA = tPool.tokenBBalance - lagTTokenBBalance;
-        int256 calcB = (amount * lagTTokenBBalance) / lagTTokenABalance;
-        int256 calcD = (calcA - calcB);
-
-        calcD = calcD * 10000;
-        int256 cost = calcD / calcB;
-
-        return cost;
-    }
-
-      function calculateVswapCost(VirtualPool memory tPool, int256 amount)
-        public
-        view
-        returns (int256)
-    {
-        int256 lagTTokenABalance = tPool.tokenABalance;
-        int256 lagTTokenBBalance = tPool.tokenBBalance;
-
-        /*
-        T_virtuswap(buy_currency,sell_currency,buy_currency,time)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-lag_fee_T(buy_currency,sell_currency));
-        */
-        tPool.tokenABalance =
-            lagTTokenABalance -
-            (amount - ((tPool.fee * amount) / 1 ether));
-
-        // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
-        tPool.tokenBBalance =
-            (lagTTokenABalance * lagTTokenBBalance) /
-            (lagTTokenABalance - amount);
-
-        int256 calcA = tPool.tokenBBalance - lagTTokenBBalance;
-        int256 calcB = (amount * lagTTokenBBalance) / lagTTokenABalance;
-        int256 calcD = (calcA - calcB);
-
-        calcD = calcD * 1000000;
-        int256 cost = calcD / calcB;
-
-        return cost;
-    }
 
     function appendAddresses(address a, address b)
         internal
@@ -264,10 +203,10 @@ library vPoolCalculations {
     function quote(
         Pool[] storage rPools,
         VirtualPool memory tPool,
-        int256 amount
-    ) public view returns (int256) {
-        int256 lagTTokenABalance = tPool.tokenABalance;
-        int256 lagTTokenBBalance = tPool.tokenBBalance;
+        uint256 amount
+    ) public view returns (uint256) {
+        uint256 lagTTokenABalance = tPool.tokenABalance;
+        uint256 lagTTokenBBalance = tPool.tokenBBalance;
 
         /*
         T_virtuswap(buy_currency,sell_currency,buy_currency,time)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-lag_fee_T(buy_currency,sell_currency));
@@ -281,7 +220,7 @@ library vPoolCalculations {
             (lagTTokenABalance * lagTTokenBBalance) /
             (lagTTokenABalance - amount);
 
-        int256 finalQuote = tPool.tokenBBalance - lagTTokenBBalance;
+        uint256 finalQuote = tPool.tokenBBalance - lagTTokenBBalance;
 
         return finalQuote;
     }

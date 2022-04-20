@@ -5,13 +5,9 @@ import "./Types256.sol";
 import "./ERC20/IERC20.sol";
 import "./ERC20/ERC20.sol";
 import "./vPoolCalculations.sol";
-import "./IvPoolReserveManager.sol";
 import "./vPair.sol";
 
 contract vPoolsManager {
-    uint256 public constant MINIMUM_LIQUIDITY = 10**3;
-
-    mapping(string => address[]) poolsAddresses;
 
     // event Debug(string message, int256 value);
 
@@ -19,21 +15,8 @@ contract vPoolsManager {
 
     // event ADebug(string message, address value);
 
-    event PoolCreated(
-        address poolAddress,
-        address owner,
-        address tokenA,
-        address tokenB,
-        address[] whitelist
-    );
 
     int256 imbalance_tolerance_base = 0.01 ether;
-
-    // Pool[] rPools;
-    mapping(address => mapping(address => address[])) public getPools;
-    address[] public allPools;
-
-    address[] _tokens;
 
     address owner;
 
@@ -289,47 +272,4 @@ contract vPoolsManager {
 
     //     //calculate below threshold for rPool
     // }
-
-    function getPoolsForPair(address tokenA, address tokenB)
-        public
-        view
-        returns (address[] memory)
-    {
-        return getPools[tokenA][tokenB];
-    }
-
-    function createPool(
-        address tokenA,
-        address tokenB,
-        address[] memory whitelist
-    ) public returns (address) {
-        require(tokenA != tokenB, "vSwap: IDENTICAL_ADDRESSES");
-
-        (address token0, address token1) = tokenA < tokenB
-            ? (tokenA, tokenB)
-            : (tokenB, tokenA);
-
-        require(token0 != address(0), "vSwap: ZERO_ADDRESS");
-
-        vPair newPool = new vPair(
-            msg.sender,
-            address(this),
-            tokenA,
-            tokenB,
-            whitelist
-        );
-
-        address newPoolAdd = address(newPool);
-        getPools[token0][token1].push(newPoolAdd);
-        getPools[token1][token0].push(newPoolAdd);
-        allPools.push(newPoolAdd);
-
-        emit PoolCreated(newPoolAdd, msg.sender, tokenA, tokenB, whitelist);
-
-        return newPoolAdd;
-    }
-
-    function getPoolsCount() public view returns (uint256) {
-        return allPools.length;
-    }
 }
