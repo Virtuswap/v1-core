@@ -13,7 +13,7 @@ contract vPair is IvPair, vSwapERC20 {
     address factory;
     address public token0;
     address public token1;
-    address[] whitelist;
+    address[] public whitelist;
 
     bytes4 private constant SELECTOR =
         bytes4(keccak256(bytes("transfer(address,uint256)")));
@@ -53,9 +53,6 @@ contract vPair is IvPair, vSwapERC20 {
         token1 = _tokenB;
         belowReserve = 1;
         maxReserveRatio = 0.02 ether;
-
-        //mint first token to blackhole
-        _mint(address(0), 1 ether);
     }
 
     function getBelowReserve() external pure returns (uint256) {
@@ -139,7 +136,7 @@ contract vPair is IvPair, vSwapERC20 {
                 address(this),
                 token0Amount
             ),
-            "Could not transfer token A"
+            "Could not transfer token 0"
         );
         require(
             IERC20(token1).transferFrom(
@@ -147,7 +144,7 @@ contract vPair is IvPair, vSwapERC20 {
                 address(this),
                 token1Amount
             ),
-            "Could not transfer token B"
+            "Could not transfer token 1"
         );
 
         emit LiquidityChange(address(this), token0Amount, token1Amount);
