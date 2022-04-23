@@ -2,7 +2,6 @@ pragma solidity >=0.4.22 <0.9.0;
 
 struct VirtualPool {
     uint256 fee;
-    uint256 rPoolIndex;
     address tokenA;
     address tokenB;
     uint256 tokenABalance;

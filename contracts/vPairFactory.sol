@@ -38,7 +38,7 @@ contract vPairFactory is IvPairFactory {
 
         require(getPair[token0][token1] == address(0), "vSwap: PAIR_EXISTS");
 
-        vPair newPool = new vPair(
+        vPair newPair = new vPair(
             msg.sender,
             address(this),
             tokenA,
@@ -46,14 +46,14 @@ contract vPairFactory is IvPairFactory {
             whitelist
         );
 
-        address newPoolAdd = address(newPool);
+        address pairAddress = address(newPair);
 
-        getPair[token0][token1] = newPoolAdd;
-        getPair[token1][token0] = newPoolAdd;
-        allPairs.push(newPoolAdd);
+        getPair[token0][token1] = pairAddress;
+        getPair[token1][token0] = pairAddress;
+        allPairs.push(pairAddress);
 
         emit PairCreated(
-            newPoolAdd,
+            pairAddress,
             msg.sender,
             address(this),
             tokenA,

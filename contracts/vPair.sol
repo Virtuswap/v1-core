@@ -5,7 +5,7 @@ import "./interfaces/IvPair.sol";
 import "./ERC20/IERC20.sol";
 import "./vPairFactory.sol";
 import "./libraries/Math.sol";
-import "./vSwapERC20.sol";
+import "./ERC20/vSwapERC20.sol";
 import "./libraries/vSwapMath.sol";
 
 contract vPair is IvPair, vSwapERC20 {
@@ -58,7 +58,7 @@ contract vPair is IvPair, vSwapERC20 {
         _mint(address(0), 1 ether);
     }
 
-    function getBelowReserve() public pure returns (uint256) {
+    function getBelowReserve() external pure returns (uint256) {
         return 1;
     }
 
@@ -112,7 +112,7 @@ contract vPair is IvPair, vSwapERC20 {
                     address(this)
                 );
                 emit Debug("ijTokenBBalance ", ijTokenBBalance);
-               
+
                 uint256 cRR = vSwapMath.calculateReserveRatio(
                     reserveBalance,
                     ikTokenABalance,
@@ -132,7 +132,7 @@ contract vPair is IvPair, vSwapERC20 {
 
     function _mint() internal {}
 
-    function collect(uint256 token0Amount, uint256 token1Amount) public {
+    function collect(uint256 token0Amount, uint256 token1Amount) external {
         require(
             IERC20(token0).transferFrom(
                 msg.sender,
@@ -152,13 +152,11 @@ contract vPair is IvPair, vSwapERC20 {
 
         emit LiquidityChange(address(this), token0Amount, token1Amount);
 
-*/
         uint256 lpAmount = 10000 ether;
         uint256 token0Balance = IERC20(token0).balanceOf(address(this));
-        
+
         if (token0Balance > token0Amount) {
-        
-            lpAmount = vSwapMath.calculateLPTokens(
+            lpAmount = vSwapMath.calculateLPTokensAmount(
                 token0Amount,
                 IERC20(address(this)).totalSupply(),
                 token0Balance,
@@ -191,13 +189,13 @@ contract vPair is IvPair, vSwapERC20 {
         address reserveRPool
     ) public {}
 
+    function withdrawal() external {}
+
     function quote(
         address inToken,
         address outToken,
         uint256 amount
-    ) public {}
-
-    function withdrawal() public onlyOwner {}
+    ) external {}
 
     function setWhitelistAllowance(address reserveToken, bool activateReserve)
         external

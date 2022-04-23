@@ -57,7 +57,7 @@ library vSwapMath {
         return vPool;
     }
 
-    function calculateLPTokens(
+    function calculateLPTokensAmount(
         uint256 token0Amount,
         uint256 totalSupply,
         uint256 token0Balance,

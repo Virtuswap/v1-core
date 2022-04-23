@@ -1,7 +1,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
-import "./interfaces/IvSwapERC20.sol";
-import "./libraries/SafeMath.sol";
+import "../interfaces/IvSwapERC20.sol";
+import "../libraries/SafeMath.sol";
 
 contract vSwapERC20 is IvSwapERC20 {
     using SafeMath for uint256;

@@ -31,7 +31,7 @@ interface IvPair {
 
     function collect(uint256 tokenAAmount, uint256 tokenBAmount) external;
 
-    function getBelowReserve() external view returns (uint256);
+    function getBelowReserve() external pure returns (uint256);
 
     function token0() external view returns (address);
 

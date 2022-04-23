@@ -1,4 +1,4 @@
-const vPoolsManager = artifacts.require("vPoolsManager");
+const vPool = artifacts.require("vPool");
 const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapMath = artifacts.require("vSwapMath");
@@ -38,16 +38,18 @@ module.exports = async function (deployer) {
   await connectDB();
 
   await deployer.deploy(vSwapMath);
-  await deployer.link(vSwapMath, vPoolsManager);
-  await deployer.deploy(vPoolsManager);
 
   await deployer.link(vSwapMath, vPairFactory);
   await deployer.deploy(vPairFactory);
 
+
+  await deployer.link(vSwapMath, vPool);
+  await deployer.deploy(vPool, vPairFactory.networks[80001].address);
+
   var sql = utils.generateVersionsSQL(
-    vPoolsManager.networks[80001].address,
-    vPoolsManager.abi,
-    "vmanager"
+    vPool.networks[80001].address,
+    vPool.abi,
+    "vpool"
   );
   await queryDB(sql);
 

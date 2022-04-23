@@ -5,51 +5,39 @@ import "./Types256.sol";
 import "./ERC20/IERC20.sol";
 import "./ERC20/ERC20.sol";
 import "./libraries/vSwapMath.sol";
-import "./vPair.sol";
+import "./interfaces/IvPair.sol";
+import "./interfaces/IvPairFactory.sol";
 
-contract vPoolsManager {
-
-    // event Debug(string message, int256 value);
-
-    // event UDebug(string message, uint256 value);
-
-    // event ADebug(string message, address value);
-
-
-    int256 imbalance_tolerance_base = 0.01 ether;
-
+contract vPool {
     address owner;
+    address _factory;
 
-    constructor() {
-        owner = msg.sender;
-        // reserveManager = IvPoolReserveManager(vPoolReserveManager);
-        // rPools.push(); //push first empty pool to allocate 0 index
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
     }
 
-    function _calculateVirtualPool(address[] memory ks, address[] memory js)
+    constructor(address factory) {
+        owner = msg.sender;
+        _factory = factory;
+    }
+
+    function calculateVirtualPool(address[] memory ks, address[] memory js)
         public
         view
         returns (VirtualPool memory)
     {
-        VirtualPool memory vPool = vSwapMath._calculateVirtualPool(
-            ks,
-            js
-        );
-
+        VirtualPool memory vPool = vSwapMath._calculateVirtualPool(ks, js);
         return vPool;
     }
 
-    // function getTotalPool(uint256[] memory ks, uint256[] memory js)
+    // function calculateTotalPool(uint256[] memory ks, uint256[] memory js)
     //     public
     //     view
     //     returns (VirtualPool memory)
     // {
     //     VirtualPool memory vPool = _calculateVirtualPool(ks, js);
-
-    //     VirtualPool memory tPool = vPoolCalculations.getTotalPool(
-    //         rPools,
-    //         vPool
-    //     );
+    //     VirtualPool memory tPool = vPoolCalculations.getTotalPool(vPool);
 
     //     return tPool;
     // }
@@ -60,7 +48,7 @@ contract vPoolsManager {
     //     int256 amount
     // ) public view returns (int256) {
     //     VirtualPool memory tPool = getTotalPool(ks, js);
-    //     return vPoolCalculations.quote(rPools, tPool, amount);
+    //     return vSwapMath.quote(rPools, tPool, amount);
     // }
 
     // function swap(
@@ -272,4 +260,8 @@ contract vPoolsManager {
 
     //     //calculate below threshold for rPool
     // }
+
+    function changeFactory(address factory) public onlyOwner {
+        _factory = factory;
+    }
 }
