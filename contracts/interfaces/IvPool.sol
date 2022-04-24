@@ -7,6 +7,11 @@ interface IvPool {
         external
         returns (VirtualPool memory vPool);
 
+    function calculateTotalPool(VirtualPool memory vPool, address vPairAddress)
+        external
+        view
+        returns (VirtualPool memory);
+
     function calculateTotalPool(
         uint256[] memory ks,
         uint256[] memory js,

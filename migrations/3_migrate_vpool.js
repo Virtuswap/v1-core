@@ -38,7 +38,7 @@ module.exports = async function (deployer) {
   await deployer.deploy(vSwapMath);
 
   await deployer.link(vSwapMath, vPool);
-  await deployer.deploy(vPool, "0xE6F37150fEf0eD54042e0c5E3344D74D3f42691A");
+  await deployer.deploy(vPool, "0x0206953b5845106e8335E3e2224d1Fb2f90DB5c5");
 
   var sql = utils.generateVersionsSQL(
     vPool.networks[80001].address,

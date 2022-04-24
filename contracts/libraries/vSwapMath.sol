@@ -9,58 +9,19 @@ import "../interfaces/IvPair.sol";
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
 
-    function calculateVirtualPool(address[] memory ks, address[] memory js)
-        public
-        view
-        returns (VirtualPool memory vPool)
-    {
-       vPool.fee = 0.003 ether;
+    function calculateVirtualPoolBalance(
+        uint256 belowReserveIK,
+        uint256 ikPairTokenABalance,
+        uint256 ikPairTokenBBalance,
+        uint256 jkPairTokenBBalance
+    ) public pure returns (uint256) {
 
-        for (uint256 i = 0; i < ks.length; i++) {
-            uint256 belowReserveIK = IvPair(ks[i]).getBelowReserve();
-            uint256 belowReserveJK = IvPair(js[i]).getBelowReserve();
-
-            uint256 ikPairTokenABalance = IERC20(IvPair(ks[i]).token0())
-                .balanceOf(ks[i]);
-
-            // emit DebugA("ks[i]", ks[i], 0);
-            // emit DebugA("js[i]", js[i], 0);
-
-            // emit Debug("ikPairTokenABalance", ikPairTokenABalance);
-
-            uint256 ikPairTokenBBalance = IERC20(IvPair(ks[i]).token1())
-                .balanceOf(ks[i]);
-
-            // emit Debug("ikPairTokenBBalance", ikPairTokenBBalance);
-
-            uint256 jkPairTokenABalance = IERC20(IvPair(js[i]).token0())
-                .balanceOf(js[i]);
-
-            // emit Debug("jkPairTokenABalance", jkPairTokenABalance);
-
-            uint256 jkPairTokenBBalance = IERC20(IvPair(js[i]).token1())
-                .balanceOf(js[i]);
-
-            // emit Debug("jkPairTokenBBalance", jkPairTokenBBalance);
-
-            //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
-            vPool.tokenABalance =
-                vPool.tokenABalance +
-                (belowReserveIK *
-                    ikPairTokenABalance *
-                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
-                Math.max(ikPairTokenBBalance, EPSILON);
-
-            //  V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
-            vPool.tokenBBalance =
-                vPool.tokenBBalance +
-                (belowReserveJK *
-                    jkPairTokenABalance *
-                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
-                Math.max(jkPairTokenBBalance, EPSILON);
-        }
-
-        return vPool;
+        //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
+        return
+            (belowReserveIK *
+                ikPairTokenABalance *
+                Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
+            Math.max(ikPairTokenBBalance, EPSILON);
     }
 
     function quote(VirtualPool memory tPool, uint256 amount)
@@ -124,41 +85,15 @@ library vSwapMath {
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
     }
 
-    function getTotalPool(VirtualPool memory vPool, address vPairAddress)
-        public
-        view
-        returns (VirtualPool memory)
-    {
-        VirtualPool memory tPool = vPool;
-
-        uint256 rPoolTokenABalance = 0;
-        uint256 rPoolTokenBBalance = 0;
-        uint256 rPoolFee = 0;
-
-        if (vPairAddress != address(0)) {
-            rPoolTokenABalance = IERC20(IvPair(vPairAddress).token0())
-                .balanceOf(vPairAddress);
-
-            rPoolTokenBBalance = IERC20(IvPair(vPairAddress).token1())
-                .balanceOf(vPairAddress);
-
-            rPoolFee = IvPair(vPairAddress).fee();
-        }
-
-        tPool.tokenABalance = rPoolTokenABalance + vPool.tokenABalance;
-
-        tPool.tokenBBalance = rPoolTokenBBalance + vPool.tokenBBalance;
-
-        if (vPool.tokenABalance > 0) {
-            tPool.fee =
-                (rPoolFee *
-                    rPoolTokenABalance +
-                    vPool.fee *
-                    vPool.tokenABalance) /
-                vPool.tokenABalance;
-        }
-
-        return tPool;
+    function totalPoolFeeAvg(
+        uint256 rPoolFee,
+        uint256 rPoolTokenABalance,
+        uint256 vPoolFee,
+        uint256 vPoolTokenABalance
+    ) public pure returns (uint256) {
+        return
+            (rPoolFee * rPoolTokenABalance + vPoolFee * vPoolTokenABalance) /
+            vPoolTokenABalance;
     }
 
     // function _calculateBelowThreshold(
