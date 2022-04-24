@@ -40,8 +40,8 @@ contract vPairFactory is IvPairFactory {
         vPair newPair = new vPair(
             msg.sender,
             address(this),
-            tokenA,
-            tokenB,
+            token0,
+            token1,
             whitelist
         );
 
@@ -55,8 +55,8 @@ contract vPairFactory is IvPairFactory {
             pairAddress,
             msg.sender,
             address(this),
-            tokenA,
-            tokenB,
+            token0,
+            token1,
             whitelist
         );
     }

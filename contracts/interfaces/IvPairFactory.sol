@@ -5,8 +5,8 @@ interface IvPairFactory {
         address poolAddress,
         address owner,
         address factory,
-        address tokenA,
-        address tokenB,
+        address token0,
+        address token1,
         address[] whitelist
     );
 
