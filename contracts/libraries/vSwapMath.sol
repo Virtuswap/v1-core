@@ -1,4 +1,6 @@
-import "../Types256.sol";
+pragma solidity >=0.4.22 <0.9.0;
+
+import "../types.sol";
 import "../ERC20/IERC20.sol";
 import "../ERC20/ERC20.sol";
 import "./Math.sol";
@@ -7,51 +9,83 @@ import "../interfaces/IvPair.sol";
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
 
-    function _calculateVirtualPool(address[] memory ks, address[] memory js)
+    function calculateVirtualPool(address[] memory ks, address[] memory js)
         public
         view
-        returns (VirtualPool memory)
+        returns (VirtualPool memory vPool)
     {
-        VirtualPool memory vPool;
-        vPool.fee = 0.003 ether;
+       vPool.fee = 0.003 ether;
 
         for (uint256 i = 0; i < ks.length; i++) {
-            address ikIndex = ks[i];
-            address jkIndex = js[i];
+            uint256 belowReserveIK = IvPair(ks[i]).getBelowReserve();
+            uint256 belowReserveJK = IvPair(js[i]).getBelowReserve();
 
-            uint256 belowReserveIK = IvPair(ikIndex).getBelowReserve();
-            uint256 belowReserveJK = IvPair(jkIndex).getBelowReserve();
+            uint256 ikPairTokenABalance = IERC20(IvPair(ks[i]).token0())
+                .balanceOf(ks[i]);
 
-            uint256 ikIndexTokenABalance = IERC20(IvPair(ikIndex).token0())
-                .balanceOf(ikIndex);
+            // emit DebugA("ks[i]", ks[i], 0);
+            // emit DebugA("js[i]", js[i], 0);
 
-            uint256 ikIndexTokenBBalance = IERC20(IvPair(ikIndex).token1())
-                .balanceOf(ikIndex);
+            // emit Debug("ikPairTokenABalance", ikPairTokenABalance);
 
-            uint256 jkIndexTokenABalance = IERC20(IvPair(jkIndex).token0())
-                .balanceOf(ikIndex);
+            uint256 ikPairTokenBBalance = IERC20(IvPair(ks[i]).token1())
+                .balanceOf(ks[i]);
 
-            uint256 jkIndexTokenBBalance = IERC20(IvPair(jkIndex).token1())
-                .balanceOf(ikIndex);
+            // emit Debug("ikPairTokenBBalance", ikPairTokenBBalance);
+
+            uint256 jkPairTokenABalance = IERC20(IvPair(js[i]).token0())
+                .balanceOf(js[i]);
+
+            // emit Debug("jkPairTokenABalance", jkPairTokenABalance);
+
+            uint256 jkPairTokenBBalance = IERC20(IvPair(js[i]).token1())
+                .balanceOf(js[i]);
+
+            // emit Debug("jkPairTokenBBalance", jkPairTokenBBalance);
 
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
             vPool.tokenABalance =
                 vPool.tokenABalance +
                 (belowReserveIK *
-                    ikIndexTokenABalance *
-                    Math.min(ikIndexTokenBBalance, jkIndexTokenBBalance)) /
-                Math.max(ikIndexTokenBBalance, EPSILON);
+                    ikPairTokenABalance *
+                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
+                Math.max(ikPairTokenBBalance, EPSILON);
 
             //  V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
             vPool.tokenBBalance =
                 vPool.tokenBBalance +
                 (belowReserveJK *
-                    jkIndexTokenABalance *
-                    Math.min(ikIndexTokenBBalance, jkIndexTokenBBalance)) /
-                Math.max(jkIndexTokenBBalance, EPSILON);
+                    jkPairTokenABalance *
+                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
+                Math.max(jkPairTokenBBalance, EPSILON);
         }
 
         return vPool;
+    }
+
+    function quote(VirtualPool memory tPool, uint256 amount)
+        public
+        pure
+        returns (uint256)
+    {
+        uint256 lagTTokenABalance = tPool.tokenABalance;
+        uint256 lagTTokenBBalance = tPool.tokenBBalance;
+
+        /*
+        T_virtuswap(buy_currency,sell_currency,buy_currency,time)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-lag_fee_T(buy_currency,sell_currency));
+        */
+        tPool.tokenABalance =
+            lagTTokenABalance -
+            (amount - ((tPool.fee * amount) / 1 ether));
+
+        // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
+        tPool.tokenBBalance =
+            (lagTTokenABalance * lagTTokenBBalance) /
+            (lagTTokenABalance - amount);
+
+        uint256 finalQuote = tPool.tokenBBalance - lagTTokenBBalance;
+
+        return finalQuote;
     }
 
     function calculateLPTokensAmount(
@@ -65,14 +99,12 @@ library vSwapMath {
                 sum(lag_t(add_currency_base,add_currency_quote,:))/
                 (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
                 (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
-                
+
         uint256 lpAmount = ((token0Amount * totalSupply) / token0Balance) *
             (1 + reserveRatio);
 
         return lpAmount;
     }
-
-    
 
     function calculateReserveRatio(
         uint256 reserveBalance,
@@ -92,38 +124,42 @@ library vSwapMath {
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
     }
 
-    // function getTotalPool(Pool[] storage rPools, VirtualPool memory vPool)
-    //     public
-    //     view
-    //     returns (VirtualPool memory)
-    // {
-    //     VirtualPool memory tPool = vPool;
+    function getTotalPool(VirtualPool memory vPool, address vPairAddress)
+        public
+        view
+        returns (VirtualPool memory)
+    {
+        VirtualPool memory tPool = vPool;
 
-    //     uint256 rPoolTokenABalance = 0;
-    //     uint256 rPoolTokenBBalance = 0;
-    //     uint256 rPoolFee = 0;
+        uint256 rPoolTokenABalance = 0;
+        uint256 rPoolTokenBBalance = 0;
+        uint256 rPoolFee = 0;
 
-    //     if (vPool.rPoolIndex > 0) {
-    //         rPoolTokenABalance = rPools[vPool.rPoolIndex].tokenABalance;
-    //         rPoolTokenBBalance = rPools[vPool.rPoolIndex].tokenBBalance;
-    //         rPoolFee = rPools[vPool.rPoolIndex].fee;
-    //     }
+        if (vPairAddress != address(0)) {
+            rPoolTokenABalance = IERC20(IvPair(vPairAddress).token0())
+                .balanceOf(vPairAddress);
 
-    //     tPool.tokenABalance = rPoolTokenABalance + vPool.tokenABalance;
+            rPoolTokenBBalance = IERC20(IvPair(vPairAddress).token1())
+                .balanceOf(vPairAddress);
 
-    //     tPool.tokenBBalance = rPoolTokenBBalance + vPool.tokenBBalance;
+            rPoolFee = IvPair(vPairAddress).fee();
+        }
 
-    //     if (vPool.tokenABalance > 0) {
-    //         tPool.fee =
-    //             (rPoolFee *
-    //                 rPoolTokenABalance +
-    //                 vPool.fee *
-    //                 vPool.tokenABalance) /
-    //             vPool.tokenABalance;
-    //     }
+        tPool.tokenABalance = rPoolTokenABalance + vPool.tokenABalance;
 
-    //     return tPool;
-    // }
+        tPool.tokenBBalance = rPoolTokenBBalance + vPool.tokenBBalance;
+
+        if (vPool.tokenABalance > 0) {
+            tPool.fee =
+                (rPoolFee *
+                    rPoolTokenABalance +
+                    vPool.fee *
+                    vPool.tokenABalance) /
+                vPool.tokenABalance;
+        }
+
+        return tPool;
+    }
 
     // function _calculateBelowThreshold(
     //     Pool[] storage rPools,

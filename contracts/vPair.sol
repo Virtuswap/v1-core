@@ -19,7 +19,7 @@ contract vPair is IvPair, vSwapERC20 {
 
     uint256 public belowReserve;
     uint256 public reserveRatio;
-    uint256 fee;
+    uint256 public fee;
     uint256 maxReserveRatio;
     mapping(address => bool) whitelistAllowance;
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
+import "./types.sol";
 import "./ERC20/IERC20.sol";
 import "./ERC20/ERC20.sol";
 import "./libraries/vSwapMath.sol";
@@ -21,22 +22,14 @@ contract vPool {
         _;
     }
 
-    struct VirtualPool {
-        uint256 fee;
-        address tokenA;
-        address tokenB;
-        uint256 tokenABalance;
-        uint256 tokenBBalance;
-        bool balanced;
-    }
-
     constructor(address factory) {
         owner = msg.sender;
         _factory = factory;
     }
 
     function calculateVirtualPool(address[] memory ks, address[] memory js)
-        public
+        external
+        view
         returns (VirtualPool memory vPool)
     {
         vPool.fee = 0.003 ether;
@@ -48,25 +41,25 @@ contract vPool {
             uint256 ikPairTokenABalance = IERC20(IvPair(ks[i]).token0())
                 .balanceOf(ks[i]);
 
-            emit DebugA("ks[i]", ks[i], 0);
-            emit DebugA("js[i]", js[i], 0);
+            // emit DebugA("ks[i]", ks[i], 0);
+            // emit DebugA("js[i]", js[i], 0);
 
-            emit Debug("ikPairTokenABalance", ikPairTokenABalance);
+            // emit Debug("ikPairTokenABalance", ikPairTokenABalance);
 
             uint256 ikPairTokenBBalance = IERC20(IvPair(ks[i]).token1())
                 .balanceOf(ks[i]);
 
-            emit Debug("ikPairTokenBBalance", ikPairTokenBBalance);
+            // emit Debug("ikPairTokenBBalance", ikPairTokenBBalance);
 
             uint256 jkPairTokenABalance = IERC20(IvPair(js[i]).token0())
                 .balanceOf(js[i]);
 
-            emit Debug("jkPairTokenABalance", jkPairTokenABalance);
+            // emit Debug("jkPairTokenABalance", jkPairTokenABalance);
 
             uint256 jkPairTokenBBalance = IERC20(IvPair(js[i]).token1())
                 .balanceOf(js[i]);
 
-            emit Debug("jkPairTokenBBalance", jkPairTokenBBalance);
+            // emit Debug("jkPairTokenBBalance", jkPairTokenBBalance);
 
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
             vPool.tokenABalance =
@@ -88,25 +81,27 @@ contract vPool {
         return vPool;
     }
 
-    // function calculateTotalPool(uint256[] memory ks, uint256[] memory js)
-    //     public
-    //     view
-    //     returns (VirtualPool memory)
-    // {
-    //     VirtualPool memory vPool = _calculateVirtualPool(ks, js);
-    //     VirtualPool memory tPool = vPoolCalculations.getTotalPool(vPool);
+    function calculateTotalPool(
+        address[] memory ks,
+        address[] memory js,
+        address vPairAddress
+    ) external view returns (VirtualPool memory) {
+        VirtualPool memory vPool = vSwapMath.calculateVirtualPool(ks, js);
+        VirtualPool memory tPool = vSwapMath.getTotalPool(vPool, vPairAddress);
 
-    //     return tPool;
-    // }
+        return tPool;
+    }
 
-    // function quote(
-    //     uint256[] memory ks,
-    //     uint256[] memory js,
-    //     int256 amount
-    // ) public view returns (int256) {
-    //     VirtualPool memory tPool = getTotalPool(ks, js);
-    //     return vSwapMath.quote(rPools, tPool, amount);
-    // }
+    function quote(
+        address[] memory ks,
+        address[] memory js,
+        address vPairAddress,
+        uint256 amount
+    ) external view returns (uint256) {
+        VirtualPool memory vPool = vSwapMath.calculateVirtualPool(ks, js);
+        VirtualPool memory tPool = vSwapMath.getTotalPool(vPool, vPairAddress);
+        return vSwapMath.quote(tPool, amount);
+    }
 
     // function swap(
     //     uint256[] memory ks,
