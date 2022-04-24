@@ -12,6 +12,8 @@ contract vPool {
     address owner;
     address _factory;
 
+    uint256 constant EPSILON = 1 wei;
+
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
@@ -25,9 +27,44 @@ contract vPool {
     function calculateVirtualPool(address[] memory ks, address[] memory js)
         public
         view
-        returns (VirtualPool memory)
+        returns (VirtualPool memory vPool)
     {
-        VirtualPool memory vPool = vSwapMath._calculateVirtualPool(ks, js);
+        vPool.fee = 0.003 ether;
+
+        for (uint256 i = 0; i < ks.length; i++) {
+            uint256 belowReserveIK = IvPair(ks[i]).getBelowReserve();
+            uint256 belowReserveJK = IvPair(js[i]).getBelowReserve();
+
+            uint256 ikPairTokenABalance = IERC20(IvPair(ks[i]).token0())
+                .balanceOf(ks[i]);
+
+            uint256 ikPairTokenBBalance = IERC20(IvPair(ks[i]).token1())
+                .balanceOf(ks[i]);
+
+            uint256 jkPairTokenABalance = IERC20(IvPair(js[i]).token0())
+                .balanceOf(js[i]);
+
+            uint256 jkPairTokenBBalance = IERC20(IvPair(js[i]).token1())
+                .balanceOf(js[i]);
+
+
+            //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
+            vPool.tokenABalance =
+                vPool.tokenABalance +
+                (belowReserveIK *
+                    ikPairTokenABalance *
+                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
+                Math.max(ikPairTokenBBalance, EPSILON);
+
+            //  V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
+            vPool.tokenBBalance =
+                vPool.tokenBBalance +
+                (belowReserveJK *
+                    jkPairTokenABalance *
+                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
+                Math.max(jkPairTokenBBalance, EPSILON);
+        }
+
         return vPool;
     }
 

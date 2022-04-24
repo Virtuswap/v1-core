@@ -15,9 +15,6 @@ library vSwapMath {
         VirtualPool memory vPool;
         vPool.fee = 0.003 ether;
 
-        vPool.tokenA = IvPair(ks[0]).token0();
-        vPool.tokenB = IvPair(js[0]).token1();
-
         for (uint256 i = 0; i < ks.length; i++) {
             address ikIndex = ks[i];
             address jkIndex = js[i];
@@ -43,7 +40,7 @@ library vSwapMath {
                 (belowReserveIK *
                     ikIndexTokenABalance *
                     Math.min(ikIndexTokenBBalance, jkIndexTokenBBalance)) /
-                Math.min(ikIndexTokenBBalance, EPSILON);
+                Math.max(ikIndexTokenBBalance, EPSILON);
 
             //  V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
             vPool.tokenBBalance =
@@ -51,7 +48,7 @@ library vSwapMath {
                 (belowReserveJK *
                     jkIndexTokenABalance *
                     Math.min(ikIndexTokenBBalance, jkIndexTokenBBalance)) /
-                Math.min(jkIndexTokenBBalance, EPSILON);
+                Math.max(jkIndexTokenBBalance, EPSILON);
         }
 
         return vPool;
@@ -74,6 +71,8 @@ library vSwapMath {
 
         return lpAmount;
     }
+
+    
 
     function calculateReserveRatio(
         uint256 reserveBalance,
