@@ -38,44 +38,70 @@ contract vPool {
             uint256 belowReserveIK = IvPair(ks[i]).getBelowReserve();
             uint256 belowReserveJK = IvPair(js[i]).getBelowReserve();
 
-            uint256 ikPairTokenABalance = IERC20(IvPair(ks[i]).token0())
-                .balanceOf(ks[i]);
+            //find common token (jkTokenB == ikTokenB)
+            address ksToken0 = IvPair(ks[i]).token0();
+            address ksToken1 = IvPair(ks[i]).token1();
+            address jsToken0 = IvPair(js[i]).token0();
+            address jsToken1 = IvPair(js[i]).token1();
 
-            // emit DebugA("ks[i]", ks[i], 0);
-            // emit DebugA("js[i]", js[i], 0);
+            if (ksToken0 == jsToken0) {
+                (ksToken0, ksToken1, jsToken0, jsToken1) = (
+                    ksToken1,
+                    ksToken0,
+                    jsToken1,
+                    jsToken0
+                );
+            } else if (ksToken0 == jsToken1) {
+                (ksToken0, ksToken1, jsToken0, jsToken1) = (
+                    ksToken1,
+                    ksToken0,
+                    jsToken0,
+                    jsToken1
+                );
+            } else if (ksToken1 == jsToken0) {
+                (ksToken0, ksToken1, jsToken0, jsToken1) = (
+                    ksToken0,
+                    ksToken1,
+                    jsToken1,
+                    jsToken0
+                );
+            }
 
-            // emit Debug("ikPairTokenABalance", ikPairTokenABalance);
+            require(ksToken1 == jsToken1, "Invalid virtual pool request");
 
-            uint256 ikPairTokenBBalance = IERC20(IvPair(ks[i]).token1())
-                .balanceOf(ks[i]);
+            vPool.tokenA = ksToken0;
+            vPool.tokenB = jsToken0;
 
-            // emit Debug("ikPairTokenBBalance", ikPairTokenBBalance);
+            uint256 ikPairToken0Balance = IERC20(ksToken0).balanceOf(ks[i]);
+            uint256 ikPairToken1Balance = IERC20(ksToken1).balanceOf(ks[i]);
+            uint256 jkPairToken0Balance = IERC20(jsToken0).balanceOf(js[i]);
+            uint256 jkPairToken1Balance = IERC20(jsToken1).balanceOf(js[i]);
 
-            uint256 jkPairTokenABalance = IERC20(IvPair(js[i]).token0())
-                .balanceOf(js[i]);
+            // vPool.tokenABalance =
+            //     vPool.tokenABalance +
+            //     vSwapMath.calculateVirtualPoolBalance(
+            //         belowReserveIK,
+            //         ikPairTokenABalance,
+            //         ikPairTokenBBalance,
+            //         jkPairTokenBBalance
+            //     );
 
-            // emit Debug("jkPairTokenABalance", jkPairTokenABalance);
-
-            uint256 jkPairTokenBBalance = IERC20(IvPair(js[i]).token1())
-                .balanceOf(js[i]);
-
-            // emit Debug("jkPairTokenBBalance", jkPairTokenBBalance);
+            //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
 
             vPool.tokenABalance =
                 vPool.tokenABalance +
-                vSwapMath.calculateVirtualPoolBalance(
-                    belowReserveIK,
-                    ikPairTokenABalance,
-                    ikPairTokenBBalance,
-                    jkPairTokenBBalance
-                );
+                (belowReserveIK *
+                    ikPairToken0Balance *
+                    Math.min(ikPairToken1Balance, jkPairToken1Balance)) /
+                Math.max(ikPairToken1Balance, EPSILON);
 
+            // V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
             vPool.tokenBBalance =
                 vPool.tokenBBalance +
                 (belowReserveJK *
-                    jkPairTokenABalance *
-                    Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
-                Math.max(jkPairTokenBBalance, EPSILON);
+                    jkPairToken0Balance *
+                    Math.min(ikPairToken1Balance, jkPairToken1Balance)) /
+                Math.max(jkPairToken1Balance, EPSILON);
         }
 
         return vPool;
@@ -117,36 +143,41 @@ contract vPool {
         return tPool;
     }
 
-    function calculateTotalPool(
-        address[] memory ks,
-        address[] memory js,
-        address vPairAddress
-    ) external view returns (VirtualPool memory) {
-        VirtualPool memory vPool = this.calculateVirtualPool(ks, js);
-        return this.calculateTotalPool(vPool, vPairAddress);
-    }
+    // function calculateTotalPool(
+    //     address[] memory ks,
+    //     address[] memory js,
+    //     address vPairAddress
+    // ) external view returns (VirtualPool memory) {
+    //     VirtualPool memory vPool = this.calculateVirtualPool(ks, js);
+    //     return this.calculateTotalPool(vPool, vPairAddress);
+    // }
 
-    function quote(
-        address[] memory ks,
-        address[] memory js,
-        address vPairAddress,
-        uint256 amount
-    ) external view returns (uint256) {
-        VirtualPool memory tPool = this.calculateTotalPool(
-            ks,
-            js,
-            vPairAddress
-        );
+    // function quote(
+    //     address[] memory ks,
+    //     address[] memory js,
+    //     address vPairAddress,
+    //     uint256 amount
+    // ) external view returns (uint256) {
+    //     VirtualPool memory tPool = this.calculateTotalPool(
+    //         ks,
+    //         js,
+    //         vPairAddress
+    //     );
 
-        return vSwapMath.quote(tPool, amount);
-    }
+    //     return vSwapMath.quote(tPool, amount);
+    // }
 
     // function swap(
     //     uint256[] memory ks,
     //     uint256[] memory js,
+    //     address vPairAddress,
     //     int256 amount
     // ) public {
-    //     VirtualPool memory tPool = getTotalPool(ks, js);
+    //     VirtualPool memory tPool = this.calculateTotalPool(
+    //         ks,
+    //         js,
+    //         vPairAddress
+    //     );
 
     //     require(
     //         IERC20(tPool.tokenA).transferFrom(
@@ -157,7 +188,7 @@ contract vPool {
     //         "Failed to transfer token A to contract"
     //     );
 
-    //     int256 outBalance = vPoolCalculations.quote(rPools, tPool, amount);
+    //     int256 outBalance = vSwapMath.quote(tPool, amount);
 
     //     VirtualPool[] memory lagR = new VirtualPool[](rPools.length);
 
