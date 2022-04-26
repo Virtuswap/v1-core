@@ -77,17 +77,7 @@ contract vPool {
             uint256 jkPairToken0Balance = IERC20(jsToken0).balanceOf(js[i]);
             uint256 jkPairToken1Balance = IERC20(jsToken1).balanceOf(js[i]);
 
-            // vPool.tokenABalance =
-            //     vPool.tokenABalance +
-            //     vSwapMath.calculateVirtualPoolBalance(
-            //         belowReserveIK,
-            //         ikPairTokenABalance,
-            //         ikPairTokenBBalance,
-            //         jkPairTokenBBalance
-            //     );
-
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
-
             vPool.tokenABalance =
                 vPool.tokenABalance +
                 (belowReserveIK *
@@ -95,7 +85,7 @@ contract vPool {
                     Math.min(ikPairToken1Balance, jkPairToken1Balance)) /
                 Math.max(ikPairToken1Balance, EPSILON);
 
-            // V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
+            // // V(i,j,j)=V(i,j,j)+ind_below_reserve_threshold(i,k)*R(j,k,j)*min(R(i,k,k),R(j,k,k))/max(R(j,k,k),epsilon);
             vPool.tokenBBalance =
                 vPool.tokenBBalance +
                 (belowReserveJK *
@@ -107,18 +97,19 @@ contract vPool {
         return vPool;
     }
 
-    function calculateTotalPool(VirtualPool memory vPool, address vPairAddress)
-        external
-        view
-        returns (VirtualPool memory)
-    {
+    function calculateTotalPool(
+        address[] memory ks,
+        address[] memory js,
+        address vPairAddress
+    ) external view returns (VirtualPool memory) {
+        VirtualPool memory vPool = this.calculateVirtualPool(ks, js);
         VirtualPool memory tPool = vPool;
 
         uint256 rPoolTokenABalance = 0;
         uint256 rPoolTokenBBalance = 0;
         uint256 rPoolFee = 0;
 
-        if (vPairAddress != address(0)) {
+        if (vPairAddress > address(0)) {
             rPoolTokenABalance = IERC20(IvPair(vPairAddress).token0())
                 .balanceOf(vPairAddress);
 
@@ -143,29 +134,20 @@ contract vPool {
         return tPool;
     }
 
-    // function calculateTotalPool(
-    //     address[] memory ks,
-    //     address[] memory js,
-    //     address vPairAddress
-    // ) external view returns (VirtualPool memory) {
-    //     VirtualPool memory vPool = this.calculateVirtualPool(ks, js);
-    //     return this.calculateTotalPool(vPool, vPairAddress);
-    // }
+    function quote(
+        address[] memory ks,
+        address[] memory js,
+        address vPairAddress,
+        uint256 amount
+    ) external view returns (uint256) {
+        VirtualPool memory tPool = this.calculateTotalPool(
+            ks,
+            js,
+            vPairAddress
+        );
 
-    // function quote(
-    //     address[] memory ks,
-    //     address[] memory js,
-    //     address vPairAddress,
-    //     uint256 amount
-    // ) external view returns (uint256) {
-    //     VirtualPool memory tPool = this.calculateTotalPool(
-    //         ks,
-    //         js,
-    //         vPairAddress
-    //     );
-
-    //     return vSwapMath.quote(tPool, amount);
-    // }
+        return vSwapMath.quote(tPool, amount);
+    }
 
     // function swap(
     //     uint256[] memory ks,
