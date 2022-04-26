@@ -8,7 +8,7 @@ import "./libraries/vSwapMath.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
 
-contract vPool {
+contract VirtualPool {
     address owner;
     address _factory;
 
@@ -27,55 +27,39 @@ contract vPool {
         _factory = factory;
     }
 
-    function calculateVirtualPool(address[] memory ks, address[] memory js)
+    function CalculateVirtualPool(address[] memory iks, address[] memory jks)
         external
         view
-        returns (VirtualPool memory vPool)
+        returns (virtualPoolModel memory vPool)
     {
+        require(iks.length == jks.length, "VSWAP: INVALID_VPOOL_REQUEST");
+
         vPool.fee = 0.003 ether;
 
-        for (uint256 i = 0; i < ks.length; i++) {
-            uint256 belowReserveIK = IvPair(ks[i]).getBelowReserve();
-            uint256 belowReserveJK = IvPair(js[i]).getBelowReserve();
+        for (uint256 i = 0; i < iks.length; i++) {
+            uint256 belowReserveIK = IvPair(iks[i]).getBelowReserve();
+            uint256 belowReserveJK = IvPair(jks[i]).getBelowReserve();
 
-            //find common token (jkTokenB == ikTokenB)
-            address ksToken0 = IvPair(ks[i]).token0();
-            address ksToken1 = IvPair(ks[i]).token1();
-            address jsToken0 = IvPair(js[i]).token0();
-            address jsToken1 = IvPair(js[i]).token1();
+            address ikToken0 = IvPair(iks[i]).token0();
+            address ikToken1 = IvPair(iks[i]).token1();
+            address jkToken0 = IvPair(jks[i]).token0();
+            address jkToken1 = IvPair(jks[i]).token1();
 
-            if (ksToken0 == jsToken0) {
-                (ksToken0, ksToken1, jsToken0, jsToken1) = (
-                    ksToken1,
-                    ksToken0,
-                    jsToken1,
-                    jsToken0
-                );
-            } else if (ksToken0 == jsToken1) {
-                (ksToken0, ksToken1, jsToken0, jsToken1) = (
-                    ksToken1,
-                    ksToken0,
-                    jsToken0,
-                    jsToken1
-                );
-            } else if (ksToken1 == jsToken0) {
-                (ksToken0, ksToken1, jsToken0, jsToken1) = (
-                    ksToken0,
-                    ksToken1,
-                    jsToken1,
-                    jsToken0
-                );
+            (ikToken0, ikToken1, jkToken0, jkToken1) = vSwapMath
+                .findCommonToken(ikToken0, ikToken1, jkToken0, jkToken1);
+
+            require(ikToken1 == jkToken1, "VSWAP: INVALID_VPOOL_REQUEST");
+
+            //set tokens address in first loop
+            if (i == 0) {
+                vPool.tokenA = ikToken0;
+                vPool.tokenB = jkToken0;
             }
 
-            require(ksToken1 == jsToken1, "Invalid virtual pool request");
-
-            vPool.tokenA = ksToken0;
-            vPool.tokenB = jsToken0;
-
-            uint256 ikPairToken0Balance = IERC20(ksToken0).balanceOf(ks[i]);
-            uint256 ikPairToken1Balance = IERC20(ksToken1).balanceOf(ks[i]);
-            uint256 jkPairToken0Balance = IERC20(jsToken0).balanceOf(js[i]);
-            uint256 jkPairToken1Balance = IERC20(jsToken1).balanceOf(js[i]);
+            uint256 ikPairToken0Balance = IERC20(ikToken0).balanceOf(iks[i]);
+            uint256 ikPairToken1Balance = IERC20(ikToken1).balanceOf(iks[i]);
+            uint256 jkPairToken0Balance = IERC20(jkToken0).balanceOf(jks[i]);
+            uint256 jkPairToken1Balance = IERC20(jkToken1).balanceOf(jks[i]);
 
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
             vPool.tokenABalance =
@@ -97,35 +81,36 @@ contract vPool {
         return vPool;
     }
 
-    function calculateTotalPool(
-        address[] memory ks,
-        address[] memory js,
+    function CalculateTotalPool(
+        address[] memory iks,
+        address[] memory jks,
         address vPairAddress
-    ) external view returns (VirtualPool memory) {
-        VirtualPool memory vPool = this.calculateVirtualPool(ks, js);
-        VirtualPool memory tPool = vPool;
+    ) external view returns (virtualPoolModel memory tPool) {
+        virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
 
-        uint256 rPoolTokenABalance = 0;
-        uint256 rPoolTokenBBalance = 0;
-        uint256 rPoolFee = 0;
+        tPool = vPool;
+
+        uint256 vPairTokenABalance = 0;
+        uint256 vPairTokenBBalance = 0;
+        uint256 vPairFee = 0;
 
         if (vPairAddress > address(0)) {
-            rPoolTokenABalance = IERC20(IvPair(vPairAddress).token0())
+            vPairTokenABalance = IERC20(IvPair(vPairAddress).token0())
                 .balanceOf(vPairAddress);
 
-            rPoolTokenBBalance = IERC20(IvPair(vPairAddress).token1())
+            vPairTokenBBalance = IERC20(IvPair(vPairAddress).token1())
                 .balanceOf(vPairAddress);
 
-            rPoolFee = IvPair(vPairAddress).fee();
+            vPairFee = IvPair(vPairAddress).fee();
         }
 
-        tPool.tokenABalance = rPoolTokenABalance + vPool.tokenABalance;
-        tPool.tokenBBalance = rPoolTokenBBalance + vPool.tokenBBalance;
+        tPool.tokenABalance = vPairTokenABalance + vPool.tokenABalance;
+        tPool.tokenBBalance = vPairTokenBBalance + vPool.tokenBBalance;
 
         if (vPool.tokenABalance > 0) {
             tPool.fee = vSwapMath.totalPoolFeeAvg(
-                rPoolFee,
-                rPoolTokenABalance,
+                vPairFee,
+                vPairTokenABalance,
                 vPool.fee,
                 vPool.tokenABalance
             );
@@ -134,20 +119,194 @@ contract vPool {
         return tPool;
     }
 
-    function quote(
-        address[] memory ks,
-        address[] memory js,
+    function Quote(
+        address[] memory iks,
+        address[] memory jks,
         address vPairAddress,
         uint256 amount
     ) external view returns (uint256) {
-        VirtualPool memory tPool = this.calculateTotalPool(
-            ks,
-            js,
+        virtualPoolModel memory tPool = this.CalculateTotalPool(
+            iks,
+            jks,
             vPairAddress
         );
 
         return vSwapMath.quote(tPool, amount);
     }
+
+    //     function swap(
+    //         uint256[] memory ks,
+    //         uint256[] memory js,
+    //         address vPairAddress,
+    //         int256 amount
+    //     ) public {
+    //         // buy_currency=2;
+    //         // sell_currency=3;
+    //         // Buy=30;
+
+    //         VirtualPool memory tPool = this.calculateTotalPool(
+    //             ks,
+    //             js,
+    //             vPairAddress
+    //         );
+
+    //         VirtualPoolVM[] memory lagR = new VirtualPoolVM[](rPools.length);
+
+    //         //lag_T(buy_currency,sell_currency,buy_currency)=T(buy_currency,sell_currency,buy_currency);
+    //         int256 lagTTokenABalance = tPool.tokenABalance;
+
+    //         //lag_T(buy_currency,sell_currency,sell_currency)=T(buy_currency,sell_currency,sell_currency);
+    //         int256 lagTTokenBBalance = tPool.tokenBBalance;
+
+    //         //%substract amount and add fees to amount_in
+    //         //T(buy_currency,sell_currency,buy_currency)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-fee_T(buy_currency,sell_currency)); ****
+    //         tPool.tokenABalance =
+    //             lagTTokenABalance -
+    //             (amount - ((tPools[tradePoolIndex].fee * amount) / 1 ether));
+
+    //         // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
+    //         tPool.tokenBBalance = tPools[tradePoolIndex].tokenBBalance =
+    //             (lagTTokenABalance * lagTTokenBBalance) /
+    //             (lagTTokenABalance - amount);
+
+    //         // for k=1:number_currencies
+    //         for (uint256 k = 0; k < _tokens.length; k++) {
+    //             if (buy_currency == _tokens[k].tokenAddress) continue;
+
+    //             //lag_R(buy_currency,k,buy_currency)=R(buy_currency,k,buy_currency);
+    //             lagR[buy_k_poolIndex].tokenABalance = rPools[buy_k_poolIndex]
+    //                 .tokenABalance;
+
+    //             //lag_R(buy_currency,k,sell_currency)=R(buy_currency,k,sell_currency);
+    //             lagR[buy_k_poolIndex].tokenBBalance = rPools[buy_k_poolIndex]
+    //                 .tokenBBalance;
+    //         }
+
+    //         // %take buy_currency proportional from real and virtual pool
+    //         /*  R(buy_currency,sell_currency,buy_currency)=
+    //                    lag_R(buy_currency,sell_currency,buy_currency) *
+    //                    T(buy_currency,sell_currency,buy_currency)/
+    //                    lag_T(buy_currency,sell_currency,buy_currency); */
+
+    //         rPools[tradePoolIndex].tokenABalance =
+    //             (lagR[tradePoolIndex].tokenABalance *
+    //                 tPools[tradePoolIndex].tokenABalance) /
+    //             lagTTokenABalance;
+
+    //         if (rPools[tradePoolIndex].tokenABalance < 0) {}
+    //         // %take sell_currency proportional from real and virtual pool
+    //         /* R(buy_currency,sell_currency,sell_currency)=
+    //         lag_R(buy_currency,sell_currency,sell_currency)*
+    //         T(buy_currency,sell_currency,sell_currency)/
+    //         lag_T(buy_currency,sell_currency,sell_currency);*/
+
+    //         rPools[tradePoolIndex].tokenBBalance =
+    //             (lagR[tradePoolIndex].tokenBBalance *
+    //                 tPools[tradePoolIndex].tokenBBalance) /
+    //             lagTTokenBBalance;
+
+    //         //% Updating of non-native pools that contribute to BC virtual pool;
+    //         for (uint256 k = 0; k < _tokens.length; k++) {
+    //             if (
+    //                 buy_currency == _tokens[k].tokenAddress ||
+    //                 sell_currency == _tokens[k].tokenAddress
+    //             ) continue;
+
+    //             uint256 buy_k_poolIndex = getPoolIndex(
+    //                 buy_currency,
+    //                 _tokens[k].tokenAddress
+    //             );
+
+    //             uint256 k_buy_poolIndex = getPoolIndex(
+    //                 _tokens[k].tokenAddress,
+    //                 buy_currency
+    //             );
+
+    //             //sum lagR tokenA balance
+    //             int256 summ = 0;
+    //             for (uint256 z = 0; z < lagR.length; z++) {
+    //                 if (lagR[z].tokenABalance > 0) {
+    //                     summ += lagR[z].tokenABalance;
+    //                 }
+    //             }
+
+    //             /*R(buy_currency,k,buy_currency)=
+    //             //R(buy_currency,k,buy_currency)+
+    //             ((T(buy_currency,sell_currency,buy_currency)-lag_T(buy_currency,sell_currency,buy_currency))-
+    //             (R(buy_currency,sell_currency,buy_currency)-lag_R(buy_currency,sell_currency,buy_currency)))*
+    //             lag_R(buy_currency,k,buy_currency)/
+    //             (sum(lag_R(buy_currency,1:number_currencies,buy_currency))
+    //             -lag_R(buy_currency,sell_currency,buy_currency));
+    // */
+    //             rPools[buy_k_poolIndex].tokenABalance =
+    //                 rPools[buy_k_poolIndex].tokenABalance +
+    //                 (((tPools[tradePoolIndex].tokenABalance - lagTTokenABalance) -
+    //                     (rPools[tradePoolIndex].tokenABalance -
+    //                         lagR[tradePoolIndex].tokenABalance)) *
+    //                     lagR[buy_k_poolIndex].tokenABalance) /
+    //                 (summ - lagR[tradePoolIndex].tokenABalance);
+
+    //             //fill reverse pool
+    //             //R(k,buy_currency,buy_currency)=R(buy_currency,k,buy_currency);
+    //             rPools[k_buy_poolIndex].tokenBBalance = rPools[buy_k_poolIndex]
+    //                 .tokenABalance;
+    //         }
+
+    //         // % Updating reserves of real pools and all the subsequent calculations;
+    //         // i=buy_currency;
+    //         // for k=1:number_currencies
+    //         //     if (k~=buy_currency & k~=sell_currency)
+    //         //         R(buy_currency,k,sell_currency)=R(buy_currency,k,sell_currency)+((T(buy_currency,sell_currency,sell_currency)-lag_T(buy_currency,sell_currency,sell_currency))-(R(buy_currency,sell_currency,sell_currency)-lag_R(buy_currency,sell_currency,sell_currency)))*lag_R(buy_currency,k,buy_currency)/(sum(lag_R(buy_currency,1:number_currencies,buy_currency))-lag_R(buy_currency,sell_currency,buy_currency));
+    //         //         R(k,buy_currency,sell_currency)=R(buy_currency,k,sell_currency);
+    //         //     end;
+    //         // end;
+    //         for (uint256 k = 0; k < _tokens.length; k++) {
+    //             if (
+    //                 buy_currency == _tokens[k].tokenAddress ||
+    //                 sell_currency == _tokens[k].tokenAddress
+    //             ) continue;
+
+    //             uint256 buy_k_poolIndex = getPoolIndex(
+    //                 buy_currency,
+    //                 _tokens[k].tokenAddress
+    //             );
+
+    //             uint256 k_buy_poolIndex = getPoolIndex(
+    //                 _tokens[k].tokenAddress,
+    //                 buy_currency
+    //             );
+
+    //             //sum lagR tokenA balance
+    //             int256 summ = 0;
+    //             for (uint256 z = 0; z < lagR.length; z++) {
+    //                 if (lagR[z].tokenABalance > 0) {
+    //                     summ += lagR[z].tokenABalance;
+    //                 }
+    //             }
+
+    //             /*R(buy_currency,k,sell_currency)=
+    //             R(buy_currency,k,sell_currency)+
+    //             ((T(buy_currency,sell_currency,sell_currency)-lag_T(buy_currency,sell_currency,sell_currency))-
+    //             (R(buy_currency,sell_currency,sell_currency)-lag_R(buy_currency,sell_currency,sell_currency)))*
+    //             lag_R(buy_currency,k,buy_currency)/(sum(lag_R(buy_currency,1:number_currencies,buy_currency))-
+    //             lag_R(buy_currency,sell_currency,buy_currency));*/
+
+    //             rPools[buy_k_poolIndex].reserves[sell_currency].reserveBalance =
+    //                 rPools[buy_k_poolIndex].reserves[sell_currency].reserveBalance +
+    //                 (((tPools[tradePoolIndex].tokenBBalance - lagTTokenBBalance) -
+    //                     (rPools[tradePoolIndex].tokenBBalance -
+    //                         lagR[tradePoolIndex].tokenBBalance)) *
+    //                     lagR[buy_k_poolIndex].tokenABalance) /
+    //                 (summ - lagR[tradePoolIndex].tokenABalance);
+
+    //             //fill reverse pool
+    //             rPools[k_buy_poolIndex]
+    //                 .reserves[sell_currency]
+    //                 .reserveBalance = rPools[buy_k_poolIndex]
+    //                 .reserves[sell_currency]
+    //                 .reserveBalance;
+    //         }
+    //     }
 
     // function swap(
     //     uint256[] memory ks,

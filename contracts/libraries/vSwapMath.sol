@@ -9,13 +9,38 @@ import "../interfaces/IvPair.sol";
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
 
+    //find common token ahd assign to ikToken1 and jkToken1
+    function findCommonToken(
+        address ikToken0,
+        address ikToken1,
+        address jkToken0,
+        address jkToken1
+    )
+        public
+        pure
+        returns (
+            address,
+            address,
+            address,
+            address
+        )
+    {
+        return
+            (ikToken0 == jkToken0)
+                ? (ikToken1, ikToken0, jkToken1, jkToken0)
+                : (ikToken0 == jkToken1)
+                ? (ikToken1, ikToken0, jkToken0, jkToken1)
+                : (ikToken1 == jkToken0)
+                ? (ikToken0, ikToken1, jkToken1, jkToken0)
+                : (ikToken0, ikToken1, jkToken0, jkToken1); //default
+    }
+
     function calculateVirtualPoolBalance(
         uint256 belowReserveIK,
         uint256 ikPairTokenABalance,
         uint256 ikPairTokenBBalance,
         uint256 jkPairTokenBBalance
     ) public pure returns (uint256) {
-
         //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
         return
             (belowReserveIK *
@@ -24,7 +49,7 @@ library vSwapMath {
             Math.max(ikPairTokenBBalance, EPSILON);
     }
 
-    function quote(VirtualPool memory tPool, uint256 amount)
+    function quote(virtualPoolModel memory tPool, uint256 amount)
         public
         pure
         returns (uint256)

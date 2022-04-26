@@ -3,22 +3,22 @@ pragma solidity >=0.4.22 <0.9.0;
 import "../types.sol";
 
 interface IvPool {
-    function calculateVirtualPool(address[] memory ks, address[] memory js)
+    function CalculateVirtualPool(address[] memory ks, address[] memory js)
         external
-        returns (VirtualPool memory vPool);
+        returns (virtualPoolModel memory vPool);
 
-    function calculateTotalPool(
+    function CalculateTotalPool(
         uint256[] memory ks,
         uint256[] memory js,
         address vPairAddress
-    ) external view returns (VirtualPool memory);
+    ) external view returns (virtualPoolModel memory);
 
-    function quote(
+    function Quote(
         uint256[] memory ks,
         uint256[] memory js,
         address vPairAddress,
         int256 amount
     ) external view returns (int256);
 
-    function changeFactory(address factory) external;
+    function ChangeFactory(address factory) external;
 }

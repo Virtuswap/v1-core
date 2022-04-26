@@ -1,4 +1,4 @@
-struct VirtualPool {
+struct virtualPoolModel {
     uint256 fee;
     address tokenA;
     address tokenB;

@@ -1,4 +1,4 @@
-const vPool = artifacts.require("vPool");
+const vPool = artifacts.require("VirtualPool");
 const vSwapMath = artifacts.require("vSwapMath");
 const utils = require("./utils");
 

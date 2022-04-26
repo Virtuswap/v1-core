@@ -1,4 +1,4 @@
-const vPool = artifacts.require("vPool");
+const vPool = artifacts.require("VirtualPool");
 const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapMath = artifacts.require("vSwapMath");

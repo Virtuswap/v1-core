@@ -27,15 +27,15 @@ contract vPairFactory is IvPairFactory {
         address tokenB,
         address[] memory whitelist
     ) external {
-        require(tokenA != tokenB, "vSwap: IDENTICAL_ADDRESSES");
+        require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
         (address token0, address token1) = tokenA < tokenB
             ? (tokenA, tokenB)
             : (tokenB, tokenA);
 
-        require(token0 != address(0), "vSwap: ZERO_ADDRESS");
+        require(token0 != address(0), "VSWAP: ZERO_ADDRESS");
 
-        require(getPair[token0][token1] == address(0), "vSwap: PAIR_EXISTS");
+        require(getPair[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
         vPair newPair = new vPair(
             msg.sender,

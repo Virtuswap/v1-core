@@ -26,6 +26,24 @@ contract vPair is IvPair, vSwapERC20 {
     event Debug(string message, uint256 value);
     event DebugA(string message, address value);
 
+    event Mint(address indexed sender, uint256 amount0, uint256 amount1);
+
+    event Burn(
+        address indexed sender,
+        uint256 amount0,
+        uint256 amount1,
+        address indexed to
+    );
+    event Swap(
+        address indexed sender,
+        uint256 amount0In,
+        uint256 amount1In,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
@@ -66,48 +84,33 @@ contract vPair is IvPair, vSwapERC20 {
                 address(this)
             );
 
-            emit Debug("Reserve balance: ", reserveBalance);
-
             if (reserveBalance > 0) {
                 address ikAddress = vPairFactory(factory).getPairAddress(
                     token0,
                     whitelist[i]
                 );
 
-                emit DebugA("ikAddress ", ikAddress);
-
                 address jkAddress = vPairFactory(factory).getPairAddress(
                     token1,
                     whitelist[i]
                 );
 
-                emit DebugA("jkAddress ", jkAddress);
-
                 uint256 ikTokenABalance = IERC20(token0).balanceOf(ikAddress);
-
-                emit Debug("ikTokenABalance ", ikTokenABalance);
 
                 uint256 ikTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     ikAddress
                 );
 
-                emit Debug("ikTokenBBalance ", ikTokenBBalance);
-
                 uint256 jkTokenABalance = IERC20(token1).balanceOf(jkAddress);
-                emit Debug("jkTokenABalance ", jkTokenABalance);
-
                 uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
                     jkAddress
                 );
-                emit Debug("jkTokenBBalance ", jkTokenBBalance);
                 uint256 ijTokenABalance = IERC20(token0).balanceOf(
                     address(this)
                 );
-                emit Debug("ijTokenABalance ", ijTokenABalance);
                 uint256 ijTokenBBalance = IERC20(token1).balanceOf(
                     address(this)
                 );
-                emit Debug("ijTokenBBalance ", ijTokenBBalance);
 
                 uint256 cRR = vSwapMath.calculateReserveRatio(
                     reserveBalance,
@@ -118,7 +121,7 @@ contract vPair is IvPair, vSwapERC20 {
                     ijTokenABalance,
                     ijTokenBBalance
                 );
-                emit Debug("cRR ", cRR);
+
                 _reserveRatio = _reserveRatio + cRR;
             }
         }
