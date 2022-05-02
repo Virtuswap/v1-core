@@ -8,10 +8,29 @@ contract vPairFactory is IvPairFactory {
     mapping(address => mapping(address => address)) public getPair;
     address[] public allPairs;
 
-    constructor() {}
+    address _admin;
+
+    address _vPool;
+
+    modifier onlyAdmin() {
+        require(msg.sender == _admin);
+        _;
+    }
+
+    constructor() {
+        _admin = msg.sender;
+    }
 
     function allPairsLength() external view returns (uint256) {
         return allPairs.length;
+    }
+
+    function getvPoolAddress() external view returns (address) {
+        return _vPool;
+    }
+
+    function updateVPoolAddress(address vPool) external onlyAdmin {
+        _vPool = vPool;
     }
 
     function getPairAddress(address tokenA, address tokenB)

@@ -1,6 +1,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "./interfaces/IvPair.sol";
+import "./interfaces/IvPairFactory.sol";
 import "./ERC20/IERC20.sol";
 import "./vPairFactory.sol";
 import "./libraries/Math.sol";
@@ -51,6 +52,11 @@ contract vPair is IvPair, vSwapERC20 {
 
     modifier onlyFactory() {
         require(msg.sender == factory);
+        _;
+    }
+
+    modifier onlyPool() {
+        require(msg.sender == IvPairFactory(factory).getvPoolAddress());
         _;
     }
 
@@ -179,6 +185,20 @@ contract vPair is IvPair, vSwapERC20 {
             "vSwap: TRANSFER_FAILED"
         );
     }
+
+    function transferToken(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyPool returns (bool) {
+        require(
+            token == token0 || token == token1,
+            "Token dont exist in the pool"
+        );
+
+        return ERC20(token).transfer(to, amount);
+    }
+
     function withdrawal() external {}
 
     function quote(

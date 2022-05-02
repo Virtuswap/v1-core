@@ -30,4 +30,10 @@ interface IvPair {
     function token1() external view returns (address);
 
     function fee() external view returns (uint256);
+
+    function transferToken(
+        address token,
+        address to,
+        uint256 amount
+    ) external returns (bool);
 }

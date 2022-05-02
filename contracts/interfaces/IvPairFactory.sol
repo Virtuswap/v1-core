@@ -22,4 +22,8 @@ interface IvPairFactory {
         address tokenB,
         address[] memory whitelist
     ) external;
+
+    function getvPoolAddress() external view returns (address);
+
+    function updateVPoolAddress(address vPool) external;
 }
