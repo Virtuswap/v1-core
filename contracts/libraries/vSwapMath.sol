@@ -9,7 +9,7 @@ import "../interfaces/IvPair.sol";
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
 
-    //find common token ahd assign to ikToken1 and jkToken1
+    //find common token and assign to ikToken1 and jkToken1
     function findCommonToken(
         address ikToken0,
         address ikToken1,
@@ -49,29 +49,41 @@ library vSwapMath {
             Math.max(ikPairTokenBBalance, EPSILON);
     }
 
-    function quote(virtualPoolModel memory tPool, uint256 amount)
+    function concatenateArrays(address[] memory arr1, address[] memory arr2)
         public
         pure
-        returns (uint256)
+        returns (address[] memory)
     {
-        uint256 lagTTokenABalance = tPool.tokenABalance;
-        uint256 lagTTokenBBalance = tPool.tokenBBalance;
+        address[] memory returnArr = new address[](arr1.length + arr2.length);
 
-        /*
-        T_virtuswap(buy_currency,sell_currency,buy_currency,time)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-lag_fee_T(buy_currency,sell_currency));
-        */
-        tPool.tokenABalance =
-            lagTTokenABalance -
-            (amount - ((tPool.fee * amount) / 1 ether));
+        uint256 i = 0;
+        for (; i < arr1.length; i++) {
+            returnArr[i] = arr1[i];
+        }
 
+        uint256 j = 0;
+        while (j < arr1.length) {
+            returnArr[i++] = arr2[j++];
+        }
+
+        return returnArr;
+    }
+
+    function quote(
+        virtualPoolModel memory tPool,
+        uint256 amount,
+        bool calculateFees
+    ) public pure returns (uint256) {
         // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
-        tPool.tokenBBalance =
-            (lagTTokenABalance * lagTTokenBBalance) /
-            (lagTTokenABalance - amount);
+        uint256 totalOut = ((tPool.tokenABalance * tPool.tokenBBalance) /
+            (tPool.tokenABalance - amount)) - tPool.tokenBBalance;
 
-        uint256 finalQuote = tPool.tokenBBalance - lagTTokenBBalance;
+        if (calculateFees) {
+            //add fees
+            totalOut = (totalOut - ((tPool.fee * totalOut) / 1 ether));
+        }
 
-        return finalQuote;
+        return totalOut;
     }
 
     function calculateLPTokensAmount(
@@ -111,13 +123,13 @@ library vSwapMath {
     }
 
     function totalPoolFeeAvg(
-        uint256 rPoolFee,
-        uint256 rPoolTokenABalance,
+        uint256 vPairFee,
+        uint256 vPairTokenABalance,
         uint256 vPoolFee,
         uint256 vPoolTokenABalance
     ) public pure returns (uint256) {
         return
-            (rPoolFee * rPoolTokenABalance + vPoolFee * vPoolTokenABalance) /
+            (vPairFee * vPairTokenABalance + vPoolFee * vPoolTokenABalance) /
             vPoolTokenABalance;
     }
 

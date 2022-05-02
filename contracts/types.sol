@@ -1,8 +1,9 @@
 struct virtualPoolModel {
     uint256 fee;
-    address tokenA;
-    address tokenB;
+    address token0;
+    address token1;
     uint256 tokenABalance;
     uint256 tokenBBalance;
     bool balanced;
+    address vPairAddress;
 }

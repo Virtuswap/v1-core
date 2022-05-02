@@ -21,14 +21,6 @@ interface IvPair {
         uint256 amount
     ) external;
 
-    function swap(
-        address inToken,
-        address outToken,
-        uint256 amount,
-        address reserveToken,
-        address reserveRPool
-    ) external;
-
     function collect(uint256 tokenAAmount, uint256 tokenBAmount) external;
 
     function getBelowReserve() external pure returns (uint256);

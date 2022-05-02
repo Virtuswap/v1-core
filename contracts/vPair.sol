@@ -179,15 +179,6 @@ contract vPair is IvPair, vSwapERC20 {
             "vSwap: TRANSFER_FAILED"
         );
     }
-
-    function swap(
-        address inToken,
-        address outToken,
-        uint256 amount,
-        address reserveToken,
-        address reserveRPool
-    ) public {}
-
     function withdrawal() external {}
 
     function quote(
