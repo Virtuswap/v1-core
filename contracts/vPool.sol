@@ -219,37 +219,37 @@ contract VirtualPool {
             );
         }
 
-        // //take more tokenOut from Virtual pool
-        // virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
+        //take more tokenOut from Virtual pool
+        virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
 
-        // uint256 virtualOutWeight = (
-        //     ((vPool.tokenBBalance * 10000) / tPool.tokenBBalance)
-        // );
+        uint256 virtualOutWeight = (
+            ((vPool.tokenBBalance * 10000) / tPool.tokenBBalance)
+        );
 
-        // uint256 vPoolTokenOutBalance = amountOut * virtualOutWeight;
-        // vPoolTokenOutBalance = vPoolTokenOutBalance / 10000;
+        uint256 vPoolTokenOutBalance = amountOut * virtualOutWeight;
+        vPoolTokenOutBalance = vPoolTokenOutBalance / 10000;
 
-        // // uint256 virtualInWeight = ((vPool.tokenABalance * 10000) /
-        // //     tPool.tokenABalance);
+        // uint256 virtualInWeight = ((vPool.tokenABalance * 10000) /
+        //     tPool.tokenABalance);
 
-        // uint256 vPoolTokenInAmount = amount *
-        //     ((vPool.tokenABalance * 10000) / tPool.tokenABalance);
+        uint256 vPoolTokenInAmount = amount *
+            ((vPool.tokenABalance * 10000) / tPool.tokenABalance);
 
-        // vPoolTokenInAmount = vPoolTokenInAmount / 10000;
+        vPoolTokenInAmount = vPoolTokenInAmount / 10000;
 
-        // require(
-        //     ERC20(tokenIn).transferFrom(msg.sender, jks[0], vPoolTokenInAmount),
-        //     "Failed to collect from user"
-        // );
+        require(
+            ERC20(tokenIn).transferFrom(msg.sender, jks[0], vPoolTokenInAmount),
+            "Failed to collect from user"
+        );
 
-        // require(
-        //     IvPair(jks[0]).transferToken(
-        //         tokenOut,
-        //         msg.sender,
-        //         vPoolTokenOutBalance
-        //     ),
-        //     "Hello"
-        // );
+        require(
+            IvPair(jks[0]).transferToken(
+                tokenOut,
+                msg.sender,
+                vPoolTokenOutBalance
+            ),
+            "Hello 1"
+        );
     }
 
     function changeFactory(address factory) public onlyOwner {

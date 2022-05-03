@@ -193,11 +193,16 @@ contract vPair is IvPair, vSwapERC20 {
         address token,
         address to,
         uint256 amount
-    ) external onlyPool returns (bool) {
-        require(
-            token == token0 || token == token1,
-            "Token dont exist in the pool"
-        );
+    ) external returns (bool) {
+        // require(
+        //     token == token0 || token == token1,
+        //     "Token dont exist in the pool"
+        // );
+
+        // require(
+        //     msg.sender == IvPairFactory(factory).getvPoolAddress(),
+        //     "Only pool cant invoke this function"
+        // );
 
         return ERC20(token).transfer(to, amount);
     }
