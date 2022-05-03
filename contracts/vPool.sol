@@ -198,7 +198,7 @@ contract VirtualPool {
 
             emit Debug("Real pool token in Balance delta", vPairTokenInAmount);
 
-            //collect from user to real pool
+            // //collect from user to real pool
             require(
                 ERC20(tokenIn).transferFrom(
                     msg.sender,
@@ -208,10 +208,10 @@ contract VirtualPool {
                 "Failed to collect from user"
             );
 
-            //from real pool to to user
+            // //from real pool to to user
             require(
                 IvPair(tPool.vPairAddress).transferToken(
-                    tokenIn,
+                    tokenOut,
                     msg.sender,
                     vPairTokenOutAmount
                 ),
@@ -219,37 +219,37 @@ contract VirtualPool {
             );
         }
 
-        //take more tokenOut from Virtual pool
-        virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
+        // //take more tokenOut from Virtual pool
+        // virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
 
-        uint256 virtualOutWeight = (
-            ((vPool.tokenBBalance * 10000) / tPool.tokenBBalance)
-        );
+        // uint256 virtualOutWeight = (
+        //     ((vPool.tokenBBalance * 10000) / tPool.tokenBBalance)
+        // );
 
-        uint256 vPoolTokenOutBalance = amountOut * virtualOutWeight;
-        vPoolTokenOutBalance = vPoolTokenOutBalance / 10000;
+        // uint256 vPoolTokenOutBalance = amountOut * virtualOutWeight;
+        // vPoolTokenOutBalance = vPoolTokenOutBalance / 10000;
 
-        // uint256 virtualInWeight = ((vPool.tokenABalance * 10000) /
-        //     tPool.tokenABalance);
+        // // uint256 virtualInWeight = ((vPool.tokenABalance * 10000) /
+        // //     tPool.tokenABalance);
 
-        uint256 vPoolTokenInAmount = amount *
-            ((vPool.tokenABalance * 10000) / tPool.tokenABalance);
+        // uint256 vPoolTokenInAmount = amount *
+        //     ((vPool.tokenABalance * 10000) / tPool.tokenABalance);
 
-        vPoolTokenInAmount = vPoolTokenInAmount / 10000;
+        // vPoolTokenInAmount = vPoolTokenInAmount / 10000;
 
-        require(
-            ERC20(tokenIn).transferFrom(msg.sender, jks[0], vPoolTokenInAmount),
-            "Failed to collect from user"
-        );
+        // require(
+        //     ERC20(tokenIn).transferFrom(msg.sender, jks[0], vPoolTokenInAmount),
+        //     "Failed to collect from user"
+        // );
 
-        require(
-            IvPair(jks[0]).transferToken(
-                tokenOut,
-                msg.sender,
-                vPoolTokenOutBalance
-            ),
-            "Hello"
-        );
+        // require(
+        //     IvPair(jks[0]).transferToken(
+        //         tokenOut,
+        //         msg.sender,
+        //         vPoolTokenOutBalance
+        //     ),
+        //     "Hello"
+        // );
     }
 
     function changeFactory(address factory) public onlyOwner {

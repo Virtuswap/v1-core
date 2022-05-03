@@ -56,7 +56,10 @@ contract vPair is IvPair, vSwapERC20 {
     }
 
     modifier onlyPool() {
-        require(msg.sender == IvPairFactory(factory).getvPoolAddress());
+        require(
+            msg.sender == IvPairFactory(factory).getvPoolAddress(),
+            "Only pool cant invoke this function"
+        );
         _;
     }
 
