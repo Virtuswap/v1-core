@@ -55,10 +55,10 @@ contract vPair is IvPair, vSwapERC20 {
         _;
     }
 
-    modifier onlyPool() {
+    modifier onlyVPool() {
         require(
             msg.sender == IvPairFactory(factory).getvPoolAddress(),
-            "Only pool cant invoke this function"
+            "VSWAP:ONLY_VPOOL"
         );
         _;
     }
@@ -147,7 +147,7 @@ contract vPair is IvPair, vSwapERC20 {
                 address(this),
                 token0Amount
             ),
-            "Could not transfer token 0"
+            "VSWAP:COLLECT_ERROR_TOKEN0"
         );
         require(
             IERC20(token1).transferFrom(
@@ -155,7 +155,7 @@ contract vPair is IvPair, vSwapERC20 {
                 address(this),
                 token1Amount
             ),
-            "Could not transfer token 1"
+            "VSWAP:COLLECT_ERROR_TOKEN1"
         );
 
         emit LiquidityChange(address(this), token0Amount, token1Amount);
@@ -185,7 +185,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
         require(
             success && (data.length == 0 || abi.decode(data, (bool))),
-            "vSwap: TRANSFER_FAILED"
+            "VSWAP: TRANSFER_FAILED"
         );
     }
 
@@ -193,18 +193,9 @@ contract vPair is IvPair, vSwapERC20 {
         address token,
         address to,
         uint256 amount
-    ) external returns (bool) {
-        // require(
-        //     token == token0 || token == token1,
-        //     "Token dont exist in the pool"
-        // );
-
-        // require(
-        //     msg.sender == IvPairFactory(factory).getvPoolAddress(),
-        //     "Only pool cant invoke this function"
-        // );
-
-        return ERC20(token).transfer(to, amount);
+    ) external onlyVPool returns (bool) {
+        _safeTransfer(token, to, amount);
+        return true;
     }
 
     function withdrawal() external {}
