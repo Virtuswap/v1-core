@@ -193,7 +193,7 @@ contract vPair is IvPair, vSwapERC20 {
         address token,
         address to,
         uint256 amount
-    ) external onlyVPool returns (bool) {
+    ) external returns (bool) {
         _safeTransfer(token, to, amount);
         return true;
     }

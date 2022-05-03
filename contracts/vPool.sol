@@ -175,14 +175,14 @@ contract VirtualPool {
             emit DebugA("msg.sender", msg.sender, 0);
             emit Debug("vPairTokenOutAmount", vPairTokenOutAmount);
             //from real pool to to user
-            // require(
-            //     IvPair(tPool.vPairAddress).transferToken(
-            //         tPool.token1,
-            //         msg.sender,
-            //         vPairTokenOutAmount
-            //     ),
-            //     "VPOOL:SENT_ERROR_TOKENOUT"
-            // );
+            require(
+                IvPair(tPool.vPairAddress).transferToken(
+                    tPool.token1,
+                    msg.sender,
+                    vPairTokenOutAmount
+                ),
+                "VPOOL:SENT_ERROR_TOKENOUT"
+            );
         }
 
         virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
