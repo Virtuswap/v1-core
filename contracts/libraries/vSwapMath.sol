@@ -83,7 +83,7 @@ library vSwapMath {
     }
 
     function quote(
-        virtualPoolModel memory tPool,
+        VirtualPoolModel memory tPool,
         uint256 amount,
         bool calculateFees
     ) public pure returns (uint256) {

@@ -33,10 +33,10 @@ contract VirtualPool {
         _factory = factory;
     }
 
-    function CalculateVirtualPool(address[] memory iks, address[] memory jks)
-        external
+    function _calculateVirtualPool(address[] memory iks, address[] memory jks)
+        private 
         view
-        returns (virtualPoolModel memory vPool)
+        returns (VirtualPoolModel memory vPool)
     {
         //no virtual pool;
         if (iks.length == 0) return vPool;
@@ -93,12 +93,12 @@ contract VirtualPool {
         return vPool;
     }
 
-    function CalculateTotalPool(address[] memory iks, address[] memory jks)
-        external
+    function _calculateTotalPool(address[] memory iks, address[] memory jks)
+        private 
         view
-        returns (virtualPoolModel memory tPool)
+        returns (VirtualPoolModel memory tPool)
     {
-        tPool = this.CalculateVirtualPool(iks, jks);
+        tPool = _calculateVirtualPool(iks, jks);
         address vPairAddress = IvPairFactory(_factory).getPairAddress(
             tPool.token0,
             tPool.token1
@@ -135,16 +135,16 @@ contract VirtualPool {
         address[] memory jks,
         uint256 amount
     ) external view returns (uint256) {
-        virtualPoolModel memory tPool = this.CalculateTotalPool(iks, jks);
+        VirtualPoolModel memory tPool = _calculateTotalPool(iks, jks);
         return vSwapMath.quote(tPool, amount, true);
     }
 
-    function swap(
+    function Swap(
         address[] memory iks,
         address[] memory jks,
         uint256 amount
     ) public {
-        virtualPoolModel memory tPool = this.CalculateTotalPool(iks, jks);
+        VirtualPoolModel memory tPool = _calculateTotalPool(iks, jks);
         uint256 amountOut = vSwapMath.quote(tPool, amount, true);
 
         if (tPool.vPairAddress > address(0)) {
@@ -160,7 +160,6 @@ contract VirtualPool {
                 tPool.tokenABalance
             );
 
-            // //collect from user to real pool
             require(
                 ERC20(tPool.token0).transferFrom(
                     msg.sender,
@@ -170,11 +169,6 @@ contract VirtualPool {
                 "VPOOL:COLLECT_ERROR_TOKENIN"
             );
 
-            emit DebugA("tPool.vPairAddress", tPool.vPairAddress, 0);
-            emit DebugA("tPool.token1", tPool.token1, 0);
-            emit DebugA("msg.sender", msg.sender, 0);
-            emit Debug("vPairTokenOutAmount", vPairTokenOutAmount);
-            //from real pool to to user
             require(
                 IvPair(tPool.vPairAddress).transferToken(
                     tPool.token1,
@@ -185,7 +179,7 @@ contract VirtualPool {
             );
         }
 
-        virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
+        VirtualPoolModel memory vPool = _calculateVirtualPool(iks, jks);
 
         uint256 vPoolTokenOutBalance = vSwapMath.calculateWeightedAmount(
             amountOut,
@@ -235,7 +229,7 @@ contract VirtualPool {
         }
     }
 
-    function changeFactory(address factory) public onlyOwner {
+    function ChangeFactory(address factory) public onlyOwner {
         _factory = factory;
     }
 }
