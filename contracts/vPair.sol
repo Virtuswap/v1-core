@@ -200,12 +200,6 @@ contract vPair is IvPair, vSwapERC20 {
 
     function withdrawal() external {}
 
-    function quote(
-        address inToken,
-        address outToken,
-        uint256 amount
-    ) external {}
-
     function setWhitelistAllowance(address reserveToken, bool activateReserve)
         external
         onlyOwner
@@ -215,5 +209,9 @@ contract vPair is IvPair, vSwapERC20 {
 
     function isReserveAllowed(address reserveToken) public view returns (bool) {
         return whitelistAllowance[reserveToken];
+    }
+
+    function setFactory(address _factory) external onlyOwner {
+        factory = _factory;
     }
 }

@@ -6,4 +6,6 @@ struct virtualPoolModel {
     uint256 tokenBBalance;
     bool balanced;
     address vPairAddress;
+    uint256 sumTokenA;
+    uint256 sumTokenB;
 }

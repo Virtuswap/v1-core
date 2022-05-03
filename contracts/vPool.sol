@@ -70,6 +70,9 @@ contract VirtualPool {
             uint256 jkPairToken0Balance = IERC20(jkToken0).balanceOf(jks[i]);
             uint256 jkPairToken1Balance = IERC20(jkToken1).balanceOf(jks[i]);
 
+            vPool.sumTokenA = vPool.sumTokenA + ikPairToken0Balance;
+            vPool.sumTokenB = vPool.sumTokenB + jkPairToken0Balance;
+
             //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
             vPool.tokenABalance =
                 vPool.tokenABalance +
@@ -141,115 +144,95 @@ contract VirtualPool {
         address[] memory jks,
         uint256 amount
     ) public {
-        //1. Deduct fee amount from out token and not from in token
         virtualPoolModel memory tPool = this.CalculateTotalPool(iks, jks);
-
-        address tokenIn;
-        address tokenOut;
-
-        //find trade direction
-        emit DebugS("tPoolToken0", ERC20(tPool.token0).name());
-        emit DebugS("tPoolToken1", ERC20(tPool.token1).name());
-
-        (tokenIn, tokenOut) = (tPool.token0, tPool.token1);
-
-        //%substract amount and add fees to amount_in
-        //T(buy_currency,sell_currency,buy_currency)=lag_T(buy_currency,sell_currency,buy_currency)-Buy*(1-fee_T(buy_currency,sell_currency)); ****
-
-        uint256 amountOut = vSwapMath.quote(tPool, amount, false);
-
-        emit Debug("amountOut", amountOut);
-
-        //calculate amount to take from tokenOut from real pool
-        uint256 vPairTokenOutAmount = 0;
-        uint256 vPairTokenInBalance = 0;
-        uint256 vPairTokenInAmount = 0;
+        uint256 amountOut = vSwapMath.quote(tPool, amount, true);
 
         if (tPool.vPairAddress > address(0)) {
-            vPairTokenInBalance = IERC20(tokenIn).balanceOf(tPool.vPairAddress);
-
-            vPairTokenOutAmount = IERC20(tokenOut).balanceOf(
-                tPool.vPairAddress
+            uint256 vPairTokenOutAmount = vSwapMath.calculateWeightedAmount(
+                amountOut,
+                IERC20(tPool.token1).balanceOf(tPool.vPairAddress),
+                tPool.tokenBBalance
             );
 
-            uint256 realOutWeight = (
-                ((vPairTokenOutAmount * 10000) / tPool.tokenBBalance)
+            uint256 vPairTokenInAmount = vSwapMath.calculateWeightedAmount(
+                amount,
+                IERC20(tPool.token0).balanceOf(tPool.vPairAddress),
+                tPool.tokenABalance
             );
-
-            vPairTokenOutAmount = amountOut * realOutWeight;
-            vPairTokenOutAmount = vPairTokenOutAmount / 10000;
-
-            emit Debug("realOutWeight", realOutWeight);
-
-            emit Debug(
-                "Real pool token out Balance delta",
-                vPairTokenOutAmount
-            );
-
-            uint256 realInWeight = ((vPairTokenInBalance * 10000) /
-                tPool.tokenABalance);
-
-            emit Debug("realOutWeight", realOutWeight);
-            emit Debug("realInWeight", realInWeight);
-
-            vPairTokenInAmount = amount * realInWeight;
-
-            vPairTokenInAmount = vPairTokenInAmount / 10000;
-
-            emit Debug("Real pool token in Balance delta", vPairTokenInAmount);
 
             // //collect from user to real pool
             require(
-                ERC20(tokenIn).transferFrom(
+                ERC20(tPool.token0).transferFrom(
                     msg.sender,
                     tPool.vPairAddress,
                     vPairTokenInAmount
                 ),
-                "Failed to collect from user"
+                "VPOOL:COLLECT_ERROR_TOKENIN"
             );
 
-            // //from real pool to to user
-            require(
-                IvPair(tPool.vPairAddress).transferToken(
-                    tokenOut,
-                    msg.sender,
-                    vPairTokenOutAmount
-                ),
-                "Hello"
-            );
+            emit DebugA("tPool.vPairAddress", tPool.vPairAddress, 0);
+            emit DebugA("tPool.token1", tPool.token1, 0);
+            emit DebugA("msg.sender", msg.sender, 0);
+            emit Debug("vPairTokenOutAmount", vPairTokenOutAmount);
+            //from real pool to to user
+            // require(
+            //     IvPair(tPool.vPairAddress).transferToken(
+            //         tPool.token1,
+            //         msg.sender,
+            //         vPairTokenOutAmount
+            //     ),
+            //     "VPOOL:SENT_ERROR_TOKENOUT"
+            // );
         }
 
-        //take more tokenOut from Virtual pool
         virtualPoolModel memory vPool = this.CalculateVirtualPool(iks, jks);
 
-        uint256 virtualOutWeight = (
-            ((vPool.tokenBBalance * 10000) / tPool.tokenBBalance)
+        uint256 vPoolTokenOutBalance = vSwapMath.calculateWeightedAmount(
+            amountOut,
+            vPool.tokenBBalance,
+            tPool.tokenBBalance
         );
 
-        uint256 vPoolTokenOutBalance = amountOut * virtualOutWeight;
-        vPoolTokenOutBalance = vPoolTokenOutBalance / 10000;
-
-        // uint256 virtualInWeight = ((vPool.tokenABalance * 10000) /
-        //     tPool.tokenABalance);
-
-        uint256 vPoolTokenInAmount = amount *
-            ((vPool.tokenABalance * 10000) / tPool.tokenABalance);
-
-        vPoolTokenInAmount = vPoolTokenInAmount / 10000;
-
-        require(
-            ERC20(tokenIn).transferFrom(msg.sender, jks[0], vPoolTokenInAmount),
-            "Failed to collect from user"
+        uint256 vPoolTokenInBalance = vSwapMath.calculateWeightedAmount(
+            amount,
+            vPool.tokenABalance,
+            tPool.tokenABalance
         );
 
-        require(
-            IvPair(jks[0]).transferToken(
-                tokenOut,
-                msg.sender,
-                vPoolTokenOutBalance
-            ),
-            "Hello 1"
-        );
+        //take more tokenOut from Virtual pool
+        for (uint256 i = 0; i < jks.length; i++) {
+            //find jk size relative to virtual pool
+
+            uint256 ikTokenInBalance = vSwapMath.calculateWeightedAmount(
+                vPoolTokenInBalance,
+                ERC20(tPool.token0).balanceOf(iks[i]),
+                vPool.sumTokenA
+            );
+
+            uint256 jkTokenOutBalance = vSwapMath.calculateWeightedAmount(
+                vPoolTokenOutBalance,
+                ERC20(tPool.token1).balanceOf(jks[i]),
+                vPool.sumTokenB
+            );
+
+            require(
+                ERC20(tPool.token0).transferFrom(
+                    msg.sender,
+                    jks[i],
+                    ikTokenInBalance
+                ),
+                "VPOOL:COLLECT_ERROR_TOKENIN"
+            );
+
+            require(
+                IvPair(jks[i]).transferToken(
+                    tPool.token1,
+                    msg.sender,
+                    jkTokenOutBalance
+                ),
+                "VPOOL:SENT_ERROR_TOKENOUT"
+            );
+        }
     }
 
     function changeFactory(address factory) public onlyOwner {

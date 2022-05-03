@@ -15,12 +15,6 @@ interface IvPair {
 
     function withdrawal() external;
 
-    function quote(
-        address inToken,
-        address outToken,
-        uint256 amount
-    ) external;
-
     function collect(uint256 tokenAAmount, uint256 tokenBAmount) external;
 
     function getBelowReserve() external pure returns (uint256);

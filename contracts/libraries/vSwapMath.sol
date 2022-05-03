@@ -35,6 +35,19 @@ library vSwapMath {
                 : (ikToken0, ikToken1, jkToken0, jkToken1); //default
     }
 
+    function calculateWeightedAmount(
+        uint256 amount,
+        uint256 nominator,
+        uint256 denominator
+    ) public pure returns (uint256) {
+        uint256 realOutWeight = (((nominator * 10000) / denominator));
+
+        uint256 res = amount * realOutWeight;
+        res = res / 10000;
+
+        return res;
+    }
+
     function calculateVirtualPoolBalance(
         uint256 belowReserveIK,
         uint256 ikPairTokenABalance,
