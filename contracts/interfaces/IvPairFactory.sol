@@ -1,29 +1,13 @@
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity >=0.5.0;
 
-interface IvPairFactory {
-    event PairCreated(
-        address poolAddress,
-        address owner,
-        address factory,
-        address token0,
-        address token1,
-        address[] whitelist
-    );
+import "./vPairFactory/IvPoolFactoryVPoolManager.sol";
+import "./vPairFactory/IvPairFactoryEvents.sol";
+import "./vPairFactory/IvPairFactoryActions.sol";
+import "./vPairFactory/IvPairFactoryPairs.sol";
 
-    function allPairsLength() external view returns (uint256);
-
-    function getPairAddress(address tokenA, address tokenB)
-        external
-        view
-        returns (address);
-
-    function createPair(
-        address tokenA,
-        address tokenB,
-        address[] memory whitelist
-    ) external;
-
-    function getvPoolAddress() external view returns (address);
-
-    function updateVPoolAddress(address vPool) external;
-}
+interface IvPairFactory is
+    IvPairFactoryEvents,
+    IvPoolFactoryVPoolManager,
+    IvPairFactoryActions,
+    IvPairFactoryPairs
+{}

@@ -2,11 +2,11 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
-import "./ERC20/IERC20.sol";
-import "./vPairFactory.sol";
-import "./libraries/Math.sol";
 import "./ERC20/vSwapERC20.sol";
+import "./libraries/SafeERC20.sol";
+import "./libraries/Math.sol";
 import "./libraries/vSwapMath.sol";
+
 
 contract vPair is IvPair, vSwapERC20 {
     address owner;
@@ -14,9 +14,6 @@ contract vPair is IvPair, vSwapERC20 {
     address public token0;
     address public token1;
     address[] public whitelist;
-
-    bytes4 private constant SELECTOR =
-        bytes4(keccak256(bytes("transfer(address,uint256)")));
 
     uint256 public belowReserve;
     uint256 public reserveRatio;
@@ -27,22 +24,6 @@ contract vPair is IvPair, vSwapERC20 {
     event Debug(string message, uint256 value);
     event DebugA(string message, address value);
 
-    event Mint(address indexed sender, uint256 amount0, uint256 amount1);
-
-    event Burn(
-        address indexed sender,
-        uint256 amount0,
-        uint256 amount1,
-        address indexed to
-    );
-    event Swap(
-        address indexed sender,
-        uint256 amount0In,
-        uint256 amount1In,
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address indexed to
-    );
     event Sync(uint112 reserve0, uint112 reserve1);
 
     modifier onlyOwner() {
@@ -94,12 +75,12 @@ contract vPair is IvPair, vSwapERC20 {
             );
 
             if (reserveBalance > 0) {
-                address ikAddress = vPairFactory(factory).getPairAddress(
+                address ikAddress = IvPairFactory(factory).getPair(
                     token0,
                     whitelist[i]
                 );
 
-                address jkAddress = vPairFactory(factory).getPairAddress(
+                address jkAddress = IvPairFactory(factory).getPair(
                     token1,
                     whitelist[i]
                 );
@@ -138,8 +119,6 @@ contract vPair is IvPair, vSwapERC20 {
         reserveRatio = _reserveRatio;
     }
 
-    function _mint() internal {}
-
     function collect(uint256 token0Amount, uint256 token1Amount) external {
         require(
             IERC20(token0).transferFrom(
@@ -173,20 +152,7 @@ contract vPair is IvPair, vSwapERC20 {
         }
 
         _mint(msg.sender, lpAmount);
-    }
-
-    function _safeTransfer(
-        address token,
-        address to,
-        uint256 value
-    ) private {
-        (bool success, bytes memory data) = token.call(
-            abi.encodeWithSelector(SELECTOR, to, value)
-        );
-        require(
-            success && (data.length == 0 || abi.decode(data, (bool))),
-            "VSWAP: TRANSFER_FAILED"
-        );
+        emit Mint(msg.sender, token0Amount, token1Amount);
     }
 
     function transferToken(
@@ -194,7 +160,7 @@ contract vPair is IvPair, vSwapERC20 {
         address to,
         uint256 amount
     ) external returns (bool) {
-        _safeTransfer(token, to, amount);
+        SafeERC20.safeTransfer(IERC20(token), to, amount);
         return true;
     }
 
@@ -205,6 +171,7 @@ contract vPair is IvPair, vSwapERC20 {
         onlyOwner
     {
         whitelistAllowance[reserveToken] = activateReserve;
+        emit WhitelistChanged(reserveToken, activateReserve);
     }
 
     function isReserveAllowed(address reserveToken) public view returns (bool) {

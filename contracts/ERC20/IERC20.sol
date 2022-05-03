@@ -12,72 +12,58 @@ interface IERC20 {
      */
     function totalSupply() external view returns (uint256);
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
+    /// @notice Returns the balance of a token
+    /// @param account The account for which to look up the number of tokens it has, i.e. its balance
+    /// @return The number of tokens held by the account
     function balanceOf(address account) external view returns (uint256);
 
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    /// @notice Transfers the amount of token from the `msg.sender` to the recipient
+    /// @param recipient The account that will receive the amount transferred
+    /// @param amount The number of tokens to send from the sender to the recipient
+    /// @return Returns true for a successful transfer, false for an unsuccessful transfer
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
 
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
+    /// @notice Returns the current allowance given to a spender by an owner
+    /// @param owner The account of the token owner
+    /// @param spender The account of the token spender
+    /// @return The current allowance granted by `owner` to `spender`
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
+    /// @notice Sets the allowance of a spender from the `msg.sender` to the value `amount`
+    /// @param spender The account which will be allowed to spend a given amount of the owners tokens
+    /// @param amount The amount of tokens allowed to be used by `spender`
+    /// @return Returns true for a successful approval, false for unsuccessful
     function approve(address spender, uint256 amount) external returns (bool);
 
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
+    /// @notice Transfers `amount` tokens from `sender` to `recipient` up to the allowance given to the `msg.sender`
+    /// @param sender The account from which the transfer will be initiated
+    /// @param recipient The recipient of the transfer
+    /// @param amount The amount of the transfer
+    /// @return Returns true for a successful transfer, false for unsuccessful
     function transferFrom(
         address sender,
         address recipient,
         uint256 amount
     ) external returns (bool);
 
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
+    /// @notice Event emitted when tokens are transferred from one address to another, either via `#transfer` or `#transferFrom`.
+    /// @param from The account from which the tokens were sent, i.e. the balance decreased
+    /// @param to The account to which the tokens were sent, i.e. the balance increased
+    /// @param value The amount of tokens that were transferred
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    /// @notice Event emitted when the approval amount for the spender of a given owner's tokens changes.
+    /// @param owner The account that approved spending of its tokens
+    /// @param spender The account for which the spending allowance was modified
+    /// @param value The new allowance from the owner to the spender
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
-

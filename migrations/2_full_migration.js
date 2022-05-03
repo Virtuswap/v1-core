@@ -1,7 +1,9 @@
-const vPool = artifacts.require("VirtualPool");
+const vPool = artifacts.require("vPool");
 const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapMath = artifacts.require("vSwapMath");
+const SafeERC20 = artifacts.require("SafeERC20");
+const Address = artifacts.require("Address");
 const utils = require("./utils");
 
 const mysql = require("mysql");
@@ -37,12 +39,18 @@ async function queryDB(sql) {
 module.exports = async function (deployer) {
   await connectDB();
 
+  //libraries
   await deployer.deploy(vSwapMath);
+  await deployer.deploy(SafeERC20);
+  await deployer.deploy(Address);
 
+  await deployer.link(Address, vPairFactory);
+  await deployer.link(SafeERC20, vPairFactory);
   await deployer.link(vSwapMath, vPairFactory);
   await deployer.deploy(vPairFactory);
 
-
+  await deployer.link(Address, vPool);
+  await deployer.link(SafeERC20, vPool);
   await deployer.link(vSwapMath, vPool);
   await deployer.deploy(vPool, vPairFactory.networks[80001].address);
 

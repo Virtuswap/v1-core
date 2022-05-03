@@ -91,10 +91,8 @@ library vSwapMath {
         uint256 totalOut = ((tPool.tokenABalance * tPool.tokenBBalance) /
             (tPool.tokenABalance - amount)) - tPool.tokenBBalance;
 
-        if (calculateFees) {
-            //add fees
+        if (calculateFees)
             totalOut = (totalOut - ((tPool.fee * totalOut) / 1 ether));
-        }
 
         return totalOut;
     }

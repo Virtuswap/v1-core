@@ -1,33 +1,13 @@
-interface IvPair {
-    event LiquidityChange(
-        address poolAddress,
-        uint256 tokenABalance,
-        uint256 tokenBBalance
-    );
+pragma solidity >=0.5.0;
 
-    function setWhitelistAllowance(address reserveToken, bool activateReserve)
-        external;
+import "./vPair/IvPairState.sol";
+import "./vPair/IvPairEvents.sol";
+import "./vPair/IvPairReservesManager.sol";
+import "./vPair/IvPairFee.sol";
 
-    function isReserveAllowed(address reserveToken)
-        external
-        view
-        returns (bool);
-
-    function withdrawal() external;
-
-    function collect(uint256 tokenAAmount, uint256 tokenBAmount) external;
-
-    function getBelowReserve() external pure returns (uint256);
-
-    function token0() external view returns (address);
-
-    function token1() external view returns (address);
-
-    function fee() external view returns (uint256);
-
-    function transferToken(
-        address token,
-        address to,
-        uint256 amount
-    ) external returns (bool);
-}
+interface IvPair is
+    IvPairState,
+    IvPairEvents,
+    IvPairReservesManager,
+    IvPairFee
+{}

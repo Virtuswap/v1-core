@@ -1,22 +1,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
-import "../types.sol";
+import "./vPool/IvPoolEvents.sol";
+import "./vPool/IvPoolState.sol";
+import "./vPool/IvPoolActions.sol";
 
-interface IvPool {
-    function CalculateVirtualPool(address[] memory ks, address[] memory js)
-        external
-        returns (virtualPoolModel memory vPool);
-
-    function CalculateTotalPool(uint256[] memory ks, uint256[] memory js)
-        external
-        view
-        returns (virtualPoolModel memory);
-
-    function Quote(
-        uint256[] memory ks,
-        uint256[] memory js,
-        int256 amount
-    ) external view returns (int256);
-
-    function ChangeFactory(address factory) external;
-}
+interface IvPool is IvPoolEvents, IvPoolState, IvPoolActions {}
