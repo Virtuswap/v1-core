@@ -8,6 +8,7 @@ import "../interfaces/IvPair.sol";
 
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
+    uint256 constant MULTIPLIER = 100000;
 
     //find common token and assign to ikToken1 and jkToken1
     function findCommonToken(
@@ -40,27 +41,23 @@ library vSwapMath {
         uint256 nominator,
         uint256 denominator
     ) public pure returns (uint256) {
-        uint256 realOutWeight = (((nominator * 10000) / denominator));
-
-        uint256 res = amount * realOutWeight;
-        res = res / 10000;
-
-        return res;
-    }
-
-    function calculateVirtualPoolBalance(
-        uint256 belowReserveIK,
-        uint256 ikPairTokenABalance,
-        uint256 ikPairTokenBBalance,
-        uint256 jkPairTokenBBalance
-    ) public pure returns (uint256) {
-        //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
         return
-            (belowReserveIK *
-                ikPairTokenABalance *
-                Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
-            Math.max(ikPairTokenBBalance, EPSILON);
+            (amount * (((nominator * MULTIPLIER) / denominator))) / MULTIPLIER;
     }
+
+    // function calculateVirtualPoolBalance(
+    //     uint256 belowReserveIK,
+    //     uint256 ikPairTokenABalance,
+    //     uint256 ikPairTokenBBalance,
+    //     uint256 jkPairTokenBBalance
+    // ) public pure returns (uint256) {
+    //     //  V(i,j,i)=V(i,j,i)+ind_below_reserve_threshold(i,k)*R(i,k,i)*min(R(i,k,k),R(j,k,k))/max(R(i,k,k),epsilon);
+    //     return
+    //         (belowReserveIK *
+    //             ikPairTokenABalance *
+    //             Math.min(ikPairTokenBBalance, jkPairTokenBBalance)) /
+    //         Math.max(ikPairTokenBBalance, EPSILON);
+    // }
 
     function concatenateArrays(address[] memory arr1, address[] memory arr2)
         public
@@ -109,10 +106,8 @@ library vSwapMath {
                 (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
                 (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
 
-        uint256 lpAmount = ((token0Amount * totalSupply) / token0Balance) *
-            (1 + reserveRatio);
-
-        return lpAmount;
+        return
+            ((token0Amount * totalSupply) / token0Balance) * (1 + reserveRatio);
     }
 
     function calculateReserveRatio(
@@ -131,6 +126,19 @@ library vSwapMath {
                     (((jkTokenABalance / Math.max(jkTokenBBalance, EPSILON)) *
                         ijtokenABalance) / Math.max(ijtokenBBalance, EPSILON))
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
+    }
+
+    function calculateVirtualPoolBalance(
+        uint256 vPoolTokenBalance,
+        uint256 belowReserve,
+        uint256 ikF,
+        uint256 ikS,
+        uint256 jsF
+    ) public pure returns (uint256) {
+        return
+            vPoolTokenBalance +
+            (belowReserve * ikF * Math.min(ikS, jsF)) /
+            Math.max(ikS, EPSILON);
     }
 
     function totalPoolFeeAvg(
