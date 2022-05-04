@@ -189,13 +189,13 @@ contract vPool is IvPool {
             tPool.tokenABalance
         );
 
-        //take more tokenOut from Virtual pool
         for (uint256 i = 0; i < iks.length; i++) {
-            //enforce whitelist
-            require(
-                IvPair(iks[i]).isReserveAllowed(tPool.token0) == true,
-                "VSWAP:RESERVE_NOT_WHITELISTED"
-            );
+           
+            // //enforce whitelist
+            // require(
+            //     IvPair(iks[i]).isReserveAllowed(tPool.token0) == true,
+            //     "VSWAP:RESERVE_NOT_WHITELISTED"
+            // );
 
             uint256 ikTokenInBalance = vSwapMath.calculateWeightedAmount(
                 vPoolTokenInBalance,
