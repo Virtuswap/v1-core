@@ -132,21 +132,18 @@ contract vPair is IvPair, vSwapERC20 {
     function collect(uint256 token0Amount, uint256 token1Amount) external {
         uint256 token0Balance = IERC20(token0).balanceOf(address(this));
 
-        require(
-            IERC20(token0).transferFrom(
-                msg.sender,
-                address(this),
-                token0Amount
-            ),
-            "VSWAP:COLLECT_ERROR_TOKEN0"
+        SafeERC20.safeTransferFrom(
+            IERC20(token0),
+            msg.sender,
+            address(this),
+            token0Amount
         );
-        require(
-            IERC20(token1).transferFrom(
-                msg.sender,
-                address(this),
-                token1Amount
-            ),
-            "VSWAP:COLLECT_ERROR_TOKEN1"
+
+        SafeERC20.safeTransferFrom(
+            IERC20(token1),
+            msg.sender,
+            address(this),
+            token1Amount
         );
 
         emit LiquidityChange(address(this), token0Amount, token1Amount);
@@ -165,7 +162,7 @@ contract vPair is IvPair, vSwapERC20 {
         }
 
         require(lpAmount > 0, "VSWAP:ERROR_CALCULATING_LPTOKENS");
-        
+
         _mint(msg.sender, lpAmount);
         emit Mint(msg.sender, token0Amount, token1Amount);
     }
