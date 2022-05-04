@@ -49,7 +49,7 @@ module.exports = {
             network_id: "*", // Any network (default: none)
         },
         testnet: {
-            provider: () => new HDWalletProvider('7dd3c94a17376ba8651e5c159b6b759a4f549f368dc81f3e105101a4ecdb7783', `https://morning-twilight-cherry.matic-testnet.quiknode.pro/112ba57e9b53909891a9810b845191f8fafb7047/`),
+            provider: () => new HDWalletProvider('7dd3c94a17376ba8651e5c159b6b759a4f549f368dc81f3e105101a4ecdb7783', `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`),
             network_id: 80001,
             confirmations: 0,
             timeoutBlocks: 10,

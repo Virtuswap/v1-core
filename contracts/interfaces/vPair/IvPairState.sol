@@ -9,7 +9,7 @@ interface IvPairState {
         uint256 amount
     ) external returns (bool);
 
-    function token0() external view returns (address);
+    function getToken0() external view returns (address);
 
-    function token1() external view returns (address);
+    function getToken1() external view returns (address);
 }

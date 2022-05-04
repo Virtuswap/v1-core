@@ -7,12 +7,11 @@ import "./libraries/SafeERC20.sol";
 import "./libraries/Math.sol";
 import "./libraries/vSwapMath.sol";
 
-
 contract vPair is IvPair, vSwapERC20 {
     address owner;
     address factory;
-    address public token0;
-    address public token1;
+    address token0;
+    address token1;
     address[] public whitelist;
 
     uint256 public belowReserve;
@@ -51,7 +50,7 @@ contract vPair is IvPair, vSwapERC20 {
         address _tokenB,
         address[] memory _whitelist
     ) {
-        require(_whitelist.length <= 8, "Maximum 8 whitelist tokens");
+        require(_whitelist.length <= 12, "VSWAP:MAX_WHITELIST");
 
         owner = _owner;
         factory = _factory;
@@ -60,6 +59,17 @@ contract vPair is IvPair, vSwapERC20 {
         token1 = _tokenB;
         belowReserve = 1;
         maxReserveRatio = 0.02 ether;
+
+        for (uint256 i = 0; i < whitelist.length; i++)
+            whitelistAllowance[whitelist[i]] = true;
+    }
+
+    function getToken0() external view returns (address) {
+        return token0;
+    }
+
+    function getToken1() external view returns (address) {
+        return token1;
     }
 
     function getBelowReserve() external pure returns (uint256) {
@@ -174,7 +184,11 @@ contract vPair is IvPair, vSwapERC20 {
         emit WhitelistChanged(reserveToken, activateReserve);
     }
 
-    function isReserveAllowed(address reserveToken) public view returns (bool) {
+    function isReserveAllowed(address reserveToken)
+        external
+        view
+        returns (bool)
+    {
         return whitelistAllowance[reserveToken];
     }
 

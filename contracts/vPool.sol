@@ -50,10 +50,10 @@ contract vPool is IvPool {
             uint256 belowReserveIK = IvPair(iks[i]).getBelowReserve();
             uint256 belowReserveJK = IvPair(jks[i]).getBelowReserve();
 
-            address ikToken0 = IvPair(iks[i]).token0();
-            address ikToken1 = IvPair(iks[i]).token1();
-            address jkToken0 = IvPair(jks[i]).token0();
-            address jkToken1 = IvPair(jks[i]).token1();
+            address ikToken0 = IvPair(iks[i]).getToken0();
+            address ikToken1 = IvPair(iks[i]).getToken1();
+            address jkToken0 = IvPair(jks[i]).getToken0();
+            address jkToken1 = IvPair(jks[i]).getToken1();
 
             (ikToken0, ikToken1, jkToken0, jkToken1) = vSwapMath
                 .findCommonToken(ikToken0, ikToken1, jkToken0, jkToken1);
@@ -145,31 +145,31 @@ contract vPool is IvPool {
         VirtualPoolModel memory tPool = _calculateTotalPool(iks, jks);
         uint256 amountOut = vSwapMath.quote(tPool, amount, true);
 
-        address inToken = tPool.token0;
-        address outToken = tPool.token1;
+        //address inToken = tPool.token0;
+        //address outToken = tPool.token1;
 
         if (tPool.vPairAddress > address(0)) {
             uint256 vPairTokenInAmount = vSwapMath.calculateWeightedAmount(
                 amount,
-                IERC20(inToken).balanceOf(tPool.vPairAddress),
+                IERC20(tPool.token0).balanceOf(tPool.vPairAddress),
                 tPool.tokenABalance
             );
 
             uint256 vPairTokenOutAmount = vSwapMath.calculateWeightedAmount(
                 amountOut,
-                IERC20(outToken).balanceOf(tPool.vPairAddress),
+                IERC20(tPool.token1).balanceOf(tPool.vPairAddress),
                 tPool.tokenBBalance
             );
 
             SafeERC20.safeTransferFrom(
-                IERC20(inToken),
+                IERC20(tPool.token0),
                 msg.sender,
                 tPool.vPairAddress,
                 vPairTokenInAmount
             );
 
             IvPair(tPool.vPairAddress).transferToken(
-                outToken,
+                tPool.token1,
                 msg.sender,
                 vPairTokenOutAmount
             );
@@ -193,31 +193,31 @@ contract vPool is IvPool {
         for (uint256 i = 0; i < iks.length; i++) {
             //enforce whitelist
             require(
-                IvPair(iks[i]).isReserveAllowed(inToken) == true,
+                IvPair(iks[i]).isReserveAllowed(tPool.token0) == true,
                 "VSWAP:RESERVE_NOT_WHITELISTED"
             );
 
             uint256 ikTokenInBalance = vSwapMath.calculateWeightedAmount(
                 vPoolTokenInBalance,
-                ERC20(inToken).balanceOf(iks[i]),
+                ERC20(tPool.token0).balanceOf(iks[i]),
                 _vPool.sumTokenA
             );
 
             uint256 jkTokenOutBalance = vSwapMath.calculateWeightedAmount(
                 vPoolTokenOutBalance,
-                ERC20(outToken).balanceOf(jks[i]),
+                ERC20(tPool.token1).balanceOf(jks[i]),
                 _vPool.sumTokenB
             );
 
             SafeERC20.safeTransferFrom(
-                IERC20(inToken),
+                IERC20(tPool.token0),
                 msg.sender,
                 jks[i],
                 ikTokenInBalance
             );
 
             IvPair(jks[i]).transferToken(
-                outToken,
+                tPool.token1,
                 msg.sender,
                 jkTokenOutBalance
             );
