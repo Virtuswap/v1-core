@@ -14,8 +14,9 @@ interface IvPairEvents {
         address indexed to
     );
 
-    event WhitelistChanged(
-        address token,
-        bool allowed
-    );
+    event WhitelistChanged(address token, bool allowed);
+
+    event DebugA(string message, address value);
+
+    event Debug(string message, uint256 value);
 }

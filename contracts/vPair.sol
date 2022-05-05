@@ -10,18 +10,19 @@ import "./libraries/vSwapMath.sol";
 contract vPair is IvPair, vSwapERC20 {
     address owner;
     address factory;
-    address token0;
-    address token1;
+
+    address public immutable override token0;
+    address public immutable override token1;
+    
+    uint256 public fee;
+
+
     address[] public whitelist;
 
-    uint256 public belowReserve;
-    uint256 public reserveRatio;
-    uint256 public fee;
+    uint256 belowReserve;
+    uint256 reserveRatio;
     uint256 maxReserveRatio;
     mapping(address => bool) whitelistAllowance;
-
-    event Debug(string message, uint256 value);
-    event DebugA(string message, address value);
 
     event Sync(uint112 reserve0, uint112 reserve1);
 
@@ -37,7 +38,7 @@ contract vPair is IvPair, vSwapERC20 {
 
     modifier onlyVPool() {
         require(
-            msg.sender == IvPairFactory(factory).getvPoolAddress(),
+            IvPairFactory(factory).getvPoolAddress() == msg.sender,
             "VSWAP:ONLY_VPOOL"
         );
         _;
@@ -64,12 +65,16 @@ contract vPair is IvPair, vSwapERC20 {
             whitelistAllowance[whitelist[i]] = true;
     }
 
-    function getToken0() external view returns (address) {
-        return token0;
-    }
+    // function token0() external view returns (address) {
+    //     return token0;
+    // }
 
-    function getToken1() external view returns (address) {
-        return token1;
+    // function token1() external view returns (address) {
+    //     return token1;
+    // }
+
+    function tokens() external view returns (address, address) {
+        return (token0, token1);
     }
 
     function getBelowReserve() external pure returns (uint256) {
@@ -148,7 +153,6 @@ contract vPair is IvPair, vSwapERC20 {
 
         emit LiquidityChange(address(this), token0Amount, token1Amount);
 
-        // uint256 lpAmount = 10000 ether;
         uint256 lpAmount = 0;
 
         if (token0Balance == 0) lpAmount = 10000 ether;
@@ -171,7 +175,7 @@ contract vPair is IvPair, vSwapERC20 {
         address token,
         address to,
         uint256 amount
-    ) external returns (bool) {
+    ) external onlyVPool returns (bool) {
         SafeERC20.safeTransfer(IERC20(token), to, amount);
         return true;
     }
