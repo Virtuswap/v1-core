@@ -93,12 +93,13 @@ contract vPool is IvPool {
         }
     }
 
-    function _calculateTotalPool(address[] memory iks, address[] memory jks)
+    function _calculateTotalPool(VirtualPoolModel memory _vPool)
         private
         view
         returns (VirtualPoolModel memory tPool)
     {
-        tPool = _calculateVirtualPool(iks, jks);
+        tPool = _vPool;
+
         address vPairAddress = IvPairFactory(_factory).getPair(
             tPool.token0,
             tPool.token1
@@ -128,6 +129,15 @@ contract vPool is IvPool {
         }
     }
 
+    function _calculateTotalPool(address[] memory iks, address[] memory jks)
+        private
+        view
+        returns (VirtualPoolModel memory tPool)
+    {
+        tPool = _calculateVirtualPool(iks, jks);
+        return _calculateTotalPool(tPool);
+    }
+
     function Quote(
         address[] memory iks,
         address[] memory jks,
@@ -142,7 +152,9 @@ contract vPool is IvPool {
         address[] memory jks,
         uint256 amount
     ) external {
-        VirtualPoolModel memory tPool = _calculateTotalPool(iks, jks);
+        VirtualPoolModel memory _vPool = _calculateVirtualPool(iks, jks);
+        VirtualPoolModel memory tPool = _calculateTotalPool(_vPool);
+
         uint256 amountOut = vSwapMath.quote(tPool, amount, true);
 
         //address inToken = tPool.token0;
@@ -175,8 +187,6 @@ contract vPool is IvPool {
             );
         }
 
-        VirtualPoolModel memory _vPool = _calculateVirtualPool(iks, jks);
-
         uint256 vPoolTokenOutBalance = vSwapMath.calculateWeightedAmount(
             amountOut,
             _vPool.tokenBBalance,
@@ -190,7 +200,6 @@ contract vPool is IvPool {
         );
 
         for (uint256 i = 0; i < iks.length; i++) {
-           
             // //enforce whitelist
             // require(
             //     IvPair(iks[i]).isReserveAllowed(tPool.token0) == true,
