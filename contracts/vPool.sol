@@ -179,13 +179,13 @@ contract vPool is IvPool {
             );
         }
 
-        uint256 vPoolTokenOutBalance = vSwapMath.calculateWeightedAmount(
+        uint256 vPoolTokenOutAmount = vSwapMath.calculateWeightedAmount(
             amountOut,
             _vPool.tokenBBalance,
             tPool.tokenBBalance
         );
 
-        uint256 vPoolTokenInBalance = vSwapMath.calculateWeightedAmount(
+        uint256 vPoolTokenInAmount = vSwapMath.calculateWeightedAmount(
             amount,
             _vPool.tokenABalance,
             tPool.tokenABalance
@@ -198,14 +198,14 @@ contract vPool is IvPool {
                 "VSWAP:RESERVE_NOT_WHITELISTED"
             );
 
-            uint256 ikTokenInBalance = vSwapMath.calculateWeightedAmount(
-                vPoolTokenInBalance,
+            uint256 ikTokenInAmount = vSwapMath.calculateWeightedAmount(
+                vPoolTokenInAmount,
                 ERC20(tPool.token0).balanceOf(iks[i]),
                 _vPool.sumTokenA
             );
 
-            uint256 jkTokenOutBalance = vSwapMath.calculateWeightedAmount(
-                vPoolTokenOutBalance,
+            uint256 jkTokenOutAmount = vSwapMath.calculateWeightedAmount(
+                vPoolTokenOutAmount,
                 ERC20(tPool.token1).balanceOf(jks[i]),
                 _vPool.sumTokenB
             );
@@ -214,13 +214,13 @@ contract vPool is IvPool {
                 IERC20(tPool.token0),
                 msg.sender,
                 jks[i],
-                ikTokenInBalance
+                ikTokenInAmount
             );
 
             IvPair(jks[i]).transferToken(
                 tPool.token1,
                 msg.sender,
-                jkTokenOutBalance
+                jkTokenOutAmount
             );
         }
     }
