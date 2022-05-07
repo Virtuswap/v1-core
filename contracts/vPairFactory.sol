@@ -64,14 +64,12 @@ contract vPairFactory is IvPairFactory {
             whitelist
         );
 
-        address pairAddress = address(newPair);
-
-        pairs[token0][token1] = pairAddress;
-        pairs[token1][token0] = pairAddress;
-        allPairs.push(pairAddress);
+        pairs[token0][token1] = address(newPair);
+        pairs[token1][token0] = address(newPair);
+        allPairs.push(address(newPair));
 
         emit PairCreated(
-            pairAddress,
+            address(newPair),
             msg.sender,
             address(this),
             token0,

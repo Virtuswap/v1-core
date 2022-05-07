@@ -94,6 +94,22 @@ library vSwapMath {
         return totalOut;
     }
 
+    function quote(
+        uint256 tokenABalance,
+        uint256 tokenBBalance,
+        uint256 fee,
+        uint256 amount,
+        bool calculateFees
+    ) public pure returns (uint256) {
+        // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
+        uint256 totalOut = ((tokenABalance * tokenBBalance) /
+            (tokenABalance - amount)) - tokenBBalance;
+
+        if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
+
+        return totalOut;
+    }
+
     function calculateLPTokensAmount(
         uint256 token0Amount,
         uint256 totalSupply,

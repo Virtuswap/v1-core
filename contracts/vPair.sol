@@ -13,9 +13,8 @@ contract vPair is IvPair, vSwapERC20 {
 
     address public immutable override token0;
     address public immutable override token1;
-    
-    uint256 public fee;
 
+    uint256 public fee;
 
     address[] public whitelist;
 
@@ -65,16 +64,19 @@ contract vPair is IvPair, vSwapERC20 {
             whitelistAllowance[whitelist[i]] = true;
     }
 
-    // function token0() external view returns (address) {
-    //     return token0;
-    // }
-
-    // function token1() external view returns (address) {
-    //     return token1;
-    // }
-
     function tokens() external view returns (address, address) {
         return (token0, token1);
+    }
+
+    function quote(uint256 amount) external view returns (uint256) {
+        return
+            vSwapMath.quote(
+                IERC20(token0).balanceOf(address(this)),
+                IERC20(token1).balanceOf(address(this)),
+                fee,
+                amount,
+                true
+            );
     }
 
     function getBelowReserve() external pure returns (uint256) {

@@ -9,3 +9,8 @@ struct VirtualPoolModel {
     uint256 sumTokenA;
     uint256 sumTokenB;
 }
+
+struct VirtualPoolRequest {
+    address[] iks;
+    address[] jks;
+}
