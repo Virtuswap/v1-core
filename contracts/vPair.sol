@@ -63,6 +63,7 @@ contract vPair is IvPair, vSwapERC20 {
         for (uint256 i = 0; i < whitelist.length; i++)
             whitelistAllowance[whitelist[i]] = true;
     }
+    
 
     function tokens() external view returns (address, address) {
         return (token0, token1);
