@@ -14,4 +14,24 @@ interface IvPairState {
     function token0() external view returns (address);
 
     function token1() external view returns (address);
+
+    function quote(address tokenIn, uint256 amount)
+        external
+        view
+        returns (uint256);
+
+    function swapNative(
+        address tokenIn,
+        uint256 amount,
+        uint256 minAmountOut,
+        address to
+    ) external;
+
+    function swapReserves(
+        address tokenIn,
+        address tokenOut,
+        uint256 amount,
+        uint256 minAmountOut,
+        address to
+    ) external;
 }
