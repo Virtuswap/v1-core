@@ -12,11 +12,4 @@ interface IvPoolActions {
         address[] memory jks,
         uint256 amount
     ) external;
-
-    function swapTest(
-        address tokenIn,
-        address pairAddress,
-        uint256 amount,
-        uint256 amountOut
-    ) external;
 }
