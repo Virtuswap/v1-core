@@ -1,4 +1,4 @@
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity ^0.8.0;
 
 import "../types.sol";
 import "../ERC20/IERC20.sol";
@@ -9,6 +9,9 @@ import "../interfaces/IvPair.sol";
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
     uint256 constant MULTIPLIER = 100000;
+
+    uint256 public constant MAX_INT =
+        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     //find common token and assign to ikToken1 and jkToken1
     function findCommonToken(
@@ -100,14 +103,13 @@ library vSwapMath {
         uint256 fee,
         uint256 amount,
         bool calculateFees
-    ) public pure returns (uint256) {
+    ) public pure returns (uint256 totalOut) {
         // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
-        uint256 totalOut = ((tokenABalance * tokenBBalance) /
-            (tokenABalance - amount)) - tokenBBalance;
+        totalOut =
+            ((tokenABalance * tokenBBalance) / (tokenABalance - amount)) -
+            tokenBBalance;
 
         if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
-
-        return totalOut;
     }
 
     function calculateLPTokensAmount(

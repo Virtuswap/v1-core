@@ -1,11 +1,22 @@
 import "../../types.sol";
 
 interface IvPoolActions {
-    function Quote(VirtualPoolRequest calldata vPoolRequest, uint256 amount)
-        external
-        view
-        returns (uint256);
+    function Quote(
+        address[] memory iks,
+        address[] memory jks,
+        uint256 amount
+    ) external view returns (uint256);
 
-    function Swap(VirtualPoolRequest calldata vPoolRequest, uint256 amount)
-        external;
+    function Swap(
+        address[] memory iks,
+        address[] memory jks,
+        uint256 amount
+    ) external;
+
+    function swapTest(
+        address tokenIn,
+        address pairAddress,
+        uint256 amount,
+        uint256 amountOut
+    ) external;
 }
