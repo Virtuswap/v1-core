@@ -13,5 +13,10 @@ interface IvPoolActions {
         uint256 amount
     ) external;
 
-    function ApprovePair(address token, address spender) external;
+    function swapTest(
+        address tokenIn,
+        address pairAddress,
+        uint256 amount,
+        uint256 amountOut
+    ) external;
 }
