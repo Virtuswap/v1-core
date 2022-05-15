@@ -166,9 +166,6 @@ contract vPool is IvPool {
         uint256 amount
     ) external {
         VirtualPoolModel memory _vPool = _calculateVirtualPool(iks, jks);
-
-        emit Debug("_vPool.tokenABalance", _vPool.tokenABalance);
-
         VirtualPoolModel memory _tPool = _calculateTotalPool(_vPool);
 
         uint256 amountOut = vSwapMath.quote(_tPool, amount, true);
