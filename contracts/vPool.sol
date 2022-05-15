@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
 import "./types.sol";
 import "./ERC20/IERC20.sol";
 import "./libraries/SafeERC20.sol";
@@ -149,8 +148,15 @@ contract vPool is IvPool {
     ) external {
         VirtualPoolModel memory _vPool = _calculateVirtualPool(iks, jks);
         VirtualPoolModel memory _tPool = _calculateTotalPool(_vPool);
-
         uint256 amountOut = vSwapMath.quote(_tPool, amount, true);
+
+        //collect amount from user
+        SafeERC20.safeTransferFrom(
+            IERC20(_tPool.token0),
+            msg.sender,
+            address(this),
+            amount
+        );
 
         if (_tPool.vPairAddress > address(0)) {
             uint256 vPairTokenInAmount = vSwapMath.calculateWeightedAmount(
@@ -165,30 +171,24 @@ contract vPool is IvPool {
                 _tPool.tokenBBalance
             );
 
-            SafeERC20.safeTransferFrom(
-                IERC20(_tPool.token0),
-                msg.sender,
-                _tPool.vPairAddress,
-                vPairTokenInAmount
-            );
-
-            IvPair(_tPool.vPairAddress).transferToken(
-                _tPool.token1,
-                msg.sender,
-                vPairTokenOutAmount
+            IvPair(_tPool.vPairAddress).swapNative(
+                _tPool.token0,
+                vPairTokenInAmount,
+                vPairTokenOutAmount,
+                msg.sender
             );
         }
-
-        uint256 vPoolTokenOutAmount = vSwapMath.calculateWeightedAmount(
-            amountOut,
-            _vPool.tokenBBalance,
-            _tPool.tokenBBalance
-        );
 
         uint256 vPoolTokenInAmount = vSwapMath.calculateWeightedAmount(
             amount,
             _vPool.tokenABalance,
             _tPool.tokenABalance
+        );
+
+        uint256 vPoolTokenOutAmount = vSwapMath.calculateWeightedAmount(
+            amountOut,
+            _vPool.tokenBBalance,
+            _tPool.tokenBBalance
         );
 
         for (uint256 i = 0; i < iks.length; i++) {
@@ -204,25 +204,108 @@ contract vPool is IvPool {
                 _vPool.sumTokenA
             );
 
-            uint256 jkTokenOutAmount = vSwapMath.calculateWeightedAmount(
-                vPoolTokenOutAmount,
-                ERC20(_tPool.token1).balanceOf(jks[i]),
-                _vPool.sumTokenB
-            );
+            // uint256 jkTokenOutAmount = vSwapMath.calculateWeightedAmount(
+            //     vPoolTokenOutAmount,
+            //     ERC20(_tPool.token1).balanceOf(jks[i]),
+            //     _vPool.sumTokenB
+            // );
 
-            SafeERC20.safeTransferFrom(
-                IERC20(_tPool.token0),
-                msg.sender,
-                jks[i],
-                ikTokenInAmount
-            );
-
-            IvPair(jks[i]).transferToken(
+            IvPair(jks[i]).swapReserves(
+                _tPool.token0,
                 _tPool.token1,
-                msg.sender,
-                jkTokenOutAmount
+                ikTokenInAmount,
+                0,
+                iks[i],
+                msg.sender
             );
         }
+    }
+
+    // function Swap(
+    //     address[] memory iks,
+    //     address[] memory jks,
+    //     uint256 amount
+    // ) external {
+    //     VirtualPoolModel memory _vPool = _calculateVirtualPool(iks, jks);
+    //     VirtualPoolModel memory _tPool = _calculateTotalPool(_vPool);
+
+    //     uint256 amountOut = vSwapMath.quote(_tPool, amount, true);
+
+    //     if (_tPool.vPairAddress > address(0)) {
+    //         uint256 vPairTokenInAmount = vSwapMath.calculateWeightedAmount(
+    //             amount,
+    //             IERC20(_tPool.token0).balanceOf(_tPool.vPairAddress),
+    //             _tPool.tokenABalance
+    //         );
+
+    //         uint256 vPairTokenOutAmount = vSwapMath.calculateWeightedAmount(
+    //             amountOut,
+    //             IERC20(_tPool.token1).balanceOf(_tPool.vPairAddress),
+    //             _tPool.tokenBBalance
+    //         );
+
+    //         SafeERC20.safeTransferFrom(
+    //             IERC20(_tPool.token0),
+    //             msg.sender,
+    //             _tPool.vPairAddress,
+    //             vPairTokenInAmount
+    //         );
+
+    //         IvPair(_tPool.vPairAddress).transferToken(
+    //             _tPool.token1,
+    //             msg.sender,
+    //             vPairTokenOutAmount
+    //         );
+    //     }
+
+    //     uint256 vPoolTokenOutAmount = vSwapMath.calculateWeightedAmount(
+    //         amountOut,
+    //         _vPool.tokenBBalance,
+    //         _tPool.tokenBBalance
+    //     );
+
+    //     uint256 vPoolTokenInAmount = vSwapMath.calculateWeightedAmount(
+    //         amount,
+    //         _vPool.tokenABalance,
+    //         _tPool.tokenABalance
+    //     );
+
+    //     for (uint256 i = 0; i < iks.length; i++) {
+    //         //enforce whitelist
+    //         require(
+    //             IvPair(iks[i]).isReserveAllowed(_tPool.token0) == true,
+    //             "VSWAP:RESERVE_NOT_WHITELISTED"
+    //         );
+
+    //         uint256 ikTokenInAmount = vSwapMath.calculateWeightedAmount(
+    //             vPoolTokenInAmount,
+    //             ERC20(_tPool.token0).balanceOf(iks[i]),
+    //             _vPool.sumTokenA
+    //         );
+
+    //         uint256 jkTokenOutAmount = vSwapMath.calculateWeightedAmount(
+    //             vPoolTokenOutAmount,
+    //             ERC20(_tPool.token1).balanceOf(jks[i]),
+    //             _vPool.sumTokenB
+    //         );
+
+    //         SafeERC20.safeTransferFrom(
+    //             IERC20(_tPool.token0),
+    //             msg.sender,
+    //             jks[i],
+    //             ikTokenInAmount
+    //         );
+
+    //         IvPair(jks[i]).transferToken(
+    //             _tPool.token1,
+    //             msg.sender,
+    //             jkTokenOutAmount
+    //         );
+    //     }
+    // }
+
+    function ApprovePair(address token, address spender) external onlyOwner {
+        IERC20(token).approve(spender, vSwapMath.MAX_INT);
     }
 
     function ChangeFactory(address _factory) external onlyOwner {

@@ -12,4 +12,6 @@ interface IvPoolActions {
         address[] memory jks,
         uint256 amount
     ) external;
+
+    function ApprovePair(address token, address spender) external;
 }

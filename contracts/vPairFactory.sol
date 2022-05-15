@@ -1,6 +1,5 @@
 pragma solidity ^0.8.0;
 
-
 import "./interfaces/IvPairFactory.sol";
 import "./vPair.sol";
 import "./ERC20/IERC20.sol";
@@ -62,6 +61,7 @@ contract vPairFactory is IvPairFactory {
             address(this),
             token0,
             token1,
+            0.03 ether,
             whitelist
         );
 
