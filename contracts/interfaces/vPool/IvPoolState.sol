@@ -1,5 +1,5 @@
 interface IvPoolState {
-    function ChangeFactory(address factory) external;
+    function changeFactory(address factory) external;
 
     function factory() external view returns (address);
 

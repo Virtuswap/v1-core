@@ -1,15 +1,13 @@
 import "../../types.sol";
 
 interface IvPoolActions {
-    function Quote(
-        address[] memory iks,
-        address[] memory jks,
-        uint256 amount
-    ) external view returns (uint256);
-
-    function Swap(
-        address[] memory iks,
-        address[] memory jks,
-        uint256 amount
+    function swap(
+        address[] calldata pools,
+        uint256[] calldata amountsIn,
+        uint256[] calldata amountsOut,
+        bool[] calldata isReserve,
+        address[] calldata iks,
+        address inputToken,
+        address outputToken
     ) external;
 }

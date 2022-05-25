@@ -26,10 +26,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     uint256 reserveRatio;
     uint256 maxReserveRatio;
 
-    uint32 public blockTimestampLast;
-    uint256 public price0CumulativeLast;
-    uint256 public price1CumulativeLast;
-
     mapping(address => bool) whitelistAllowance;
     mapping(address => uint256) reserves;
 
@@ -99,17 +95,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     }
 
     function _update(uint256 balance0, uint256 balance1) private {
-        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
-        uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-
-        if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
-            price0CumulativeLast += (reserve1 / reserve0) * timeElapsed;
-            price1CumulativeLast += (reserve0 / reserve1) * timeElapsed;
-        }
-
         reserve0 = balance0;
         reserve1 = balance1;
-        blockTimestampLast = blockTimestamp;
         emit Sync(balance0, balance1);
     }
 
@@ -121,16 +108,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return (token0, token1);
     }
 
-    function getNativeReserves()
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        return (reserve0, reserve1, blockTimestampLast);
+    function getNativeReserves() external view returns (uint256, uint256) {
+        return (reserve0, reserve1);
     }
 
     function quote(address tokenIn, uint256 amount)
@@ -209,8 +188,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP:INVALID_OUTTOKEN"
         );
 
-        require(ikPairAddress > address(0), "VSWAP:INVALID_IKPOOL");
-
         (address _ikToken0, address _ikToken1) = IvPair(ikPairAddress).tokens();
         (address _jkToken0, address _jkToken1) = (token0, token1);
 
@@ -218,6 +195,10 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         (_ikToken0, _ikToken1, _jkToken0, _jkToken1) = vSwapMath
             .findCommonToken(_ikToken0, _ikToken1, _jkToken0, _jkToken1);
 
+        require(
+            ikPairAddress > address(0) && _ikToken1 == _jkToken1,
+            "VSWAP:INVALID_IKPOOL"
+        );
         require(_jkToken0 == tokenOut, "VSWAP_INVALID_TOKENOUT");
 
         uint256 tokenInBalance = IERC20(tokenIn).balanceOf(address(this));

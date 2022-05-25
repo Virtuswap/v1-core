@@ -48,9 +48,16 @@ module.exports = {
             port: 8545, // Standard Ethereum port (default: none)
             network_id: "*", // Any network (default: none)
         },
-        testnet: {
+        mumbai: {
             provider: () => new HDWalletProvider('7dd3c94a17376ba8651e5c159b6b759a4f549f368dc81f3e105101a4ecdb7783', `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`),
             network_id: 80001,
+            confirmations: 0,
+            timeoutBlocks: 10,
+            skipDryRun: true
+        },
+        ethtest: {
+            provider: () => new HDWalletProvider('7dd3c94a17376ba8651e5c159b6b759a4f549f368dc81f3e105101a4ecdb7783', `https://rinkeby.infura.io/v3/6921fb847fd14ab39f3ac23e241e51fc`),
+            network_id: 4,
             confirmations: 0,
             timeoutBlocks: 10,
             skipDryRun: true
