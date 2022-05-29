@@ -17,13 +17,13 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
 
     uint256 public override fee;
 
-    uint256 reserve0;
-    uint256 reserve1;
+    uint256 public override reserve0;
+    uint256 public override reserve1;
 
     address[] public whitelist;
 
     uint256 belowReserve;
-    uint256 reserveRatio;
+    uint256 public override reserveRatio;
     uint256 maxReserveRatio;
 
     mapping(address => bool) whitelistAllowance;
@@ -112,6 +112,10 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return (reserve0, reserve1);
     }
 
+    function getrReserve(address token) external view returns (uint256) {
+        return reserves[token];
+    }
+
     function quote(address tokenIn, uint256 amount)
         external
         view
@@ -132,20 +136,19 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
 
+        uint256 balance0Subst = balance0 - reserve0;
+        uint256 balance1Subst = balance1 - reserve1;
+
         require(
-            balance0 - reserve0 > 0 || balance1 - reserve1 > 0,
+            balance0Subst > 0 || balance1Subst > 0,
             "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
         );
-
-        uint256 balance0Subst = balance0 - reserve0;
 
         (address _inputToken, address _outputToken) = balance0Subst > 0
             ? (token0, token1)
             : (token1, token0);
 
-        uint256 _amountIn = balance0Subst > 0
-            ? balance0Subst
-            : balance1 - reserve1;
+        uint256 _amountIn = balance0Subst > 0 ? balance0Subst : balance1Subst;
 
         (uint256 _reserveIn, uint256 _reserveOut) = _getSortedReservesBalances(
             _inputToken
@@ -177,7 +180,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         uint256 minAmountOut,
         address ikPairAddress,
         address to
-    ) external noDelegateCall {
+    ) external noDelegateCall lock {
         require(
             whitelistAllowance[tokenIn] == true,
             "VSWAP:TOKEN_NOT_WHITELISTED"
@@ -199,6 +202,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             ikPairAddress > address(0) && _ikToken1 == _jkToken1,
             "VSWAP:INVALID_IKPOOL"
         );
+
+        emit DebugA("_jkToken0", _jkToken0);
         require(_jkToken0 == tokenOut, "VSWAP_INVALID_TOKENOUT");
 
         uint256 tokenInBalance = IERC20(tokenIn).balanceOf(address(this));
@@ -216,7 +221,11 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         // );
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, _amountOut);
-        _updateReserves(tokenIn, tokenInBalance + amountIn);
+        _updateReserves(tokenIn, tokenInBalance);
+        _update(
+            IERC20(token0).balanceOf(address(this)),
+            IERC20(token1).balanceOf(address(this))
+        );
     }
 
     function getBelowReserve() external pure returns (uint256) {

@@ -32,17 +32,56 @@ contract vPool is IvPool {
         WETH = _WETH;
     }
 
+    function testNative(
+        address poolAddress,
+        address inputToken,
+        uint256 amount
+    ) external {
+        SafeERC20.safeTransferFrom(
+            IERC20(inputToken),
+            msg.sender,
+            poolAddress,
+            amount
+        );
+
+        IvPair(poolAddress).swapNative(0, msg.sender);
+    }
+
+    function testReserve(
+        address poolAddress,
+        address tokenIn,
+        address tokenOut,
+        uint256 amount,
+        uint256 minAmountOut,
+        address ikPairAddress,
+        address to
+    ) external {
+        SafeERC20.safeTransferFrom(
+            IERC20(tokenIn),
+            msg.sender,
+            poolAddress,
+            amount
+        );
+
+        IvPair(poolAddress).swapReserves(
+            tokenIn,
+            tokenOut,
+            minAmountOut,
+            ikPairAddress,
+            to
+        );
+    }
+
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
-        bool[] calldata isReserve,
-        address[] memory iks,
+        address[] calldata iks, 
         address inputToken,
         address outputToken
     ) external {
         for (uint256 i = 0; i < pools.length; i++) {
-            if (!isReserve[i]) {
+            if (iks[i] == address(0)) {
                 //real pool
                 SafeERC20.safeTransferFrom(
                     IERC20(inputToken),

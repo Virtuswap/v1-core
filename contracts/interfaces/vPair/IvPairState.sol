@@ -5,6 +5,12 @@ interface IvPairState {
 
     function token1() external view returns (address);
 
+    function reserve0() external view returns (uint256);
+
+    function reserve1() external view returns (uint256);
+
+    function reserveRatio() external view returns (uint256);
+
     function quote(address tokenIn, uint256 amount)
         external
         view
