@@ -10,29 +10,15 @@ library vSwapMath {
     uint256 constant EPSILON = 1 wei;
 
     //find common token and assign to ikToken1 and jkToken1
-    function findCommonToken(
-        address ikToken0,
-        address ikToken1,
+    function orderTokens(
+        address tokenInput,
         address jkToken0,
         address jkToken1
-    )
-        public
-        pure
-        returns (
-            address,
-            address,
-            address,
-            address
-        )
-    {
+    ) public pure returns (address, address) {
         return
-            (ikToken0 == jkToken0)
-                ? (ikToken1, ikToken0, jkToken1, jkToken0)
-                : (ikToken0 == jkToken1)
-                ? (ikToken1, ikToken0, jkToken0, jkToken1)
-                : (ikToken1 == jkToken0)
-                ? (ikToken0, ikToken1, jkToken1, jkToken0)
-                : (ikToken0, ikToken1, jkToken0, jkToken1); //default
+            tokenInput == jkToken0
+                ? (jkToken0, jkToken1)
+                : (jkToken1, jkToken0);
     }
 
     function quote(

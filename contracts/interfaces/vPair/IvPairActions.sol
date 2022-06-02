@@ -5,7 +5,6 @@ interface IvPairActions {
         address tokenIn,
         address tokenOut,
         uint256 minAmountOut,
-        address ikPairAddress,
         address to
     ) external;
 

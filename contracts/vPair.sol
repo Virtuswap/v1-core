@@ -178,7 +178,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         address tokenIn,
         address tokenOut,
         uint256 minAmountOut,
-        address ikPairAddress,
         address to
     ) external noDelegateCall lock {
         require(
@@ -191,37 +190,46 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP:INVALID_OUTTOKEN"
         );
 
-        (address _ikToken0, address _ikToken1) = IvPair(ikPairAddress).tokens();
-        (address _jkToken0, address _jkToken1) = (token0, token1);
-
-        //find common token
-        (_ikToken0, _ikToken1, _jkToken0, _jkToken1) = vSwapMath
-            .findCommonToken(_ikToken0, _ikToken1, _jkToken0, _jkToken1);
-
-        require(
-            ikPairAddress > address(0) && _ikToken1 == _jkToken1,
-            "VSWAP:INVALID_IKPOOL"
-        );
-
-        emit DebugA("_jkToken0", _jkToken0);
-        require(_jkToken0 == tokenOut, "VSWAP_INVALID_TOKENOUT");
-
-        uint256 tokenInBalance = IERC20(tokenIn).balanceOf(address(this));
-        uint256 amountIn = tokenInBalance - reserves[tokenIn];
+        uint256 amountIn = IERC20(tokenIn).balanceOf(address(this)) -
+            reserves[tokenIn];
 
         require(amountIn > 0, "VSWAP: INSUFFICIENT_INPUT_AMOUNT");
 
-        uint256 ikAmountOut = IvPair(ikPairAddress).quote(tokenIn, amountIn);
+        //find oracle pools
+        address native0Oracle = IvPairFactory(factory).getPair(tokenIn, token0); //AC
+        address native1Oracle = IvPairFactory(factory).getPair(tokenIn, token1); //BC
 
-        uint256 _amountOut = this.quote(_ikToken1, ikAmountOut);
+        require(
+            native0Oracle > address(0) || native1Oracle > address(0),
+            "VSWAP:NO_ORACLE_POOL_TOKENIN"
+        );
 
-        // require(
-        //     _amountOut >= minAmountOut,
-        //     "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT"
-        // );
+        uint256 token0bid = 0;
+        uint256 token1bid = 0;
 
-        SafeERC20.safeTransfer(IERC20(tokenOut), to, _amountOut);
-        _updateReserves(tokenIn, tokenInBalance);
+        if (native0Oracle > address(0))
+            token0bid = IvPair(native0Oracle).quote(tokenIn, amountIn);
+        if (native1Oracle > address(0))
+            token1bid = IvPair(native1Oracle).quote(tokenIn, amountIn);
+
+        uint256 finalBid = 0;
+        if (token0bid > 0 && token1bid > 0) {
+            // get lower bid to prevent malicious pools
+            finalBid = (token0bid / token1bid > reserve0 / reserve1)
+                ? token1bid
+                : token0bid;
+        } else {
+            finalBid = token1bid == 0 ? token0bid : token1bid;
+        }
+
+        //take fees TBD
+        finalBid = finalBid * fee;
+
+        require(finalBid >= minAmountOut, "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT");
+
+        SafeERC20.safeTransfer(IERC20(tokenOut), to, finalBid);
+        
+        _updateReserves(tokenIn, reserves[tokenIn] + amountIn);
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this))

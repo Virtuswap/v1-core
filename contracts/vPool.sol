@@ -53,7 +53,6 @@ contract vPool is IvPool {
         address tokenOut,
         uint256 amount,
         uint256 minAmountOut,
-        address ikPairAddress,
         address to
     ) external {
         SafeERC20.safeTransferFrom(
@@ -63,26 +62,19 @@ contract vPool is IvPool {
             amount
         );
 
-        IvPair(poolAddress).swapReserves(
-            tokenIn,
-            tokenOut,
-            minAmountOut,
-            ikPairAddress,
-            to
-        );
+        IvPair(poolAddress).swapReserves(tokenIn, tokenOut, minAmountOut, to);
     }
 
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
-        address[] calldata iks, 
+        bool[] calldata isReserve,
         address inputToken,
         address outputToken
     ) external {
         for (uint256 i = 0; i < pools.length; i++) {
-            if (iks[i] == address(0)) {
-                //real pool
+            if (!isReserve[i]) {
                 SafeERC20.safeTransferFrom(
                     IERC20(inputToken),
                     msg.sender,
@@ -103,7 +95,6 @@ contract vPool is IvPool {
                     inputToken,
                     outputToken,
                     amountsOut[i],
-                    iks[i],
                     msg.sender
                 );
             }

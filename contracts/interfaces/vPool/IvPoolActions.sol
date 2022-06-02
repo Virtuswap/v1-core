@@ -5,7 +5,7 @@ interface IvPoolActions {
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
-        address[] calldata iks,
+        bool[] calldata isReserve,
         address inputToken,
         address outputToken
     ) external;
