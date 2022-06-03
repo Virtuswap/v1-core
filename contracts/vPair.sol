@@ -204,22 +204,27 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP:NO_ORACLE_POOL_TOKENIN"
         );
 
-        uint256 token0bid = 0;
-        uint256 token1bid = 0;
-
-        if (native0Oracle > address(0))
-            token0bid = IvPair(native0Oracle).quote(tokenIn, amountIn);
-        if (native1Oracle > address(0))
-            token1bid = IvPair(native1Oracle).quote(tokenIn, amountIn);
-
         uint256 finalBid = 0;
-        if (token0bid > 0 && token1bid > 0) {
-            // get lower bid to prevent malicious pools
-            finalBid = (token0bid / token1bid > reserve0 / reserve1)
-                ? token1bid
-                : token0bid;
+        address oraclePool;
+        if (native0Oracle > address(0) && native1Oracle > address(0)) {
+            uint256 token0bid = IvPair(native0Oracle).quote(tokenIn, amountIn);
+            uint256 token1bid = IvPair(native1Oracle).quote(tokenIn, amountIn);
+
+            if (token0bid > 0 && token1bid > 0) {
+                // get lower bid to prevent malicious pools
+                (oraclePool, finalBid) = (token0bid / token1bid >
+                    reserve0 / reserve1)
+                    ? (native1Oracle, token1bid)
+                    : (native0Oracle, token0bid);
+            } else {
+                (oraclePool, finalBid) = token1bid == 0
+                    ? (native0Oracle, token0bid)
+                    : (native1Oracle, token1bid);
+            }
         } else {
-            finalBid = token1bid == 0 ? token0bid : token1bid;
+            finalBid = (native0Oracle == address(0))
+                ? IvPair(native1Oracle).quote(tokenIn, amountIn)
+                : IvPair(native0Oracle).quote(tokenIn, amountIn);
         }
 
         //take fees TBD
@@ -228,7 +233,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         require(finalBid >= minAmountOut, "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT");
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, finalBid);
-        
+
         _updateReserves(tokenIn, reserves[tokenIn] + amountIn);
         _update(
             IERC20(token0).balanceOf(address(this)),
