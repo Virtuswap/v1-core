@@ -2,19 +2,19 @@ const ERC20 = artifacts.require("./ERC20/vSwapERC20TEST.sol");
 
 module.exports = function (deployer) {
   const tokens = [
-    { name: "Bitcoin", sym: "BTC" }, //0xEC13ACCFD057aD450e3f6e981650F4377307feC3
-    { name: "Ethereum", sym: "ETH" }, //0x2f8c9D79954E19CDbE0e7DD9b73f0BBeb8d64C25
-    { name: "USDT", sym: "USDT" }, //0x352c4697e9b79159e0997F5b6CFD7CaB8dF89A99
-    { name: "USDC", sym: "USDC" }, //0x6774968eb96DE494Cd4D95c65ce45Fbc53e8c12b
-    { name: "Link", sym: "Link" }, //0x0C89a89b4FAc6B7B28611F4f75647a4BD25331a7
-    { name: "HEX", sym: "HEX" }, //0xaAb8C504F4bF00d91Aa795D9b131474e59a1913E
-    { name: "Luna", sym: "LUNA" }, //0xB0B93e00D05Fb506A2ad9A3799ee036621A7b791
-    { name: "Wrapped Doge", sym: "WDOGE" }, //0xee37f7EF0989403486F6cc71DeFa0c072FCf9EB8
-    { name: "Maker", sym: "MKR" }, //0xF1c1A88210a9b80790e3EBeE80e42b12BC564683
-    { name: "Matic", sym: "MATIC" }, //0xBe2B00E821Ff1E1948e3749F75aa30FBAa8944f5
-    { name: "SAND", sym: "SAND" }, //0xc1648592E61A937C72C954a835bE64f0421680B2
-    { name: "1INCH", sym: "1INCH" }, //0x70D656350320558658eA8d57095D35Fb29046B90
-    { name: "AAVE", sym: "AAVE" }, //0x43cd5542EcFA031264DD3dcE6Dbf9289169D9D49
+    { name: "Bitcoin", sym: "BTC" }, //0xa6dd9AdD507701da0f5f279a0462fDd2f5A1E13C
+    { name: "Ethereum", sym: "ETH" }, //0xaCD5165C3fC730c536cF255454fD1F5E01C36d80
+    { name: "USDT", sym: "USDT" }, //0xF9fA134DBeD8017ca31cf85152E91C4Ee9A3896E
+    { name: "USDC", sym: "USDC" }, //0xdE9F3aFcDb060c939Ded87b7b851E005515b1DE9
+    { name: "Link", sym: "Link" }, //0x707E8D82137bEB2b02EF69f7C1a662a7Aa50F43D
+    { name: "HEX", sym: "HEX" }, //0x8b749cdd47d641DEC724bc2cBCeD5cdad7166DD0
+    { name: "Luna", sym: "LUNA" }, //0x8A4641c79c2e58738249e80397EeC2DF6Bf56D8a
+    { name: "Wrapped Doge", sym: "WDOGE" }, //0x3705E8C504117F01A4D866F4E5FA5551bE45Ef63
+    { name: "Maker", sym: "MKR" }, //0xcb7FE49C52dad5aBc609c4E308175b39e3d67a1d
+    { name: "Matic", sym: "MATIC" }, //0x3EF1a03535Bc5e337aAB6Dc1AF8f6e0f14B8c717
+    { name: "SAND", sym: "SAND" }, //0xC5CEc566EA589F6b6a61CcC2B2e1dC29B8885208
+    { name: "1INCH", sym: "1INCH" }, //0x34D99A867d4F0a102bd55d62Aea29Fbfb35d4274
+    { name: "AAVE", sym: "AAVE" }, //0x0fd06DDA77C24e6B6c290F1aF51658d13E560a15
   ];
 
   tokens.forEach((token) => {

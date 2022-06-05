@@ -21,7 +21,7 @@ contract vSwapERC20TEST is IvSwapERC20 {
     ) {
         name = _name;
         symbol = _sym;
-        totalSupply = _totalSupply;
+        _mint(msg.sender, _totalSupply);
     }
 
     function _mint(address to, uint256 value) internal {
