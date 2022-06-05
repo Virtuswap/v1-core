@@ -116,16 +116,17 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return reserves[token];
     }
 
-    function quote(address tokenIn, uint256 amount)
-        external
-        view
-        returns (uint256)
-    {
+    function quote(
+        address tokenIn,
+        uint256 amount,
+        bool calculateFees
+    ) external view returns (uint256) {
         (uint256 reserveIn, uint256 reserveOut) = _getSortedReservesBalances(
             tokenIn
         );
 
-        return vSwapMath.quote(reserveIn, reserveOut, fee, amount, true);
+        return
+            vSwapMath.quote(reserveIn, reserveOut, fee, amount, calculateFees);
     }
 
     function swapNative(uint256 minAmountOut, address to)
@@ -252,6 +253,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         );
     }
 
+    //Receive reserve token
+    //Out native token
     function swapReserves(
         address tokenIn,
         address tokenOut,
@@ -285,8 +288,16 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         uint256 finalb = 0;
         address selectedToken;
         if (native0Oracle > address(0) && native1Oracle > address(0)) {
-            uint256 token0bid = IvPair(native0Oracle).quote(tokenIn, amountIn);
-            uint256 token1bid = IvPair(native1Oracle).quote(tokenIn, amountIn);
+            uint256 token0bid = IvPair(native0Oracle).quote(
+                tokenIn,
+                amountIn,
+                false
+            );
+            uint256 token1bid = IvPair(native1Oracle).quote(
+                tokenIn,
+                amountIn,
+                false
+            );
 
             if (token0bid > 0 && token1bid > 0) {
                 // get lower bid to prevent malicious pools
@@ -301,8 +312,14 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             }
         } else {
             (selectedToken, finalb) = (native0Oracle == address(0))
-                ? (token0, IvPair(native1Oracle).quote(tokenIn, amountIn))
-                : (token1, IvPair(native0Oracle).quote(tokenIn, amountIn));
+                ? (
+                    token0,
+                    IvPair(native1Oracle).quote(tokenIn, amountIn, false)
+                )
+                : (
+                    token1,
+                    IvPair(native0Oracle).quote(tokenIn, amountIn, false)
+                );
         }
 
         //selected token is output token
