@@ -1,12 +1,13 @@
 import "../../types.sol";
 
-interface IvPoolActions {
+interface IvRouterActions {
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
         address inputToken,
-        address outputToken
+        address outputToken,
+        address to
     ) external;
 
     function testNative(

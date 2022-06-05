@@ -1,4 +1,4 @@
-interface IvPoolState {
+interface IvRouterState {
     function changeFactory(address factory) external;
 
     function factory() external view returns (address);

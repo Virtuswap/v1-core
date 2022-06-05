@@ -7,10 +7,10 @@ import "./libraries/SafeERC20.sol";
 import "./libraries/vSwapMath.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
-import "./interfaces/IvPool.sol";
+import "./interfaces/IvRouter.sol";
 import "./interfaces/IWETH.sol";
 
-contract vPool is IvPool {
+contract vRouter is IvRouter {
     address public override factory;
     address public immutable override owner;
     address public immutable override WETH;
@@ -75,7 +75,8 @@ contract vPool is IvPool {
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
         address inputToken,
-        address outputToken
+        address outputToken,
+        address to
     ) external {
         //check for real pool
         address rPool = IvPairFactory(factory).getPair(inputToken, outputToken);
@@ -89,7 +90,7 @@ contract vPool is IvPool {
                     amountsIn[i]
                 );
 
-                IvPair(pools[i]).swapNative(amountsOut[i], msg.sender);
+                IvPair(pools[i]).swapNative(amountsOut[i], to);
             } else {
                 SafeERC20.safeTransferFrom(
                     IERC20(inputToken),
@@ -102,7 +103,7 @@ contract vPool is IvPool {
                     inputToken,
                     outputToken,
                     amountsOut[i],
-                    msg.sender
+                    to
                 );
             }
         }
@@ -166,34 +167,34 @@ contract vPool is IvPool {
     //     _swap(amounts, path, to);
     // }
 
-    function swapExactETHForTokens(
-        address[] calldata pools,
-        uint256[] calldata amountsIn,
-        uint256[] calldata amountsOut,
-        address outputToken,
-        uint256 deadline
-    )
-        external
-        payable
-        virtual
-        override
-        ensure(deadline)
-        returns (uint256[] memory amounts)
-    {
-        amounts = UniswapV2Library.getAmountsOut(factory, msg.value, path);
-        require(
-            amounts[amounts.length - 1] >= amountOutMin,
-            "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
-        );
-        IWETH(WETH).deposit{value: amounts[0]}();
-        assert(
-            IWETH(WETH).transfer(
-                UniswapV2Library.pairFor(factory, path[0], path[1]),
-                amounts[0]
-            )
-        );
-        _swap(amounts, path, to);
-    }
+    // function swapExactETHForTokens(
+    //     address[] calldata pools,
+    //     uint256[] calldata amountsIn,
+    //     uint256[] calldata amountsOut,
+    //     address outputToken,
+    //     uint256 deadline
+    // )
+    //     external
+    //     payable
+    //     virtual
+    //     override
+    //     ensure(deadline)
+    //     returns (uint256[] memory amounts)
+    // {
+    //     amounts = UniswapV2Library.getAmountsOut(factory, msg.value, path);
+    //     require(
+    //         amounts[amounts.length - 1] >= amountOutMin,
+    //         "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
+    //     );
+    //     IWETH(WETH).deposit{value: amounts[0]}();
+    //     assert(
+    //         IWETH(WETH).transfer(
+    //             UniswapV2Library.pairFor(factory, path[0], path[1]),
+    //             amounts[0]
+    //         )
+    //     );
+    //     _swap(amounts, path, to);
+    // }
 
     // function swapTokensForExactETH(
     //     uint256 amountOut,

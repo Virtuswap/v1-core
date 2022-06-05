@@ -1,4 +1,4 @@
-const vPool = artifacts.require("vPool");
+const vRouter = artifacts.require("vRouter");
 const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapMath = artifacts.require("vSwapMath");
@@ -51,14 +51,14 @@ module.exports = async function (deployer) {
   await deployer.link(vSwapMath, vPairFactory);
   await deployer.deploy(vPairFactory);
 
-  await deployer.link(Address, vPool);
-  await deployer.link(SafeERC20, vPool);
-  await deployer.link(vSwapMath, vPool);
-  await deployer.deploy(vPool, vPairFactory.networks[80001].address, WETH);
+  await deployer.link(Address, vRouter);
+  await deployer.link(SafeERC20, vRouter);
+  await deployer.link(vSwapMath, vRouter);
+  await deployer.deploy(vRouter, vPairFactory.networks[80001].address, WETH);
 
   var sql = utils.generateVersionsSQL(
-    vPool.networks[80001].address,
-    vPool.abi,
+    vRouter.networks[80001].address,
+    vRouter.abi,
     "vpool"
   );
   await queryDB(sql);

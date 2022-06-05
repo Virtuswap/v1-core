@@ -175,83 +175,97 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         _update(_reserve0, _reserve1);
     }
 
-    //Receive native token
-    //Out reserve token
-    function exchangeReserves(
-        address tokenOut,
-        uint256 minAmountOut,
-        address to
-    ) external noDelegateCall lock {
-        uint256 balance0Subst = IERC20(token0).balanceOf(address(this)) -
-            reserve0;
-        uint256 balance1Subst = IERC20(token1).balanceOf(address(this)) -
-            reserve1;
+    // //Receive native token
+    // //Out reserve token
+    // function exchangeReserves(
+    //     address tokenOut,
+    //     uint256 minAmountOut,
+    //     address to
+    // ) external noDelegateCall lock {
+    //     uint256 balance0Subst = IERC20(token0).balanceOf(address(this)) -
+    //         reserve0;
+    //     uint256 balance1Subst = IERC20(token1).balanceOf(address(this)) -
+    //         reserve1;
 
-        require(
-            balance0Subst > 0 || balance1Subst > 0,
-            "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
-        );
+    //     require(
+    //         balance0Subst > 0 || balance1Subst > 0,
+    //         "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
+    //     );
 
-        (address _inputToken, uint256 _amountIn) = balance0Subst > 0
-            ? (token0, balance0Subst)
-            : (token1, balance1Subst);
+    //     (address _inputToken, uint256 _amountIn) = balance0Subst > 0
+    //         ? (token0, balance0Subst)
+    //         : (token1, balance1Subst);
 
-        //find oracle pools
-        address native0Oracle = IvPairFactory(factory).getPair(
-            tokenOut,
-            token0
-        );
-        address native1Oracle = IvPairFactory(factory).getPair(
-            tokenOut,
-            token1
-        );
+    //     //find oracle pools
+    //     address native0Oracle = IvPairFactory(factory).getPair(
+    //         tokenOut,
+    //         token0
+    //     );
+    //     address native1Oracle = IvPairFactory(factory).getPair(
+    //         tokenOut,
+    //         token1
+    //     );
 
-        require(
-            native0Oracle > address(0) || native1Oracle > address(0),
-            "VSWAP:NO_ORACLE_POOL"
-        );
+    //     require(
+    //         native0Oracle > address(0) || native1Oracle > address(0),
+    //         "VSWAP:NO_ORACLE_POOL"
+    //     );
 
-        uint256 finalb = 0;
-        address selectedToken;
-        if (native0Oracle > address(0) && native1Oracle > address(0)) {
-            uint256 token0bid = IvPair(native0Oracle).quote(token0, _amountIn);
-            uint256 token1bid = IvPair(native1Oracle).quote(token1, _amountIn);
+    //     uint256 finalb = 0;
+    //     address selectedToken;
+    //     if (native0Oracle > address(0) && native1Oracle > address(0)) {
+    //         uint256 token0bid = IvPair(native0Oracle).quote(
+    //             token0,
+    //             _amountIn,
+    //             false
+    //         );
+    //         uint256 token1bid = IvPair(native1Oracle).quote(
+    //             token1,
+    //             _amountIn,
+    //             false
+    //         );
 
-            if (token0bid > 0 && token1bid > 0) {
-                // get lower bid to prevent malicious pools
-                (selectedToken, finalb) = (((token0bid / token1bid) * 1000) >=
-                    ((reserve0 / reserve1) * 1000))
-                    ? (token1, token1bid)
-                    : (token0, token0bid);
-            } else {
-                (selectedToken, finalb) = token1bid == 0
-                    ? (token0, token0bid)
-                    : (token1, token1bid);
-            }
-        } else {
-            (selectedToken, finalb) = (native0Oracle == address(0))
-                ? (token0, IvPair(native1Oracle).quote(token1, _amountIn))
-                : (token1, IvPair(native0Oracle).quote(token0, _amountIn));
-        }
+    //         if (token0bid > 0 && token1bid > 0) {
+    //             // get lower bid to prevent malicious pools
+    //             (selectedToken, finalb) = (((token0bid / token1bid) * 1000) >=
+    //                 ((reserve0 / reserve1) * 1000))
+    //                 ? (token1, token1bid)
+    //                 : (token0, token0bid);
+    //         } else {
+    //             (selectedToken, finalb) = token1bid == 0
+    //                 ? (token0, token0bid)
+    //                 : (token1, token1bid);
+    //         }
+    //     } else {
+    //         (selectedToken, finalb) = (native0Oracle == address(0))
+    //             ? (
+    //                 token0,
+    //                 IvPair(native1Oracle).quote(token1, _amountIn, false)
+    //             )
+    //             : (
+    //                 token1,
+    //                 IvPair(native0Oracle).quote(token0, _amountIn, false)
+    //             );
+    //     }
 
-        //selected token is output token
-        if (tokenOut != selectedToken) {
-            (uint256 _reserve0, uint256 _reserve1) = _getSortedReservesBalances(
-                selectedToken
-            );
-            finalb = vSwapMath.quote(_reserve0, _reserve1, fee, finalb, true);
-        }
+    //     //selected token is output token
+    //     if (tokenOut != selectedToken) {
+    //         (uint256 _reserve0, uint256 _reserve1) = _getSortedReservesBalances(
+    //             selectedToken
+    //         );
+    //         finalb = vSwapMath.quote(_reserve0, _reserve1, fee, finalb, true);
+    //     }
 
-        // require(finalb >= minAmountOut, "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT");
+    //     // require(finalb >= minAmountOut, "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT");
 
-        SafeERC20.safeTransfer(IERC20(tokenOut), to, finalb);
+    //     SafeERC20.safeTransfer(IERC20(tokenOut), to, finalb);
 
-        _updateReserves(tokenOut, reserves[tokenOut] - finalb);
-        _update(
-            IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
-        );
-    }
+    //     _updateReserves(tokenOut, reserves[tokenOut] - finalb);
+    //     _update(
+    //         IERC20(token0).balanceOf(address(this)),
+    //         IERC20(token1).balanceOf(address(this))
+    //     );
+    // }
 
     //Receive reserve token
     //Out native token
