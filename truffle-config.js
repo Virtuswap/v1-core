@@ -56,7 +56,7 @@ module.exports = {
           `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`
         ),
       network_id: 80001,
-      gasPrice: 35000000000,
+      gasPrice: 40000000000,
       confirmations: 0,
       timeoutBlocks: 10,
       skipDryRun: true,

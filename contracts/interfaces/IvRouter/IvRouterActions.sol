@@ -5,6 +5,7 @@ interface IvRouterActions {
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
+        address[] calldata iks,
         address inputToken,
         address outputToken,
         address to
@@ -13,15 +14,18 @@ interface IvRouterActions {
     function testNative(
         address poolAddress,
         address inputToken,
-        uint256 amount
+        address outputToken,
+        uint256 amount,
+        bytes calldata data
     ) external;
 
     function testReserve(
         address poolAddress,
         address tokenIn,
-        address tokenOut,
         uint256 amount,
         uint256 minAmountOut,
-        address to
+        address ikPool,
+        address to,
+        bytes calldata data
     ) external;
 }

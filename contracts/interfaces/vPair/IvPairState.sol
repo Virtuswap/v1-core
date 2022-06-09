@@ -17,5 +17,5 @@ interface IvPairState {
         bool calculateFees
     ) external view returns (uint256);
 
-    function getNativeReserves() external view returns (uint256, uint256);
+    // function getNativeReserves() external view returns (uint256, uint256);
 }

@@ -8,9 +8,10 @@ import "./libraries/vSwapMath.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvRouter.sol";
+import "./interfaces/IvSwapCallee.sol";
 import "./interfaces/IWETH.sol";
 
-contract vRouter is IvRouter {
+contract vRouter is IvRouter, IvSwapCallee {
     address public override factory;
     address public immutable override owner;
     address public immutable override WETH;
@@ -37,10 +38,37 @@ contract vRouter is IvRouter {
         WETH = _WETH;
     }
 
+    function vSwapcallee(
+        address sender,
+        uint256 amount,
+        bytes memory data
+    ) external virtual {
+        address inputToken = abi.decode(data, (address));
+
+        SafeERC20.safeTransferFrom(
+            IERC20(inputToken),
+            msg.sender,
+            sender,
+            amount
+        );
+    }
+
+    function testFlashSwap(
+        address poolAddress,
+        address inputToken,
+        address outputToken,
+        uint256 amount
+    ) external {
+        bytes memory data = abi.encodePacked(inputToken);
+        IvPair(poolAddress).swapNative(0, outputToken, msg.sender, data);
+    }
+
     function testNative(
         address poolAddress,
         address inputToken,
-        uint256 amount
+        address outputToken,
+        uint256 amount,
+        bytes calldata data
     ) external {
         SafeERC20.safeTransferFrom(
             IERC20(inputToken),
@@ -48,17 +76,17 @@ contract vRouter is IvRouter {
             poolAddress,
             amount
         );
-
-        IvPair(poolAddress).swapNative(0, msg.sender);
+        IvPair(poolAddress).swapNative(0, outputToken, msg.sender, data);
     }
 
     function testReserve(
         address poolAddress,
         address tokenIn,
-        address tokenOut,
         uint256 amount,
         uint256 minAmountOut,
-        address to
+        address ikPool,
+        address to,
+        bytes calldata data
     ) external {
         SafeERC20.safeTransferFrom(
             IERC20(tokenIn),
@@ -67,21 +95,21 @@ contract vRouter is IvRouter {
             amount
         );
 
-        IvPair(poolAddress).swapReserves(tokenIn, tokenOut, minAmountOut, to);
+        IvPair(poolAddress).swapReserves(minAmountOut, ikPool, to, data);
     }
 
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
+        address[] calldata iks,
         address inputToken,
         address outputToken,
         address to
     ) external {
         //check for real pool
-        address rPool = IvPairFactory(factory).getPair(inputToken, outputToken);
         for (uint256 i = 0; i < pools.length; i++) {
-            if (pools[i] == rPool && rPool > address(0)) {
+            if (iks[i] > address(0)) {
                 // REAL POOL
                 SafeERC20.safeTransferFrom(
                     IERC20(inputToken),
@@ -90,7 +118,12 @@ contract vRouter is IvRouter {
                     amountsIn[i]
                 );
 
-                IvPair(pools[i]).swapNative(amountsOut[i], to);
+                IvPair(pools[i]).swapNative(
+                    amountsOut[i],
+                    outputToken,
+                    to,
+                    new bytes(0)
+                );
             } else {
                 SafeERC20.safeTransferFrom(
                     IERC20(inputToken),
@@ -100,10 +133,10 @@ contract vRouter is IvRouter {
                 );
 
                 IvPair(pools[i]).swapReserves(
-                    inputToken,
-                    outputToken,
                     amountsOut[i],
-                    to
+                    iks[i],
+                    to,
+                    new bytes(0)
                 );
             }
         }

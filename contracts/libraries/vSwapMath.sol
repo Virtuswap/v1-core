@@ -21,6 +21,46 @@ library vSwapMath {
                 : (jkToken1, jkToken0);
     }
 
+    function findCommonToken(
+        address ikToken0,
+        address ikToken1,
+        address jkToken0,
+        address jkToken1
+    )
+        public
+        pure
+        returns (
+            address,
+            address,
+            address,
+            address
+        )
+    {
+        return
+            (ikToken0 == jkToken0)
+                ? (ikToken1, ikToken0, jkToken1, jkToken0)
+                : (ikToken0 == jkToken1)
+                ? (ikToken1, ikToken0, jkToken0, jkToken1)
+                : (ikToken1 == jkToken0)
+                ? (ikToken0, ikToken1, jkToken1, jkToken0)
+                : (ikToken0, ikToken1, jkToken0, jkToken1); //default
+    }
+
+    function calculateVPool(
+        uint256 ikTokenABalance,
+        uint256 ikTokenBBalance,
+        uint256 jkTokenABalance,
+        uint256 jkTokenBBalance
+    ) public pure returns (VirtualPoolModel memory vPool) {
+        vPool.tokenABalance =
+            (ikTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
+            Math.max(ikTokenBBalance, EPSILON);
+
+        vPool.tokenBBalance =
+            (jkTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
+            Math.max(jkTokenBBalance, EPSILON);
+    }
+
     function quote(
         uint256 tokenABalance,
         uint256 tokenBBalance,

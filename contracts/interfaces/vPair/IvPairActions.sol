@@ -1,18 +1,23 @@
 interface IvPairActions {
-    function swapNative(uint256 amountOut, address to) external;
-
-    function swapReserves(
-        address tokenIn,
+    function swapNative(
+        uint256 amountOut,
         address tokenOut,
-        uint256 minAmountOut,
-        address to
+        address to,
+        bytes calldata data
     ) external;
 
-    function withdrawal() external;
+    function swapReserves(
+        uint256 amountOut,
+        address ikPairAddress,
+        address to,
+        bytes calldata data
+    ) external;
 
     function collect(uint256 tokenAAmount, uint256 tokenBAmount) external;
 
-    function skim(address to) external;
+    // function withdrawal() external;
 
-    function sync() external;
+    // function skim(address to) external;
+
+    // function sync() external;
 }
