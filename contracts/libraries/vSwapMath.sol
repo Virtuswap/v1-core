@@ -61,17 +61,16 @@ library vSwapMath {
             Math.max(jkTokenBBalance, EPSILON);
     }
 
-    function quote(
+    function quoteInput(
         uint256 tokenABalance,
         uint256 tokenBBalance,
         uint256 fee,
-        uint256 amount,
+        uint256 amountOut,
         bool calculateFees
     ) public pure returns (uint256 totalOut) {
-        // T(buy_currency,sell_currency,sell_currency)=lag_T(buy_currency,sell_currency,buy_currency)*lag_T(buy_currency,sell_currency,sell_currency)/(lag_T(buy_currency,sell_currency,buy_currency)-Buy); // %calculate amount_out
         totalOut =
-            ((tokenABalance * tokenBBalance) / (tokenABalance - amount)) -
-            tokenBBalance;
+            ((tokenABalance * tokenBBalance) / (tokenBBalance - amountOut)) -
+            tokenABalance;
 
         if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
     }

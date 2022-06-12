@@ -38,7 +38,9 @@ async function queryDB(sql) {
 
 const WETH = "0x0206953b5845106e8335E3e2224d1Fb2f90DB5c5";
 
-module.exports = async function (deployer) {
+module.exports = async function (deployer, network) {
+  console.log("network name: " + network);
+
   await connectDB();
 
   //libraries
@@ -56,21 +58,25 @@ module.exports = async function (deployer) {
   await deployer.link(vSwapMath, vRouter);
   await deployer.deploy(vRouter, vPairFactory.networks[80001].address, WETH);
 
+  const enviroment = network == "dev" ? 0 : 1;
+
   var sql = utils.generateVersionsSQL(
     vRouter.networks[80001].address,
     vRouter.abi,
-    "vpool"
+    "vpool",
+    enviroment
   );
   await queryDB(sql);
 
   sql = utils.generateVersionsSQL(
     vPairFactory.networks[80001].address,
     vPairFactory.abi,
-    "vfactory"
+    "vfactory",
+    enviroment
   );
   await queryDB(sql);
 
-  sql = utils.generateVersionsSQL("", vPair.abi, "vpair");
+  sql = utils.generateVersionsSQL("", vPair.abi, "vpair", enviroment);
   //update last version on DB.
   await queryDB(sql);
 };

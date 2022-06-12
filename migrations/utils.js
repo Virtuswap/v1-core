@@ -1,5 +1,4 @@
 class migrationUtils {
- 
   static twoDigits(d) {
     if (0 <= d && d < 10) return "0" + d.toString();
     if (-10 < d && d < 0) return "-0" + (-1 * d).toString();
@@ -29,9 +28,18 @@ class migrationUtils {
     return this.SQLDate(new Date());
   }
 
-  static generateVersionsSQL(adderss, abi, type) {
+  static generateTokenSQL(tokenName, sym, address, enviroment) {
+    return `INSERT INTO vswap.tokens
+            (tokenName,
+            symbol,
+            address,
+            enviroment)
+            VALUES('${tokenName}','${sym}','${address}',${enviroment})`;
+  }
+
+  static generateVersionsSQL(adderss, abi, type, env) {
     return (
-      "INSERT INTO `vswap`.`versions` (`address`, `abi`, `type`, `timestamp`) VALUES ('" +
+      "INSERT INTO `vswap`.`versions` (`address`, `abi`, `type`, `timestamp`,`enviroment`) VALUES ('" +
       adderss +
       "','" +
       JSON.stringify(abi) +
@@ -39,7 +47,9 @@ class migrationUtils {
       type +
       "', '" +
       this.SQLNow() +
-      "');"
+      "'," +
+      env +
+      ");"
     );
   }
 }

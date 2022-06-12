@@ -96,13 +96,13 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return (token0, token1);
     }
 
-    // function getNativeReserves() external view returns (uint256, uint256) {
-    //     return (reserve0, reserve1);
-    // }
+    function getNativeReserves() external view returns (uint256, uint256) {
+        return (reserve0, reserve1);
+    }
 
-    // function getrReserve(address token) external view returns (uint256) {
-    //     return reserves[token];
-    // }
+    function getrReserve(address token) external view returns (uint256) {
+        return reserves[token];
+    }
 
     function quote(
         address tokenIn,
@@ -114,14 +114,20 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         );
 
         return
-            vSwapMath.quote(reserveIn, reserveOut, fee, amount, calculateFees);
+            vSwapMath.quoteInput(
+                reserveIn,
+                reserveOut,
+                fee,
+                amount,
+                calculateFees
+            );
     }
 
     function swapNative(
         uint256 amountOut,
         address tokenOut,
         address to,
-        bytes calldata data
+        bytes memory data
     ) external noDelegateCall {
         require(to > address(0), "VSWAP:INVALID_TO");
 
@@ -135,34 +141,31 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         uint256 balance1Subst = IERC20(token1).balanceOf(address(this)) -
             reserve1;
 
-        (
-            address _inputToken,
-            address _outputToken,
-            uint256 _amountIn
-        ) = balance0Subst > 0
-                ? (token0, token1, balance0Subst)
-                : (token1, token0, balance1Subst);
+        (address _inputToken, uint256 _amountIn) = balance0Subst > 0
+            ? (token0, balance0Subst)
+            : (token1, balance1Subst);
 
         (uint256 _reserveIn, uint256 _reserveOut) = _getSortedReservesBalances(
             _inputToken
         );
 
-        uint256 _amountOut = vSwapMath.quote(
+        uint256 _expectedAmountIn = vSwapMath.quoteInput(
             _reserveIn,
             _reserveOut,
             fee,
-            _amountIn,
+            amountOut,
             true
         );
 
+        emit Debug("_expectedAmountIn", _expectedAmountIn);
         require(
-            balance0Subst > 0 || balance1Subst > 0,
+            _amountIn > 0 && _amountIn > _expectedAmountIn,
             "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
         );
 
-        (uint256 _reserve0, uint256 _reserve1) = _inputToken < _outputToken
-            ? ((_reserveIn + _amountIn), (_reserveOut - _amountOut))
-            : ((_reserveOut - _amountOut), (_reserveIn + _amountIn));
+        (uint256 _reserve0, uint256 _reserve1) = _inputToken < tokenOut
+            ? ((_reserveIn + _amountIn), (_reserveOut - amountOut))
+            : ((_reserveOut - amountOut), (_reserveIn + _amountIn));
 
         _update(_reserve0, _reserve1);
     }
@@ -302,14 +305,17 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             whitelistAllowance[_ikToken0] == true,
             "VSWAP:TOKEN_NOT_WHITELISTED"
         );
-        require(
-            (_jkToken0 == token0 || _jkToken0 == token1),
-            "VSWAP:INVALID_OUTTOKEN"
-        );
+
+        emit DebugA("output token", _jkToken0);
+
+        // require(
+        //     (_jkToken0 == token0 || _jkToken0 == token1),
+        //     "VSWAP:INVALID_OUTTOKEN"
+        // );
 
         SafeERC20.safeTransfer(IERC20(_jkToken0), to, amountOut);
 
-        uint256 requiredAmountIn = vSwapMath.quote(
+        uint256 requiredAmountIn = vSwapMath.quoteInput(
             vPool.tokenABalance,
             vPool.tokenBBalance,
             fee,
@@ -317,11 +323,18 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             true
         );
 
-        if (data.length > 0)
-            IvSwapCallee(to).vSwapcallee(msg.sender, amountOut, data);
+        emit Debug("vPool.tokenABalance", vPool.tokenABalance);
+        emit Debug("vPool.tokenBBalance", vPool.tokenBBalance);
+        emit Debug("amountOut", amountOut);
+        emit Debug("requiredAmountIn", requiredAmountIn);
+
+        // if (data.length > 0)
+        //     IvSwapCallee(to).vSwapcallee(msg.sender, amountOut, data);
 
         uint256 tokenInBalance = IERC20(_ikToken0).balanceOf(address(this));
+        emit Debug("tokenInBalance", tokenInBalance);
         uint256 amountIn = tokenInBalance - reserves[_ikToken0];
+        emit Debug("amountIn", amountIn);
         // require(
         //     amountIn > 0 && amountIn >= requiredAmountIn,
         //     "VSWAP: INSUFFICIENT_INPUT_AMOUNT"

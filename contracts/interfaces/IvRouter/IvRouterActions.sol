@@ -12,20 +12,9 @@ interface IvRouterActions {
     ) external;
 
     function testNative(
-        address poolAddress,
         address inputToken,
         address outputToken,
-        uint256 amount,
-        bytes calldata data
-    ) external;
-
-    function testReserve(
-        address poolAddress,
-        address tokenIn,
-        uint256 amount,
-        uint256 minAmountOut,
-        address ikPool,
-        address to,
-        bytes calldata data
+        uint256 amountIn,
+        uint256 amountOutMin
     ) external;
 }
