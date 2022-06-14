@@ -66,7 +66,7 @@ module.exports = async function (deployer, network) {
     const sql = utils.generateTokenSQL(
       token.name,
       token.sym,
-      ERC20.networks["818181"].address,
+      ERC20.networks["80001"].address,
       enviroment
     );
 

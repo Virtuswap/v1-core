@@ -43,32 +43,47 @@ contract vRouter is IvRouter, IvSwapCallee {
     function vSwapcallee(
         address sender,
         uint256 amount,
+        uint256 expectedAmount,
+        address tokenIn,
         bytes memory data
     ) external virtual {
-        address inputToken = abi.decode(data, (address));
+        address token0 = IvPair(msg.sender).token0();
+        address token1 = IvPair(msg.sender).token1();
+        require(
+            msg.sender == IvPairFactory(factory).getPair(token0, token1),
+            "VSWAP:INVALID_POOL"
+        ); // ensure that msg.sender is actually a registered pair
 
-        uint256 eth_balance = IERC20(0xaCD5165C3fC730c536cF255454fD1F5E01C36d80)
-            .balanceOf(address(this));
+        // uint256 eth_balance = IERC20(0xaCD5165C3fC730c536cF255454fD1F5E01C36d80)
+        //     .balanceOf(address(this));
 
-        emit Debug("Callback fired ETH balance", eth_balance);
-        emit DebugA("inputToken address", inputToken);
+        emit Debug("Callback fired ETH balance", 0);
 
         SafeERC20.safeTransferFrom(
-            IERC20(inputToken),
+            IERC20(tokenIn),
             msg.sender,
             sender,
-            1 ether
+            expectedAmount
         );
     }
 
     function testFlashSwap(
-        address poolAddress,
         address inputToken,
         address outputToken,
-        uint256 amount
+        uint256 amountOut
     ) external {
+        address nativePool = IvPairFactory(factory).getPair(
+            inputToken,
+            outputToken
+        );
+
         bytes memory data = abi.encodePacked(inputToken);
-        IvPair(poolAddress).swapNative(0, outputToken, address(this), data);
+        IvPair(nativePool).swapNative(
+            amountOut,
+            outputToken,
+            address(this),
+            data
+        );
     }
 
     function testNative(
@@ -91,7 +106,7 @@ contract vRouter is IvRouter, IvSwapCallee {
             amountOutMin,
             outputToken,
             msg.sender,
-            abi.encode("")
+            new bytes(0)
         );
     }
 
@@ -110,12 +125,12 @@ contract vRouter is IvRouter, IvSwapCallee {
             amount
         );
 
-        IvPair(poolAddress).swapReserves(
-            minAmountOut,
-            ikPool,
-            to,
-            abi.encode("")
-        );
+        // IvPair(poolAddress).swapReserves(
+        //     minAmountOut,
+        //     ikPool,
+        //     to,
+        //     new bytes(0)
+        // );
     }
 
     function swap(
@@ -152,12 +167,12 @@ contract vRouter is IvRouter, IvSwapCallee {
                     amountsIn[i]
                 );
 
-                IvPair(pools[i]).swapReserves(
-                    amountsOut[i],
-                    iks[i],
-                    to,
-                    new bytes(0)
-                );
+                // IvPair(pools[i]).swapReserves(
+                //     amountsOut[i],
+                //     iks[i],
+                //     to,
+                //     new bytes(0)
+                // );
             }
         }
     }

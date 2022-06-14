@@ -11,11 +11,11 @@ interface IvPairState {
 
     function reserveRatio() external view returns (uint256);
 
-    function quote(
-        address tokenIn,
-        uint256 amount,
-        bool calculateFees
-    ) external view returns (uint256);
+    // function quoteInput(
+    //     address tokenIn,
+    //     uint256 amount,
+    //     bool calculateFees
+    // ) external view returns (uint256);
 
     // function getNativeReserves() external view returns (uint256, uint256);
 }
