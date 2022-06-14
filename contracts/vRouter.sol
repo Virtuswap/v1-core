@@ -125,12 +125,12 @@ contract vRouter is IvRouter, IvSwapCallee {
             amount
         );
 
-        // IvPair(poolAddress).swapReserves(
-        //     minAmountOut,
-        //     ikPool,
-        //     to,
-        //     new bytes(0)
-        // );
+        IvPair(poolAddress).swapReserves(
+            minAmountOut,
+            ikPool,
+            to,
+            new bytes(0)
+        );
     }
 
     function swap(

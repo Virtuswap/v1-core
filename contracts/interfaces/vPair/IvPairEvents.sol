@@ -16,9 +16,8 @@ interface IvPairEvents {
 
     event WhitelistChanged(address token, bool allowed);
 
-
     event Sync(uint256 reserve0, uint256 reserve1);
-    
+
     event DebugA(string message, address value);
 
     event Debug(string message, uint256 value);

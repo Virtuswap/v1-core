@@ -391,27 +391,27 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     // }
 
     // force balances to match reserves
-    function skim(address to) external lock onlyOwner {
-        address _token0 = token0; // gas savings
-        address _token1 = token1; // gas savings
+    // function skim(address to) external lock onlyOwner {
+    //     address _token0 = token0; // gas savings
+    //     address _token1 = token1; // gas savings
 
-        SafeERC20.safeTransfer(
-            IERC20(_token0),
-            to,
-            IERC20(_token0).balanceOf(address(this)) - reserve0
-        );
-        SafeERC20.safeTransfer(
-            IERC20(_token1),
-            to,
-            IERC20(_token1).balanceOf(address(this)) - reserve1
-        );
-    }
+    //     SafeERC20.safeTransfer(
+    //         IERC20(_token0),
+    //         to,
+    //         IERC20(_token0).balanceOf(address(this)) - reserve0
+    //     );
+    //     SafeERC20.safeTransfer(
+    //         IERC20(_token1),
+    //         to,
+    //         IERC20(_token1).balanceOf(address(this)) - reserve1
+    //     );
+    // }
 
-    // force reserves to match balances
-    function sync() external lock onlyOwner {
-        _update(
-            IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
-        );
-    }
+    // // force reserves to match balances
+    // function sync() external lock onlyOwner {
+    //     _update(
+    //         IERC20(token0).balanceOf(address(this)),
+    //         IERC20(token1).balanceOf(address(this))
+    //     );
+    // }
 }
