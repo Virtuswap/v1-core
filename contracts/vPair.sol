@@ -213,12 +213,10 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP:TOKEN_NOT_WHITELISTED"
         );
 
-        emit DebugA("output token", _jkToken0);
-
-        // require(
-        //     (_jkToken0 == token0 || _jkToken0 == token1),
-        //     "VSWAP:INVALID_OUTTOKEN"
-        // );
+        require(
+            (_jkToken0 == token0 || _jkToken0 == token1),
+            "VSWAP:INVALID_OUTTOKEN"
+        );
 
         SafeERC20.safeTransfer(IERC20(_jkToken0), to, amountOut);
 
@@ -244,17 +242,15 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
                 data
             );
 
-        uint256 tokenInBalance = IERC20(_ikToken0).balanceOf(address(this));
-        // emit Debug("tokenInBalance", tokenInBalance);
-        uint256 amountIn = tokenInBalance - reserves[_ikToken0];
-        // emit Debug("amountIn", amountIn);
+        uint256 reserveInBalance = IERC20(_ikToken0).balanceOf(address(this));
+        uint256 amountIn = reserveInBalance - reserves[_ikToken0];
 
         require(
             amountIn > 0 && amountIn >= requiredAmountIn,
             "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
         );
 
-        _updateReserves(_ikToken0, tokenInBalance + amountIn);
+        _updateReserves(_ikToken0, reserveInBalance);
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this))
