@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "./interfaces/IvSwapCallee.sol";
-import "./interfaces/IvPair.sol";
-import "./ERC20/IERC20.sol";
-import "./interfaces/IvPairFactory.sol";
-import "./interfaces/IvRouter.sol";
-import "./libraries/SafeERC20.sol";
+import "../interfaces/IvSwapCallee.sol";
+import "../interfaces/IvPair.sol";
+import "..//ERC20/IERC20.sol";
+import "../interfaces/IvPairFactory.sol";
+import "../interfaces/IvRouter.sol";
+import "../libraries/SafeERC20.sol";
 
 contract flashSwapExample is IvSwapCallee {
     address _factory;
@@ -28,13 +28,13 @@ contract flashSwapExample is IvSwapCallee {
     ) external virtual {
         address token0 = IvPair(msg.sender).token0();
         address token1 = IvPair(msg.sender).token1();
-
         address poolAddress = IvPairFactory(_factory).getPair(token0, token1);
+
+        require(msg.sender == poolAddress, "VSWAP:INVALID_POOL"); // ensure that msg.sender is actually a registered pair
+
         address reserveTradePool = IvPairFactory(_factory).getPair(BTC, USDC);
         address reserveIKTradePool = IvPairFactory(_factory).getPair(ETH, BTC);
         address tokenOut = tokenIn == token0 ? token1 : token0;
-
-        require(msg.sender == poolAddress, "VSWAP:INVALID_POOL"); // ensure that msg.sender is actually a registered pair
 
         SafeERC20.safeTransfer(IERC20(tokenOut), poolAddress, amount);
 
