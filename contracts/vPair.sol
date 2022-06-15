@@ -90,10 +90,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         reserves[reserveToken] = balance;
     }
 
-    function tokens() external view returns (address, address) {
-        return (token0, token1);
-    }
-
     function getNativeReserves() external view returns (uint256, uint256) {
         return (reserve0, reserve1);
     }
@@ -175,7 +171,10 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         address to,
         bytes calldata data
     ) external noDelegateCall lock {
-        (address _ikToken0, address _ikToken1) = IvPair(ikPairAddress).tokens();
+        (address _ikToken0, address _ikToken1) = (
+            IvPair(ikPairAddress).token0(),
+            IvPair(ikPairAddress).token1()
+        );
 
         (address _jkToken0, address _jkToken1) = (token0, token1);
         //find common token
@@ -228,11 +227,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             true
         );
 
-        // emit Debug("vPool.tokenABalance", vPool.tokenABalance);
-        // emit Debug("vPool.tokenBBalance", vPool.tokenBBalance);
-        // emit Debug("amountOut", amountOut);
-        // emit Debug("requiredAmountIn", requiredAmountIn);
-
         if (data.length > 0)
             IvSwapCallee(to).vSwapcallee(
                 msg.sender,
@@ -261,7 +255,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     //     return 1;
     // }
 
-    function _calculateReserveRatio() external returns (uint256) {
+    function _calculateReserveRatio() external view returns (uint256) {
         uint256 _reserveRatio = 0;
 
         for (uint256 i = 0; i < whitelist.length; i++) {
@@ -315,53 +309,78 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return _reserveRatio;
     }
 
-    // update reserves and, on the first call per block, price accumulators
-
-    function collect(uint256 token0Amount, uint256 token1Amount)
-        external
-        noDelegateCall
-    {
+    function mint(address to) external lock returns (uint256 liquidity) {
+        (uint256 _reserve0, uint256 _reserve1) = this.getNativeReserves();
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
+        uint256 amount0 = balance0 - _reserve0;
+        uint256 amount1 = balance1 - _reserve1;
 
-        SafeERC20.safeTransferFrom(
-            IERC20(token0),
-            msg.sender,
-            address(this),
-            token0Amount
-        );
-
-        SafeERC20.safeTransferFrom(
-            IERC20(token1),
-            msg.sender,
-            address(this),
-            token1Amount
-        );
-
-        emit LiquidityChange(address(this), token0Amount, token1Amount);
-
-        uint256 lpAmount = 0;
-
-        if (balance0 == 0) lpAmount = 10000 ether;
-        else {
-            lpAmount = vSwapMath.calculateLPTokensAmount(
-                token0Amount,
-                IERC20(address(this)).totalSupply(),
-                balance0,
+        uint256 _totalSupply = totalSupply;
+        if (_totalSupply == 0) {
+            liquidity = 10000 ether;
+        } else {
+            liquidity = vSwapMath.calculateLPTokensAmount(
+                _reserve0,
+                totalSupply,
+                amount0,
                 reserveRatio
             );
         }
-
-        require(lpAmount > 0, "VSWAP:ERROR_CALCULATING_LPTOKENS");
-
-        _mint(msg.sender, lpAmount);
-        emit Mint(msg.sender, token0Amount, token1Amount);
-
-        balance0 = IERC20(token0).balanceOf(address(this));
-        balance1 = IERC20(token1).balanceOf(address(this));
+        require(liquidity > 0, "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED");
+        _mint(to, liquidity);
 
         _update(balance0, balance1);
+        emit Mint(msg.sender, amount0, amount1);
     }
+
+    // update reserves and, on the first call per block, price accumulators
+
+    // function collect(uint256 token0Amount, uint256 token1Amount)
+    //     external
+    //     noDelegateCall
+    // {
+    //     uint256 balance0 = IERC20(token0).balanceOf(address(this));
+    //     uint256 balance1 = IERC20(token1).balanceOf(address(this));
+
+    //     SafeERC20.safeTransferFrom(
+    //         IERC20(token0),
+    //         msg.sender,
+    //         address(this),
+    //         token0Amount
+    //     );
+
+    //     SafeERC20.safeTransferFrom(
+    //         IERC20(token1),
+    //         msg.sender,
+    //         address(this),
+    //         token1Amount
+    //     );
+
+    //     emit LiquidityChange(address(this), token0Amount, token1Amount);
+
+    //     uint256 lpAmount = 0;
+
+    //     if (balance0 == 0) lpAmount = 10000 ether;
+    //     else {
+    //         lpAmount = vSwapMath.calculateLPTokensAmount(
+    //             token0Amount,
+    //             IERC20(address(this)).totalSupply(),
+    //             balance0,
+    //             reserveRatio
+    //         );
+    //     }
+
+    //     require(lpAmount > 0, "VSWAP:ERROR_CALCULATING_LPTOKENS");
+
+    //     _mint(msg.sender, lpAmount);
+    //     emit Mint(msg.sender, token0Amount, token1Amount);
+
+    //     balance0 = IERC20(token0).balanceOf(address(this));
+    //     balance1 = IERC20(token1).balanceOf(address(this));
+
+    //     _update(balance0, balance1);
+    // }
 
     function withdrawal() external noDelegateCall {}
 

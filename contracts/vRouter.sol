@@ -5,13 +5,14 @@ import "./types.sol";
 import "./ERC20/IERC20.sol";
 import "./libraries/SafeERC20.sol";
 import "./libraries/vSwapMath.sol";
+import "./libraries/TransferHelper.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvRouter.sol";
-import "./interfaces/IvSwapCallee.sol";
+import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IWETH.sol";
 
-contract vRouter is IvRouter, IvSwapCallee {
+contract vRouter is IvRouter {
     address public override factory;
     address public immutable override owner;
     address public immutable override WETH;
@@ -39,52 +40,6 @@ contract vRouter is IvRouter, IvSwapCallee {
     }
 
     function quote() public view returns (uint256) {}
-
-    function vSwapcallee(
-        address sender,
-        uint256 amount,
-        uint256 expectedAmount,
-        address tokenIn,
-        bytes memory data
-    ) external virtual {
-        address token0 = IvPair(msg.sender).token0();
-        address token1 = IvPair(msg.sender).token1();
-        require(
-            msg.sender == IvPairFactory(factory).getPair(token0, token1),
-            "VSWAP:INVALID_POOL"
-        ); // ensure that msg.sender is actually a registered pair
-
-        // uint256 eth_balance = IERC20(0xaCD5165C3fC730c536cF255454fD1F5E01C36d80)
-        //     .balanceOf(address(this));
-
-        emit Debug("Callback fired ETH balance", 0);
-
-        SafeERC20.safeTransferFrom(
-            IERC20(tokenIn),
-            msg.sender,
-            sender,
-            expectedAmount
-        );
-    }
-
-    function testFlashSwap(
-        address inputToken,
-        address outputToken,
-        uint256 amountOut
-    ) external {
-        address nativePool = IvPairFactory(factory).getPair(
-            inputToken,
-            outputToken
-        );
-
-        bytes memory data = abi.encodePacked(inputToken);
-        IvPair(nativePool).swapNative(
-            amountOut,
-            outputToken,
-            address(this),
-            data
-        );
-    }
 
     function testNative(
         address inputToken,
@@ -133,7 +88,7 @@ contract vRouter is IvRouter, IvSwapCallee {
         );
     }
 
-    function swap(
+    function _swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
@@ -141,7 +96,7 @@ contract vRouter is IvRouter, IvSwapCallee {
         address inputToken,
         address outputToken,
         address to
-    ) external {
+    ) internal {
         //check for real pool
         for (uint256 i = 0; i < pools.length; i++) {
             if (iks[i] > address(0)) {
@@ -167,12 +122,12 @@ contract vRouter is IvRouter, IvSwapCallee {
                     amountsIn[i]
                 );
 
-                // IvPair(pools[i]).swapReserves(
-                //     amountsOut[i],
-                //     iks[i],
-                //     to,
-                //     new bytes(0)
-                // );
+                IvPair(pools[i]).swapReserves(
+                    amountsOut[i],
+                    iks[i],
+                    to,
+                    new bytes(0)
+                );
             }
         }
     }
@@ -182,9 +137,12 @@ contract vRouter is IvRouter, IvSwapCallee {
     }
 
     // function swapExactTokensForTokens(
-    //     uint256 amountIn,
-    //     uint256 amountOutMin,
-    //     address[] calldata path,
+    //     address[] calldata pools,
+    //     uint256[] calldata amountsIn,
+    //     uint256[] calldata amountsOutMin,
+    //     address[] calldata iks,
+    //     address inputToken,
+    //     address outputToken,
     //     address to,
     //     uint256 deadline
     // )
@@ -199,7 +157,7 @@ contract vRouter is IvRouter, IvSwapCallee {
     //         amounts[amounts.length - 1] >= amountOutMin,
     //         "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
     //     );
-    //     TransferHelper.safeTransferFrom(
+    //     SafeERC20.safeTransferFrom(
     //         path[0],
     //         msg.sender,
     //         UniswapV2Library.pairFor(factory, path[0], path[1]),
@@ -354,5 +312,173 @@ contract vRouter is IvRouter, IvSwapCallee {
     //     // refund dust eth, if any
     //     if (msg.value > amounts[0])
     //         TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);
+    // }
+
+    // **** ADD LIQUIDITY ****
+    function _addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin
+    ) internal returns (uint256 amountA, uint256 amountB) {
+        address pool = IvPairFactory(factory).getPair(tokenA, tokenB);
+        // create the pair if it doesn't exist yet
+        if (pool == address(0)) {
+            address[] memory arr;
+            IvPairFactory(factory).createPair(tokenA, tokenB, arr);
+        }
+        (uint256 reserveA, uint256 reserveB) = IvPair(pool).getNativeReserves();
+
+        if (reserveA == 0 && reserveB == 0) {
+            (amountA, amountB) = (amountADesired, amountBDesired);
+        } else {
+            uint256 amountBOptimal = vSwapMath.quoteOutput(
+                reserveA,
+                reserveB,
+                0,
+                amountADesired,
+                false
+            );
+            if (amountBOptimal <= amountBDesired) {
+                require(
+                    amountBOptimal >= amountBMin,
+                    "UniswapV2Router: INSUFFICIENT_B_AMOUNT"
+                );
+                (amountA, amountB) = (amountADesired, amountBOptimal);
+            } else {
+                uint256 amountAOptimal = vSwapMath.quoteOutput(
+                    reserveA,
+                    reserveB,
+                    0,
+                    amountBDesired,
+                    false
+                );
+
+                assert(amountAOptimal <= amountADesired);
+                require(
+                    amountAOptimal >= amountAMin,
+                    "UniswapV2Router: INSUFFICIENT_A_AMOUNT"
+                );
+                (amountA, amountB) = (amountAOptimal, amountBDesired);
+            }
+        }
+    }
+
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    )
+        external
+        virtual
+        ensure(deadline)
+        returns (
+            uint256 amountA,
+            uint256 amountB,
+            uint256 liquidity
+        )
+    {
+        (amountA, amountB) = _addLiquidity(
+            tokenA,
+            tokenB,
+            amountADesired,
+            amountBDesired,
+            amountAMin,
+            amountBMin
+        );
+
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+        SafeERC20.safeTransferFrom(IERC20(tokenA), msg.sender, pair, amountA);
+        SafeERC20.safeTransferFrom(IERC20(tokenB), msg.sender, pair, amountB);
+        liquidity = IvPair(pair).mint(to);
+    }
+
+    function addLiquidityETH(
+        address token,
+        uint256 amountTokenDesired,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline
+    )
+        external
+        payable
+        virtual
+        ensure(deadline)
+        returns (
+            uint256 amountToken,
+            uint256 amountETH,
+            uint256 liquidity
+        )
+    {
+        (amountToken, amountETH) = _addLiquidity(
+            token,
+            WETH,
+            amountTokenDesired,
+            msg.value,
+            amountTokenMin,
+            amountETHMin
+        );
+        address pair = IvPairFactory(factory).getPair(token, WETH);
+        SafeERC20.safeTransferFrom(
+            IERC20(token),
+            msg.sender,
+            pair,
+            amountToken
+        );
+        IWETH(WETH).deposit{value: amountETH}();
+        assert(IWETH(WETH).transfer(pair, amountETH));
+        liquidity = IvPair(pair).mint(to);
+        // refund dust eth, if any
+        if (msg.value > amountETH)
+            TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
+    }
+
+    // // **** REMOVE LIQUIDITY ****
+    // function removeLiquidity(
+    //     address tokenA,
+    //     address tokenB,
+    //     uint liquidity,
+    //     uint amountAMin,
+    //     uint amountBMin,
+    //     address to,
+    //     uint deadline
+    // ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
+    //     address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
+    //     IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+    //     (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
+    //     (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
+    //     (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+    //     require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
+    //     require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
+    // }
+    // function removeLiquidityETH(
+    //     address token,
+    //     uint liquidity,
+    //     uint amountTokenMin,
+    //     uint amountETHMin,
+    //     address to,
+    //     uint deadline
+    // ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH) {
+    //     (amountToken, amountETH) = removeLiquidity(
+    //         token,
+    //         WETH,
+    //         liquidity,
+    //         amountTokenMin,
+    //         amountETHMin,
+    //         address(this),
+    //         deadline
+    //     );
+    //     TransferHelper.safeTransfer(token, to, amountToken);
+    //     IWETH(WETH).withdraw(amountETH);
+    //     TransferHelper.safeTransferETH(to, amountETH);
     // }
 }

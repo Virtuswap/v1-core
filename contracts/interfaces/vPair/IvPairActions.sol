@@ -13,7 +13,7 @@ interface IvPairActions {
         bytes calldata data
     ) external;
 
-    function collect(uint256 tokenAAmount, uint256 tokenBAmount) external;
+    function mint(address to) external returns (uint256 liquidity);
 
     // function withdrawal() external;
 

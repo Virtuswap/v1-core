@@ -75,6 +75,20 @@ library vSwapMath {
         if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
     }
 
+    function quoteOutput(
+        uint256 tokenABalance,
+        uint256 tokenBBalance,
+        uint256 fee,
+        uint256 amountIn,
+        bool calculateFees
+    ) public pure returns (uint256 totalOut) {
+        totalOut =
+            ((tokenABalance * tokenBBalance) / (tokenABalance - amountIn)) -
+            tokenBBalance;
+
+        if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
+    }
+
     function calculateLPTokensAmount(
         uint256 token0Amount,
         uint256 totalSupply,

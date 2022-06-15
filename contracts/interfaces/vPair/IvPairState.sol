@@ -1,5 +1,5 @@
 interface IvPairState {
-    function tokens() external view returns (address, address);
+    // function tokens() external view returns (address, address);
 
     function token0() external view returns (address);
 
@@ -17,5 +17,5 @@ interface IvPairState {
     //     bool calculateFees
     // ) external view returns (uint256);
 
-    // function getNativeReserves() external view returns (uint256, uint256);
+    function getNativeReserves() external view returns (uint256, uint256);
 }
