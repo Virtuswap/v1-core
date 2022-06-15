@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 import "../interfaces/IvSwapCallee.sol";
 import "../interfaces/IvPair.sol";
+import "../libraries/vSwapMath.sol";
 import "..//ERC20/IERC20.sol";
 import "../interfaces/IvPairFactory.sol";
 import "../interfaces/IvRouter.sol";
@@ -22,7 +23,7 @@ contract flashSwapExample is IvSwapCallee {
     function vSwapcallee(
         address sender,
         uint256 amount,
-        uint256 expectedAmount,
+        uint256 requiredBackAmount,
         address tokenIn,
         bytes memory data
     ) external virtual {
@@ -32,15 +33,35 @@ contract flashSwapExample is IvSwapCallee {
 
         require(msg.sender == poolAddress, "VSWAP:INVALID_POOL"); // ensure that msg.sender is actually a registered pair
 
-        address reserveTradePool = IvPairFactory(_factory).getPair(BTC, USDC);
-        address reserveIKTradePool = IvPairFactory(_factory).getPair(ETH, BTC);
         address tokenOut = tokenIn == token0 ? token1 : token0;
 
+        (uint256 reserve0, uint256 reserve1) = IvPair(poolAddress)
+            .getNativeReserves();
+
+        uint256 bidAmount = vSwapMath.quoteOutput(
+            reserve0,
+            reserve1,
+            0,
+            amount,
+            true
+        );
+        {
+            uint256 delta = bidAmount - requiredBackAmount;
+
+            if (delta > 0)
+                SafeERC20.safeTransferFrom(
+                    IERC20(tokenOut),
+                    sender,
+                    poolAddress,
+                    delta
+                );
+        }
         SafeERC20.safeTransfer(IERC20(tokenOut), poolAddress, amount);
 
+        address reserveTradePool = IvPairFactory(_factory).getPair(BTC, USDC);
         IvPair(reserveTradePool).swapReserves(
-            expectedAmount,
-            reserveIKTradePool,
+            bidAmount,
+            IvPairFactory(_factory).getPair(ETH, BTC),
             poolAddress,
             new bytes(0)
         );

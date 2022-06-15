@@ -17,8 +17,6 @@ contract vRouter is IvRouter {
     address public immutable override owner;
     address public immutable override WETH;
 
-    uint256 constant EPSILON = 1 wei;
-
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
@@ -38,8 +36,6 @@ contract vRouter is IvRouter {
         factory = _factory;
         WETH = _WETH;
     }
-
-    function quote() public view returns (uint256) {}
 
     function testNative(
         address inputToken,
