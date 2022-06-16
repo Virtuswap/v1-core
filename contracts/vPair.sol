@@ -98,25 +98,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return reserves[token];
     }
 
-    // function quoteInput(
-    //     address tokenIn,
-    //     uint256 amount,
-    //     bool calculateFees
-    // ) external view returns (uint256) {
-    //     (uint256 reserveIn, uint256 reserveOut) = _getSortedReservesBalances(
-    //         tokenIn
-    //     );
-
-    //     return
-    //         vSwapMath.quoteInput(
-    //             reserveIn,
-    //             reserveOut,
-    //             fee,
-    //             amount,
-    //             calculateFees
-    //         );
-    // }
-
     function swapNative(
         uint256 amountOut,
         address tokenOut,
@@ -175,6 +156,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             IvPair(ikPairAddress).token0(),
             IvPair(ikPairAddress).token1()
         );
+
+        require(belowReserve == 1, "VSWAP:POOL_RESERVE_FULL");
 
         (address _jkToken0, address _jkToken1) = (token0, token1);
         //find common token
@@ -336,53 +319,34 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
 
     // update reserves and, on the first call per block, price accumulators
 
-    // function collect(uint256 token0Amount, uint256 token1Amount)
-    //     external
-    //     noDelegateCall
-    // {
-    //     uint256 balance0 = IERC20(token0).balanceOf(address(this));
-    //     uint256 balance1 = IERC20(token1).balanceOf(address(this));
+    function burn(address to)
+        external
+        lock
+        returns (uint256 amount0, uint256 amount1)
+    {
+        address _token0 = token0; // gas savings
+        address _token1 = token1; // gas savings
+        uint256 balance0 = IERC20(_token0).balanceOf(address(this));
+        uint256 balance1 = IERC20(_token1).balanceOf(address(this));
+        uint256 liquidity = balanceOf[address(this)];
 
-    //     SafeERC20.safeTransferFrom(
-    //         IERC20(token0),
-    //         msg.sender,
-    //         address(this),
-    //         token0Amount
-    //     );
+        uint256 _totalSupply = totalSupply;
+        amount0 = (liquidity * balance0) / _totalSupply;
+        amount1 = (liquidity * balance1) / _totalSupply;
+        require(
+            amount0 > 0 && amount1 > 0,
+            "VSWAP: INSUFFICIENT_LIQUIDITY_BURNED"
+        );
+        _burn(address(this), liquidity);
+        SafeERC20.safeTransfer(IERC20(_token0), to, amount0);
+        SafeERC20.safeTransfer(IERC20(_token1), to, amount1);
 
-    //     SafeERC20.safeTransferFrom(
-    //         IERC20(token1),
-    //         msg.sender,
-    //         address(this),
-    //         token1Amount
-    //     );
+        balance0 = IERC20(_token0).balanceOf(address(this));
+        balance1 = IERC20(_token1).balanceOf(address(this));
 
-    //     emit LiquidityChange(address(this), token0Amount, token1Amount);
-
-    //     uint256 lpAmount = 0;
-
-    //     if (balance0 == 0) lpAmount = 10000 ether;
-    //     else {
-    //         lpAmount = vSwapMath.calculateLPTokensAmount(
-    //             token0Amount,
-    //             IERC20(address(this)).totalSupply(),
-    //             balance0,
-    //             reserveRatio
-    //         );
-    //     }
-
-    //     require(lpAmount > 0, "VSWAP:ERROR_CALCULATING_LPTOKENS");
-
-    //     _mint(msg.sender, lpAmount);
-    //     emit Mint(msg.sender, token0Amount, token1Amount);
-
-    //     balance0 = IERC20(token0).balanceOf(address(this));
-    //     balance1 = IERC20(token1).balanceOf(address(this));
-
-    //     _update(balance0, balance1);
-    // }
-
-    function withdrawal() external noDelegateCall {}
+        _update(balance0, balance1);
+        emit Burn(msg.sender, amount0, amount1, to);
+    }
 
     function setWhitelistAllowance(address reserveToken, bool activateReserve)
         external
@@ -401,32 +365,32 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         return whitelistAllowance[reserveToken];
     }
 
-    // function setFactory(address _factory) external onlyOwner noDelegateCall {
-    //     factory = _factory;
-    // }
+    function setFactory(address _factory) external onlyOwner noDelegateCall {
+        factory = _factory;
+    }
 
     // force balances to match reserves
-    // function skim(address to) external lock onlyOwner {
-    //     address _token0 = token0; // gas savings
-    //     address _token1 = token1; // gas savings
+    function skim(address to) external lock onlyOwner {
+        address _token0 = token0; // gas savings
+        address _token1 = token1; // gas savings
 
-    //     SafeERC20.safeTransfer(
-    //         IERC20(_token0),
-    //         to,
-    //         IERC20(_token0).balanceOf(address(this)) - reserve0
-    //     );
-    //     SafeERC20.safeTransfer(
-    //         IERC20(_token1),
-    //         to,
-    //         IERC20(_token1).balanceOf(address(this)) - reserve1
-    //     );
-    // }
+        SafeERC20.safeTransfer(
+            IERC20(_token0),
+            to,
+            IERC20(_token0).balanceOf(address(this)) - reserve0
+        );
+        SafeERC20.safeTransfer(
+            IERC20(_token1),
+            to,
+            IERC20(_token1).balanceOf(address(this)) - reserve1
+        );
+    }
 
-    // // force reserves to match balances
-    // function sync() external lock onlyOwner {
-    //     _update(
-    //         IERC20(token0).balanceOf(address(this)),
-    //         IERC20(token1).balanceOf(address(this))
-    //     );
-    // }
+    // force reserves to match balances
+    function sync() external lock onlyOwner {
+        _update(
+            IERC20(token0).balanceOf(address(this)),
+            IERC20(token1).balanceOf(address(this))
+        );
+    }
 }

@@ -132,91 +132,29 @@ contract vRouter is IvRouter {
         factory = _factory;
     }
 
-    // function swapExactTokensForTokens(
-    //     address[] calldata pools,
-    //     uint256[] calldata amountsIn,
-    //     uint256[] calldata amountsOutMin,
-    //     address[] calldata iks,
-    //     address inputToken,
-    //     address outputToken,
-    //     address to,
-    //     uint256 deadline
-    // )
-    //     external
-    //     virtual
-    //     override
-    //     ensure(deadline)
-    //     returns (uint256[] memory amounts)
-    // {
-    //     amounts = UniswapV2Library.getAmountsOut(factory, amountIn, path);
-    //     require(
-    //         amounts[amounts.length - 1] >= amountOutMin,
-    //         "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
-    //     );
-    //     SafeERC20.safeTransferFrom(
-    //         path[0],
-    //         msg.sender,
-    //         UniswapV2Library.pairFor(factory, path[0], path[1]),
-    //         amounts[0]
-    //     );
-    //     _swap(amounts, path, to);
-    // }
-
-    // function swapTokensForExactTokens(
-    //     uint256 amountOut,
-    //     uint256 amountInMax,
-    //     address[] calldata path,
-    //     address to,
-    //     uint256 deadline
-    // )
-    //     external
-    //     virtual
-    //     override
-    //     ensure(deadline)
-    //     returns (uint256[] memory amounts)
-    // {
-    //     amounts = UniswapV2Library.getAmountsIn(factory, amountOut, path);
-    //     require(
-    //         amounts[0] <= amountInMax,
-    //         "UniswapV2Router: EXCESSIVE_INPUT_AMOUNT"
-    //     );
-    //     TransferHelper.safeTransferFrom(
-    //         path[0],
-    //         msg.sender,
-    //         UniswapV2Library.pairFor(factory, path[0], path[1]),
-    //         amounts[0]
-    //     );
-    //     _swap(amounts, path, to);
-    // }
-
-    // function swapExactETHForTokens(
-    //     address[] calldata pools,
-    //     uint256[] calldata amountsIn,
-    //     uint256[] calldata amountsOut,
-    //     address outputToken,
-    //     uint256 deadline
-    // )
-    //     external
-    //     payable
-    //     virtual
-    //     override
-    //     ensure(deadline)
-    //     returns (uint256[] memory amounts)
-    // {
-    //     amounts = UniswapV2Library.getAmountsOut(factory, msg.value, path);
-    //     require(
-    //         amounts[amounts.length - 1] >= amountOutMin,
-    //         "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
-    //     );
-    //     IWETH(WETH).deposit{value: amounts[0]}();
-    //     assert(
-    //         IWETH(WETH).transfer(
-    //             UniswapV2Library.pairFor(factory, path[0], path[1]),
-    //             amounts[0]
-    //         )
-    //     );
-    //     _swap(amounts, path, to);
-    // }
+    function swapExactETHForTokens(
+        address[] calldata pools,
+        uint256[] calldata amountsIn,
+        uint256[] calldata amountsOut,
+        address outputToken,
+        uint256 deadline
+    )
+        external
+        payable
+        virtual
+        override
+        ensure(deadline)
+        returns (uint256[] memory amounts)
+    {
+        IWETH(WETH).deposit{value: amounts[0]}();
+        assert(
+            IWETH(WETH).transfer(
+                UniswapV2Library.pairFor(factory, path[0], path[1]),
+                amounts[0]
+            )
+        );
+        _swap(amounts, path, to);
+    }
 
     // function swapTokensForExactETH(
     //     uint256 amountOut,
@@ -236,36 +174,6 @@ contract vRouter is IvRouter {
     //     require(
     //         amounts[0] <= amountInMax,
     //         "UniswapV2Router: EXCESSIVE_INPUT_AMOUNT"
-    //     );
-    //     TransferHelper.safeTransferFrom(
-    //         path[0],
-    //         msg.sender,
-    //         UniswapV2Library.pairFor(factory, path[0], path[1]),
-    //         amounts[0]
-    //     );
-    //     _swap(amounts, path, address(this));
-    //     IWETH(WETH).withdraw(amounts[amounts.length - 1]);
-    //     TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
-    // }
-
-    // function swapExactTokensForETH(
-    //     uint256 amountIn,
-    //     uint256 amountOutMin,
-    //     address[] calldata path,
-    //     address to,
-    //     uint256 deadline
-    // )
-    //     external
-    //     virtual
-    //     override
-    //     ensure(deadline)
-    //     returns (uint256[] memory amounts)
-    // {
-    //     require(path[path.length - 1] == WETH, "UniswapV2Router: INVALID_PATH");
-    //     amounts = UniswapV2Library.getAmountsOut(factory, amountIn, path);
-    //     require(
-    //         amounts[amounts.length - 1] >= amountOutMin,
-    //         "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
     //     );
     //     TransferHelper.safeTransferFrom(
     //         path[0],
@@ -439,42 +347,64 @@ contract vRouter is IvRouter {
     }
 
     // // **** REMOVE LIQUIDITY ****
-    // function removeLiquidity(
-    //     address tokenA,
-    //     address tokenB,
-    //     uint liquidity,
-    //     uint amountAMin,
-    //     uint amountBMin,
-    //     address to,
-    //     uint deadline
-    // ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-    //     address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
-    //     IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-    //     (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
-    //     (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
-    //     (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-    //     require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
-    //     require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
-    // }
-    // function removeLiquidityETH(
-    //     address token,
-    //     uint liquidity,
-    //     uint amountTokenMin,
-    //     uint amountETHMin,
-    //     address to,
-    //     uint deadline
-    // ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH) {
-    //     (amountToken, amountETH) = removeLiquidity(
-    //         token,
-    //         WETH,
-    //         liquidity,
-    //         amountTokenMin,
-    //         amountETHMin,
-    //         address(this),
-    //         deadline
-    //     );
-    //     TransferHelper.safeTransfer(token, to, amountToken);
-    //     IWETH(WETH).withdraw(amountETH);
-    //     TransferHelper.safeTransferETH(to, amountETH);
-    // }
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external ensure(deadline) returns (uint256 amountA, uint256 amountB) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+        SafeERC20.safeTransferFrom(
+            IERC20(IvPair(pair).LPToken()),
+            msg.sender,
+            pair,
+            liquidity
+        );
+
+        (uint256 amount0, uint256 amount1) = IvPair(pair).burn(to);
+        (address token0, ) = tokenA > tokenB ? tokenA : tokenB;
+        (amountA, amountB) = tokenA == token0
+            ? (amount0, amount1)
+            : (amount1, amount0);
+        require(
+            amountA >= amountAMin,
+            "UniswapV2Router: INSUFFICIENT_A_AMOUNT"
+        );
+        require(
+            amountB >= amountBMin,
+            "UniswapV2Router: INSUFFICIENT_B_AMOUNT"
+        );
+    }
+
+    function removeLiquidityETH(
+        address token,
+        uint256 liquidity,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline
+    )
+        public
+        virtual
+        override
+        ensure(deadline)
+        returns (uint256 amountToken, uint256 amountETH)
+    {
+        (amountToken, amountETH) = removeLiquidity(
+            token,
+            WETH,
+            liquidity,
+            amountTokenMin,
+            amountETHMin,
+            address(this),
+            deadline
+        );
+        TransferHelper.safeTransfer(token, to, amountToken);
+        IWETH(WETH).withdraw(amountETH);
+        TransferHelper.safeTransferETH(to, amountETH);
+    }
 }
