@@ -3,5 +3,5 @@ interface IvPairFactoryActions {
         address tokenA,
         address tokenB,
         address[] memory whitelist
-    ) external;
+    ) external returns (address);
 }

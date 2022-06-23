@@ -22,17 +22,17 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     uint256 public override reserve1;
 
     address[] public whitelist;
+    mapping(address => bool) whitelistAllowance;
 
     uint256 belowReserve;
     uint256 public override reserveRatio;
     uint256 maxReserveRatio;
 
-    mapping(address => bool) whitelistAllowance;
     mapping(address => uint256) reserves;
 
     uint256 private unlocked = 1;
     modifier lock() {
-        require(unlocked == 1, "UniswapV2: LOCKED");
+        require(unlocked == 1, "VSWAP: LOCKED");
         unlocked = 0;
         _;
         unlocked = 1;
@@ -51,7 +51,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         uint256 _fee,
         address[] memory _whitelist
     ) {
-        require(_whitelist.length <= 12, "VSWAP:MAX_WHITELIST");
+        require(_whitelist.length <= 8, "VSWAP:MAX_WHITELIST");
 
         owner = _owner;
         factory = _factory;
@@ -68,34 +68,29 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         //sync
         _update(
             IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
+            IERC20(token1).balanceOf(address(this)),
+            address(0),
+            0
         );
     }
 
-    function _getSortedReservesBalances(address tokenIn)
-        private
-        view
-        returns (uint256, uint256)
-    {
-        return token0 == tokenIn ? (reserve0, reserve1) : (reserve1, reserve0);
-    }
-
-    function _update(uint256 balance0, uint256 balance1) private {
+    function _update(
+        uint256 balance0,
+        uint256 balance1,
+        address reserveToken,
+        uint256 reserveAmount
+    ) private {
         reserve0 = balance0;
         reserve1 = balance1;
-        emit Sync(balance0, balance1);
-    }
 
-    function _updateReserves(address reserveToken, uint256 balance) private {
-        reserves[reserveToken] = balance;
+        if (reserveToken > address(0) && reserveAmount > 0) {
+            reserves[reserveToken] = reserveAmount;
+        }
+        emit Sync(balance0, balance1);
     }
 
     function getNativeReserves() external view returns (uint256, uint256) {
         return (reserve0, reserve1);
-    }
-
-    function getrReserve(address token) external view returns (uint256) {
-        return reserves[token];
     }
 
     function swapNative(
@@ -110,9 +105,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
 
         address _inputToken = tokenOut == token0 ? token1 : token0;
 
-        (uint256 _reserveIn, uint256 _reserveOut) = _getSortedReservesBalances(
-            _inputToken
-        );
+        (uint256 _reserveIn, uint256 _reserveOut) = vSwapMath
+            .SortedReservesBalances(_inputToken, token0, reserve0, reserve1);
 
         uint256 _amountIn = IERC20(_inputToken).balanceOf(address(this)) -
             _reserveIn;
@@ -143,7 +137,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             ? ((_reserveIn + _amountIn), (_reserveOut - amountOut))
             : ((_reserveOut - amountOut), (_reserveIn + _amountIn));
 
-        _update(_reserve0, _reserve1);
+        _update(_reserve0, _reserve1, address(0), 0);
     }
 
     function swapReserves(
@@ -173,6 +167,13 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP:INVALID_IK_POOL"
         );
 
+        require(
+            whitelistAllowance[_ikToken0] == true,
+            "VSWAP:TOKEN_NOT_WHITELISTED"
+        );
+
+        SafeERC20.safeTransfer(IERC20(_jkToken0), to, amountOut);
+
         VirtualPoolModel memory vPool;
         {
             uint256 ikReserve0 = _ikToken0 == IvPair(ikPairAddress).token0()
@@ -190,17 +191,6 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
                 _jkToken0 == token0 ? reserve1 : reserve0
             );
         }
-        require(
-            whitelistAllowance[_ikToken0] == true,
-            "VSWAP:TOKEN_NOT_WHITELISTED"
-        );
-
-        require(
-            (_jkToken0 == token0 || _jkToken0 == token1),
-            "VSWAP:INVALID_OUTTOKEN"
-        );
-
-        SafeERC20.safeTransfer(IERC20(_jkToken0), to, amountOut);
 
         uint256 requiredAmountIn = vSwapMath.quoteInput(
             vPool.tokenABalance,
@@ -227,10 +217,11 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
         );
 
-        _updateReserves(_ikToken0, reserveInBalance);
         _update(
             IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
+            IERC20(token1).balanceOf(address(this)),
+            _ikToken0,
+            reserveInBalance
         );
     }
 
@@ -238,59 +229,59 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     //     return 1;
     // }
 
-    function _calculateReserveRatio() external view returns (uint256) {
-        uint256 _reserveRatio = 0;
+    // function _calculateReserveRatio() external view returns (uint256) {
+    //     uint256 _reserveRatio = 0;
 
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            uint256 reserveBalance = IERC20(whitelist[i]).balanceOf(
-                address(this)
-            );
+    //     for (uint256 i = 0; i < whitelist.length; i++) {
+    //         uint256 reserveBalance = IERC20(whitelist[i]).balanceOf(
+    //             address(this)
+    //         );
 
-            if (reserveBalance > 0) {
-                address ikAddress = IvPairFactory(factory).getPair(
-                    token0,
-                    whitelist[i]
-                );
+    //         if (reserveBalance > 0) {
+    //             address ikAddress = IvPairFactory(factory).getPair(
+    //                 token0,
+    //                 whitelist[i]
+    //             );
 
-                address jkAddress = IvPairFactory(factory).getPair(
-                    token1,
-                    whitelist[i]
-                );
+    //             address jkAddress = IvPairFactory(factory).getPair(
+    //                 token1,
+    //                 whitelist[i]
+    //             );
 
-                uint256 ikTokenABalance = IERC20(token0).balanceOf(ikAddress);
+    //             uint256 ikTokenABalance = IERC20(token0).balanceOf(ikAddress);
 
-                uint256 ikTokenBBalance = IERC20(whitelist[i]).balanceOf(
-                    ikAddress
-                );
+    //             uint256 ikTokenBBalance = IERC20(whitelist[i]).balanceOf(
+    //                 ikAddress
+    //             );
 
-                uint256 jkTokenABalance = IERC20(token1).balanceOf(jkAddress);
-                uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
-                    jkAddress
-                );
+    //             uint256 jkTokenABalance = IERC20(token1).balanceOf(jkAddress);
+    //             uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
+    //                 jkAddress
+    //             );
 
-                uint256 ijTokenABalance = IERC20(token0).balanceOf(
-                    address(this)
-                );
-                uint256 ijTokenBBalance = IERC20(token1).balanceOf(
-                    address(this)
-                );
+    //             uint256 ijTokenABalance = IERC20(token0).balanceOf(
+    //                 address(this)
+    //             );
+    //             uint256 ijTokenBBalance = IERC20(token1).balanceOf(
+    //                 address(this)
+    //             );
 
-                uint256 cRR = vSwapMath.calculateReserveRatio(
-                    reserveBalance,
-                    ikTokenABalance,
-                    ikTokenBBalance,
-                    jkTokenABalance,
-                    jkTokenBBalance,
-                    ijTokenABalance,
-                    ijTokenBBalance
-                );
+    //             uint256 cRR = vSwapMath.calculateReserveRatio(
+    //                 reserveBalance,
+    //                 ikTokenABalance,
+    //                 ikTokenBBalance,
+    //                 jkTokenABalance,
+    //                 jkTokenBBalance,
+    //                 ijTokenABalance,
+    //                 ijTokenBBalance
+    //             );
 
-                _reserveRatio = _reserveRatio + cRR;
-            }
-        }
+    //             _reserveRatio = _reserveRatio + cRR;
+    //         }
+    //     }
 
-        return _reserveRatio;
-    }
+    //     return _reserveRatio;
+    // }
 
     function mint(address to) external lock returns (uint256 liquidity) {
         (uint256 _reserve0, uint256 _reserve1) = this.getNativeReserves();
@@ -313,7 +304,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         require(liquidity > 0, "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED");
         _mint(to, liquidity);
 
-        _update(balance0, balance1);
+        _update(balance0, balance1, address(0), 0);
         emit Mint(msg.sender, amount0, amount1);
     }
 
@@ -331,20 +322,32 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         uint256 liquidity = balanceOf[address(this)];
 
         uint256 _totalSupply = totalSupply;
-        amount0 = (liquidity * balance0) / _totalSupply;
-        amount1 = (liquidity * balance1) / _totalSupply;
+        amount0 = (liquidity / _totalSupply) * balance0;
+        amount1 = (liquidity / _totalSupply) * balance1;
+
         require(
             amount0 > 0 && amount1 > 0,
             "VSWAP: INSUFFICIENT_LIQUIDITY_BURNED"
         );
+
         _burn(address(this), liquidity);
         SafeERC20.safeTransfer(IERC20(_token0), to, amount0);
         SafeERC20.safeTransfer(IERC20(_token1), to, amount1);
 
+        for (uint256 i = 0; i < whitelist.length; i++) {
+            if (whitelistAllowance[whitelist[i]]) {
+                uint256 balance = IERC20(whitelist[i]).balanceOf(address(this));
+                if (balance > 0) {
+                    uint256 amount = (liquidity / _totalSupply) * balance;
+                    SafeERC20.safeTransfer(IERC20(_token0), to, amount);
+                }
+            }
+        }
+
         balance0 = IERC20(_token0).balanceOf(address(this));
         balance1 = IERC20(_token1).balanceOf(address(this));
 
-        _update(balance0, balance1);
+        _update(balance0, balance1, address(0), 0);
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
@@ -390,7 +393,9 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     function sync() external lock onlyOwner {
         _update(
             IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
+            IERC20(token1).balanceOf(address(this)),
+            address(0),
+            0
         );
     }
 }

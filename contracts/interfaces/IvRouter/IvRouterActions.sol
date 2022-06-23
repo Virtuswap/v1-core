@@ -11,13 +11,6 @@ interface IvRouterActions {
     //     address to
     // ) external;
 
-    function testNative(
-        address inputToken,
-        address outputToken,
-        uint256 amountIn,
-        uint256 amountOutMin
-    ) external;
-
     function addLiquidity(
         address tokenA,
         address tokenB,

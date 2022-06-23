@@ -89,6 +89,15 @@ library vSwapMath {
         if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
     }
 
+    function SortedReservesBalances(
+        address tokenIn,
+        address token0,
+        uint256 reserve0,
+        uint256 reserve1
+    ) public pure returns (uint256, uint256) {
+        return token0 == tokenIn ? (reserve0, reserve1) : (reserve1, reserve0);
+    }
+
     function calculateLPTokensAmount(
         uint256 token0Amount,
         uint256 totalSupply,

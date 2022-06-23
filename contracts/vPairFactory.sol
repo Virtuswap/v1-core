@@ -10,8 +10,6 @@ contract vPairFactory is IvPairFactory {
 
     address _admin;
 
-    address _vPool;
-
     modifier onlyAdmin() {
         require(msg.sender == _admin);
         _;
@@ -23,14 +21,6 @@ contract vPairFactory is IvPairFactory {
 
     function allPairsLength() external view returns (uint256) {
         return allPairs.length;
-    }
-
-    function getvPoolAddress() external view returns (address) {
-        return _vPool;
-    }
-
-    function updateVPoolAddress(address vPool) external onlyAdmin {
-        _vPool = vPool;
     }
 
     function getPair(address tokenA, address tokenB)
@@ -45,7 +35,7 @@ contract vPairFactory is IvPairFactory {
         address tokenA,
         address tokenB,
         address[] memory whitelist
-    ) external {
+    ) external returns (address) {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
         (address token0, address token1) = tokenA < tokenB
@@ -77,5 +67,7 @@ contract vPairFactory is IvPairFactory {
             token1,
             whitelist
         );
+
+        return address(newPair);
     }
 }
