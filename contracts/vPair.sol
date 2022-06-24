@@ -48,22 +48,15 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         address _factory,
         address _tokenA,
         address _tokenB,
-        uint256 _fee,
-        address[] memory _whitelist
+        uint256 _fee
     ) {
-        require(_whitelist.length <= 8, "VSWAP:MAX_WHITELIST");
-
         owner = _owner;
         factory = _factory;
-        whitelist = _whitelist;
         token0 = _tokenA;
         token1 = _tokenB;
         fee = _fee;
         belowReserve = 1;
         maxReserveRatio = 0.02 ether;
-
-        for (uint256 i = 0; i < whitelist.length; i++)
-            whitelistAllowance[whitelist[i]] = true;
 
         //sync
         _update(
@@ -351,13 +344,22 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setWhitelistAllowance(address reserveToken, bool activateReserve)
+    function setWhitelist(address[] memory _whitelist)
         external
         noDelegateCall
         onlyOwner
     {
-        whitelistAllowance[reserveToken] = activateReserve;
-        emit WhitelistChanged(reserveToken, activateReserve);
+        require(_whitelist.length <= 8, "VSWAP:MAX_WHITELIST");
+
+        address[] memory _oldWL = whitelist;
+
+        for (uint256 i = 0; i < _oldWL.length; i++)
+            whitelistAllowance[_oldWL[i]] = false;
+
+        //set new whitelist
+        whitelist = _whitelist;
+        for (uint256 i = 0; i < _whitelist.length; i++)
+            whitelistAllowance[_whitelist[i]] = true;
     }
 
     function isReserveAllowed(address reserveToken)
