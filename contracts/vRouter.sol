@@ -37,7 +37,7 @@ contract vRouter is IvRouter {
         WETH = _WETH;
     }
 
-    function _swap(
+    function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
@@ -45,7 +45,7 @@ contract vRouter is IvRouter {
         address inputToken,
         address outputToken,
         address to
-    ) internal {
+    ) external {
         //check for real pool
         for (uint256 i = 0; i < pools.length; i++) {
             if (iks[i] > address(0)) {
@@ -149,10 +149,8 @@ contract vRouter is IvRouter {
     ) internal returns (uint256 amountA, uint256 amountB) {
         address pool = IvPairFactory(factory).getPair(tokenA, tokenB);
         // create the pair if it doesn't exist yet
-        if (pool == address(0)) {
-            address[] memory arr;
-            pool = IvPairFactory(factory).createPair(tokenA, tokenB, arr);
-        }
+        if (pool == address(0))
+            pool = IvPairFactory(factory).createPair(tokenA, tokenB);
 
         (uint256 reserveA, uint256 reserveB) = IvPair(pool).getNativeReserves();
 

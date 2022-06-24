@@ -1,7 +1,5 @@
 interface IvPairFactoryActions {
-    function createPair(
-        address tokenA,
-        address tokenB,
-        address[] memory whitelist
-    ) external returns (address);
+    function createPair(address tokenA, address tokenB)
+        external
+        returns (address);
 }

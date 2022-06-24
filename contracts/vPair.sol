@@ -328,12 +328,10 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         SafeERC20.safeTransfer(IERC20(_token1), to, amount1);
 
         for (uint256 i = 0; i < whitelist.length; i++) {
-            if (whitelistAllowance[whitelist[i]]) {
-                uint256 balance = IERC20(whitelist[i]).balanceOf(address(this));
-                if (balance > 0) {
-                    uint256 amount = (liquidity / _totalSupply) * balance;
-                    SafeERC20.safeTransfer(IERC20(_token0), to, amount);
-                }
+            uint256 balance = IERC20(whitelist[i]).balanceOf(address(this));
+            if (balance > 0) {
+                uint256 amount = (liquidity / _totalSupply) * balance;
+                SafeERC20.safeTransfer(IERC20(_token0), to, amount);
             }
         }
 
