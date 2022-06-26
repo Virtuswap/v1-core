@@ -38,6 +38,11 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         unlocked = 1;
     }
 
+    modifier onlyFactoryAdmin() {
+        require(msg.sender == IvPairFactory(factory).admin());
+        _;
+    }
+
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
@@ -344,8 +349,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
 
     function setWhitelist(address[] memory _whitelist)
         external
-        noDelegateCall
-        onlyOwner
+        onlyFactoryAdmin
     {
         require(_whitelist.length <= 8, "VSWAP:MAX_WHITELIST");
 

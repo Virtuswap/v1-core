@@ -37,6 +37,53 @@ contract vRouter is IvRouter {
         WETH = _WETH;
     }
 
+    function testNative(
+        address inputToken,
+        address outputToken,
+        uint256 amountIn,
+        uint256 amountOutMin
+    ) external {
+        address nativePool = IvPairFactory(factory).getPair(
+            inputToken,
+            outputToken
+        );
+        SafeERC20.safeTransferFrom(
+            IERC20(inputToken),
+            msg.sender,
+            nativePool,
+            amountIn
+        );
+        IvPair(nativePool).swapNative(
+            amountOutMin,
+            outputToken,
+            msg.sender,
+            new bytes(0)
+        );
+    }
+
+    function testReserve(
+        address poolAddress,
+        address tokenIn,
+        uint256 amount,
+        uint256 minAmountOut,
+        address ikPool,
+        address to
+    ) external {
+        SafeERC20.safeTransferFrom(
+            IERC20(tokenIn),
+            msg.sender,
+            poolAddress,
+            amount
+        );
+
+        IvPair(poolAddress).swapReserves(
+            minAmountOut,
+            ikPool,
+            to,
+            new bytes(0)
+        );
+    }
+
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
@@ -48,7 +95,7 @@ contract vRouter is IvRouter {
     ) external {
         //check for real pool
         for (uint256 i = 0; i < pools.length; i++) {
-            if (iks[i] > address(0)) {
+            if (iks[i] == address(0)) {
                 // REAL POOL
                 SafeERC20.safeTransferFrom(
                     IERC20(inputToken),
@@ -150,7 +197,11 @@ contract vRouter is IvRouter {
         address pool = IvPairFactory(factory).getPair(tokenA, tokenB);
         // create the pair if it doesn't exist yet
         if (pool == address(0))
-            pool = IvPairFactory(factory).createPair(tokenA, tokenB);
+            pool = IvPairFactory(factory).createPair(
+                tokenA,
+                tokenB,
+                msg.sender
+            );
 
         (uint256 reserveA, uint256 reserveB) = IvPair(pool).getNativeReserves();
 

@@ -58,10 +58,6 @@ module.exports = async function (deployer, network) {
       "1000000000000000000000000000000"
     );
 
-    const instance = await ERC20.deployed();
-
-    console.log("ADDRESS:" + instance.address);
-
     //update tokens table
     const sql = utils.generateTokenSQL(
       token.name,

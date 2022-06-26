@@ -5,4 +5,6 @@ interface IvPairFactoryPairs {
         external
         view
         returns (address);
+
+    function admin() external view returns (address);
 }

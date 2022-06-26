@@ -8,15 +8,15 @@ contract vPairFactory is IvPairFactory {
     mapping(address => mapping(address => address)) public pairs;
     address[] public allPairs;
 
-    address _admin;
+    address public immutable override admin;
 
     modifier onlyAdmin() {
-        require(msg.sender == _admin);
+        require(msg.sender == admin);
         _;
     }
 
     constructor() {
-        _admin = msg.sender;
+        admin = msg.sender;
     }
 
     function allPairsLength() external view returns (uint256) {
@@ -31,10 +31,11 @@ contract vPairFactory is IvPairFactory {
         return pairs[tokenA][tokenB];
     }
 
-    function createPair(address tokenA, address tokenB)
-        external
-        returns (address)
-    {
+    function createPair(
+        address tokenA,
+        address tokenB,
+        address owner
+    ) external returns (address) {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
         (address token0, address token1) = tokenA < tokenB
@@ -46,7 +47,7 @@ contract vPairFactory is IvPairFactory {
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
         vPair newPair = new vPair(
-            msg.sender,
+            owner,
             address(this),
             token0,
             token1,
@@ -59,7 +60,7 @@ contract vPairFactory is IvPairFactory {
 
         emit PairCreated(
             address(newPair),
-            msg.sender,
+            owner,
             address(this),
             token0,
             token1
