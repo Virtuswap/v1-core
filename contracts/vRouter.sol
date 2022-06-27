@@ -37,53 +37,6 @@ contract vRouter is IvRouter {
         WETH = _WETH;
     }
 
-    function testNative(
-        address inputToken,
-        address outputToken,
-        uint256 amountIn,
-        uint256 amountOutMin
-    ) external {
-        address nativePool = IvPairFactory(factory).getPair(
-            inputToken,
-            outputToken
-        );
-        SafeERC20.safeTransferFrom(
-            IERC20(inputToken),
-            msg.sender,
-            nativePool,
-            amountIn
-        );
-        IvPair(nativePool).swapNative(
-            amountOutMin,
-            outputToken,
-            msg.sender,
-            new bytes(0)
-        );
-    }
-
-    function testReserve(
-        address poolAddress,
-        address tokenIn,
-        uint256 amount,
-        uint256 minAmountOut,
-        address ikPool,
-        address to
-    ) external {
-        SafeERC20.safeTransferFrom(
-            IERC20(tokenIn),
-            msg.sender,
-            poolAddress,
-            amount
-        );
-
-        IvPair(poolAddress).swapReserves(
-            minAmountOut,
-            ikPool,
-            to,
-            new bytes(0)
-        );
-    }
-
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
