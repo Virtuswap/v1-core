@@ -131,26 +131,4 @@ library vSwapMath {
                         ijtokenABalance) / Math.max(ijtokenBBalance, EPSILON))
                 )) / (2 * Math.max(ijtokenABalance, EPSILON));
     }
-
-    // function _calculateBelowThreshold(
-    //     Pool[] storage rPools,
-    //     address[] memory tokens
-    // ) internal view returns (int256[] memory) {
-    //     int256[] memory reserveRatio = _calculateReserveRatio(rPools, tokens);
-
-    //     int256[] memory belowThreshold = new int256[](rPools.length);
-
-    //     for (uint256 i = 0; i < rPools.length; i++) {
-    //         if (
-    //             reserveRatio[i] >= rPools[i].maxReserveRatio &&
-    //             belowThreshold[i] == 1
-    //         ) {
-    //             belowThreshold[i] = 0;
-    //         } else if (reserveRatio[i] == 0) {
-    //             belowThreshold[i] = 1;
-    //         }
-    //     }
-
-    //     return belowThreshold;
-    // }
 }

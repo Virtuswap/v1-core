@@ -8,7 +8,8 @@ interface IvRouterActions {
         address[] calldata iks,
         address inputToken,
         address outputToken,
-        address to
+        address to,
+        uint256 deadline
     ) external;
 
     function addLiquidity(

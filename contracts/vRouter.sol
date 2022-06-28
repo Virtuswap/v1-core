@@ -41,11 +41,12 @@ contract vRouter is IvRouter {
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
-        address[] calldata iks,
+        address[] memory iks,
         address inputToken,
         address outputToken,
-        address to
-    ) external {
+        address to,
+        uint256 deadline
+    ) external ensure(deadline) {
         //check for real pool
         for (uint256 i = 0; i < pools.length; i++) {
             if (iks[i] == address(0)) {

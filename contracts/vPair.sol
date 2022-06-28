@@ -13,6 +13,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
     address owner;
     address factory;
 
+    uint256 MULIPLIER_PCT = 100000;
     address public immutable override token0;
     address public immutable override token1;
 
@@ -61,7 +62,8 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         token1 = _tokenB;
         fee = _fee;
         belowReserve = 1;
-        maxReserveRatio = 0.02 ether;
+        maxReserveRatio = 2000; //2PCT
+        reserveRatio = 0;
 
         //sync
         _update(
@@ -149,7 +151,7 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             IvPair(ikPairAddress).token1()
         );
 
-        require(belowReserve == 1, "VSWAP:POOL_RESERVE_FULL");
+        require(reserveRatio < maxReserveRatio, "VSWAP:POOL_RESERVE_FULL");
 
         (address _jkToken0, address _jkToken1) = (token0, token1);
         //find common token
@@ -215,6 +217,9 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
             "VSWAP: INSUFFICIENT_INPUT_AMOUNT"
         );
 
+        //reserve ratio
+        updateReserveRatio(_jkToken0, amountOut);
+
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this)),
@@ -223,63 +228,14 @@ contract vPair is IvPair, vSwapERC20, NoDelegateCall {
         );
     }
 
-    // function getBelowReserve() external pure returns (uint256) {
-    //     return 1;
-    // }
-
-    // function _calculateReserveRatio() external view returns (uint256) {
-    //     uint256 _reserveRatio = 0;
-
-    //     for (uint256 i = 0; i < whitelist.length; i++) {
-    //         uint256 reserveBalance = IERC20(whitelist[i]).balanceOf(
-    //             address(this)
-    //         );
-
-    //         if (reserveBalance > 0) {
-    //             address ikAddress = IvPairFactory(factory).getPair(
-    //                 token0,
-    //                 whitelist[i]
-    //             );
-
-    //             address jkAddress = IvPairFactory(factory).getPair(
-    //                 token1,
-    //                 whitelist[i]
-    //             );
-
-    //             uint256 ikTokenABalance = IERC20(token0).balanceOf(ikAddress);
-
-    //             uint256 ikTokenBBalance = IERC20(whitelist[i]).balanceOf(
-    //                 ikAddress
-    //             );
-
-    //             uint256 jkTokenABalance = IERC20(token1).balanceOf(jkAddress);
-    //             uint256 jkTokenBBalance = IERC20(whitelist[i]).balanceOf(
-    //                 jkAddress
-    //             );
-
-    //             uint256 ijTokenABalance = IERC20(token0).balanceOf(
-    //                 address(this)
-    //             );
-    //             uint256 ijTokenBBalance = IERC20(token1).balanceOf(
-    //                 address(this)
-    //             );
-
-    //             uint256 cRR = vSwapMath.calculateReserveRatio(
-    //                 reserveBalance,
-    //                 ikTokenABalance,
-    //                 ikTokenBBalance,
-    //                 jkTokenABalance,
-    //                 jkTokenBBalance,
-    //                 ijTokenABalance,
-    //                 ijTokenBBalance
-    //             );
-
-    //             _reserveRatio = _reserveRatio + cRR;
-    //         }
-    //     }
-
-    //     return _reserveRatio;
-    // }
+    function updateReserveRatio(address token, uint256 amountOut) private {
+        reserveRatio =
+            reserveRatio +
+            (
+                ((amountOut * 100 * MULIPLIER_PCT) /
+                    (((token == token0 ? reserve0 : reserve1) * 2)))
+            );
+    }
 
     function mint(address to) external lock returns (uint256 liquidity) {
         (uint256 _reserve0, uint256 _reserve1) = this.getNativeReserves();
