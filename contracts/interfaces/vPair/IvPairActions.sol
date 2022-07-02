@@ -18,8 +18,4 @@ interface IvPairActions {
     function burn(address to)
         external
         returns (uint256 amount0, uint256 amount1);
-
-    function skim(address to) external;
-
-    function sync() external;
 }

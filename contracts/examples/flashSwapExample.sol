@@ -35,14 +35,16 @@ contract flashSwapExample is IvSwapCallee {
 
         address tokenOut = tokenIn == token0 ? token1 : token0;
 
-        (uint256 reserve0, uint256 reserve1) = IvPair(poolAddress)
-            .getNativeReserves();
+        (uint256 reserve0, uint256 reserve1) = (
+            IvPair(poolAddress).reserve0(),
+            IvPair(poolAddress).reserve1()
+        );
 
-        uint256 bidAmount = vSwapMath.quoteOutput(
+        uint256 bidAmount = vSwapMath.getAmountIn(
+            amount,
             reserve0,
             reserve1,
-            0,
-            amount,
+            997,
             true
         );
         {

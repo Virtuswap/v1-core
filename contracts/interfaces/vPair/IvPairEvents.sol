@@ -1,10 +1,4 @@
 interface IvPairEvents {
-    event LiquidityChange(
-        address poolAddress,
-        uint256 tokenABalance,
-        uint256 tokenBBalance
-    );
-
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
 
     event Burn(
@@ -16,9 +10,5 @@ interface IvPairEvents {
 
     event WhitelistChanged(address token, bool allowed);
 
-    event Sync(uint256 reserve0, uint256 reserve1);
-
-    event DebugA(string message, address value);
-
-    event Debug(string message, uint256 value);
+    event Sync(uint256 balance0, uint256 balance1);
 }

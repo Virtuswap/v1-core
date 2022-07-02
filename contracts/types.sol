@@ -9,3 +9,8 @@ struct VirtualPoolModel {
     uint256 sumTokenA;
     uint256 sumTokenB;
 }
+
+struct PoolReserve {
+    uint256 reserve0;
+    uint256 reserve1;
+}

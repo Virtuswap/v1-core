@@ -151,24 +151,24 @@ contract vRouter is IvRouter {
         address pool = IvPairFactory(factory).getPair(tokenA, tokenB);
         // create the pair if it doesn't exist yet
         if (pool == address(0))
-            pool = IvPairFactory(factory).createPair(
-                tokenA,
-                tokenB,
-                msg.sender
-            );
+            pool = IvPairFactory(factory).createPair(tokenA, tokenB);
 
-        (uint256 reserveA, uint256 reserveB) = IvPair(pool).getNativeReserves();
+        (uint256 reserveA, uint256 reserveB) = (
+            IvPair(pool).reserve0(),
+            IvPair(pool).reserve1()
+        );
 
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint256 amountBOptimal = vSwapMath.quoteOutput(
+            uint256 amountBOptimal = vSwapMath.getAmountOut(
+                amountADesired,
                 reserveA,
                 reserveB,
                 0,
-                amountADesired,
                 false
             );
+
             if (amountBOptimal <= amountBDesired) {
                 require(
                     amountBOptimal >= amountBMin,
@@ -176,11 +176,11 @@ contract vRouter is IvRouter {
                 );
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint256 amountAOptimal = vSwapMath.quoteOutput(
+                uint256 amountAOptimal = vSwapMath.getAmountOut(
+                    amountBDesired,
                     reserveA,
                     reserveB,
                     0,
-                    amountBDesired,
                     false
                 );
 
@@ -319,4 +319,25 @@ contract vRouter is IvRouter {
         IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
     }
+
+    // function getAmountOut(
+    //     address tokenA,
+    //     address tokenB,
+    //     uint256 amountIn
+    // ) public pure virtual override returns (uint256 amountOut) {
+    //     (uint256 reserve0, uint256 reserve1) = IvPairFactory(factory)
+    //         .getPair(tokenA, tokenB)
+    //         .getNativeReserves();
+
+    //     vSwapMath.quoteOutput(reserve0, reserve1);
+    //     return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
+    // }
+
+    // function getAmountIn(
+    //     uint256 amountOut,
+    //     uint256 reserveIn,
+    //     uint256 reserveOut
+    // ) public pure virtual override returns (uint256 amountIn) {
+    //     return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
+    // }
 }

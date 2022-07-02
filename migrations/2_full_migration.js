@@ -51,7 +51,7 @@ module.exports = async function (deployer, network) {
   await deployer.link(Address, vPairFactory);
   await deployer.link(SafeERC20, vPairFactory);
   await deployer.link(vSwapMath, vPairFactory);
-  await deployer.deploy(vPairFactory);
+  await deployer.deploy(vPairFactory, { gas: 20000000 });
 
   await deployer.link(Address, vRouter);
   await deployer.link(SafeERC20, vRouter);

@@ -6,7 +6,5 @@ interface IvPairReservesManager {
         view
         returns (bool);
 
-    // function getBelowReserve() external pure returns (uint256);
-
-    // function getrReserve(address token) external view returns (uint256);
+    function calculateReserveRatio() external view returns (uint256 rRatio);
 }

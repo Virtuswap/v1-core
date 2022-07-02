@@ -52,11 +52,11 @@ module.exports = {
     mumbai: {
       provider: () =>
         new HDWalletProvider(
-          "f73bdfaebe0f97afed415c945f4044b52cdb90853696476fd3b4a6f5f058d824", //       b16f6384c73dd20e5358e06ca16c7b9be1524787f99516ce21461c5fe958bae1
+          "b16f6384c73dd20e5358e06ca16c7b9be1524787f99516ce21461c5fe958bae1", //              f73bdfaebe0f97afed415c945f4044b52cdb90853696476fd3b4a6f5f058d824
           `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`
         ),
       network_id: 80001,
-      gasPrice: 25000000000,
+      // gasPrice: 30000000000,
       confirmations: 2,
       timeoutBlocks: 10,
       skipDryRun: true,

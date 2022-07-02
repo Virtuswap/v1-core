@@ -31,11 +31,10 @@ contract vPairFactory is IvPairFactory {
         return pairs[tokenA][tokenB];
     }
 
-    function createPair(
-        address tokenA,
-        address tokenB,
-        address owner
-    ) external returns (address) {
+    function createPair(address tokenA, address tokenB)
+        external
+        returns (address)
+    {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
         (address token0, address token1) = tokenA < tokenB
@@ -46,13 +45,7 @@ contract vPairFactory is IvPairFactory {
 
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
-        vPair newPair = new vPair(
-            owner,
-            address(this),
-            token0,
-            token1,
-            0.03 ether
-        );
+        vPair newPair = new vPair(address(this), token0, token1, 997); // 997 = 0.03%
 
         pairs[token0][token1] = address(newPair);
         pairs[token1][token0] = address(newPair);
@@ -60,7 +53,6 @@ contract vPairFactory is IvPairFactory {
 
         emit PairCreated(
             address(newPair),
-            owner,
             address(this),
             token0,
             token1

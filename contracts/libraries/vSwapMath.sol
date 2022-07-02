@@ -61,32 +61,30 @@ library vSwapMath {
             Math.max(jkTokenBBalance, EPSILON);
     }
 
-    function quoteInput(
-        uint256 tokenABalance,
-        uint256 tokenBBalance,
-        uint256 fee,
+    function getAmountIn(
         uint256 amountOut,
-        bool calculateFees
-    ) public pure returns (uint256 totalOut) {
-        totalOut =
-            ((tokenABalance * tokenBBalance) / (tokenBBalance - amountOut)) -
-            tokenABalance;
-
-        if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
+        uint256 reserveIn,
+        uint256 reserveOut,
+        uint256 fee,
+        bool deductFees
+    ) public pure returns (uint256 amountIn) {
+        uint256 numerator = (reserveIn * amountOut) * 1000;
+        uint256 denominator = (reserveOut - amountOut) *
+            (deductFees ? fee : 1000);
+        amountIn = (numerator / denominator) + 1;
     }
 
-    function quoteOutput(
-        uint256 tokenABalance,
-        uint256 tokenBBalance,
-        uint256 fee,
+    function getAmountOut(
         uint256 amountIn,
-        bool calculateFees
-    ) public pure returns (uint256 totalOut) {
-        totalOut =
-            ((tokenABalance * tokenBBalance) / (tokenABalance - amountIn)) -
-            tokenBBalance;
-
-        if (calculateFees) totalOut = (totalOut - ((fee * totalOut) / 1 ether));
+        uint256 reserveIn,
+        uint256 reserveOut,
+        uint256 fee,
+        bool deductFees
+    ) public pure returns (uint256 amountOut) {
+        uint256 amountInWithFee = amountIn * (deductFees ? fee : 1000);
+        uint256 numerator = amountInWithFee * reserveOut;
+        uint256 denominator = (reserveIn * 1000) + amountInWithFee;
+        amountOut = numerator / denominator;
     }
 
     function SortedReservesBalances(
@@ -94,8 +92,12 @@ library vSwapMath {
         address token0,
         uint256 reserve0,
         uint256 reserve1
-    ) public pure returns (uint256, uint256) {
-        return token0 == tokenIn ? (reserve0, reserve1) : (reserve1, reserve0);
+    ) public pure returns (PoolReserve memory reserves) {
+        (uint256 reserve0, uint256 reserve1) = token0 == tokenIn
+            ? (reserve0, reserve1)
+            : (reserve1, reserve0);
+        reserves.reserve0 = reserve0;
+        reserves.reserve1 = reserve1;
     }
 
     function calculateLPTokensAmount(
@@ -111,7 +113,7 @@ library vSwapMath {
                 (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
 
         return
-            ((token0Amount * totalSupply) / token0Balance) * (1 + reserveRatio);
+            ((token0Amount * totalSupply) / token0Balance) / (1 + reserveRatio);
     }
 
     function calculateReserveRatio(
