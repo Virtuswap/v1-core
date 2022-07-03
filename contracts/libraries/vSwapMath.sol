@@ -101,19 +101,21 @@ library vSwapMath {
     }
 
     function calculateLPTokensAmount(
-        uint256 token0Amount,
+        uint256 reserve0,
         uint256 totalSupply,
-        uint256 token0Balance,
+        uint256 addBalance,
         uint256 reserveRatio
-    ) public pure returns (uint256) {
+    ) public pure returns (uint256 lpAmount) {
         /* t(add_currency_base,add_currency_quote,LP)=
                 lag_t(add_currency_base,add_currency_quote,LP)+Add*
                 sum(lag_t(add_currency_base,add_currency_quote,:))/
                 (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
                 (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
 
-        return
-            ((token0Amount * totalSupply) / token0Balance) / (1 + reserveRatio);
+        lpAmount = ((reserve0 / totalSupply) * addBalance);
+
+        //deduct reserve from lptokens
+        lpAmount = lpAmount - ((lpAmount * reserveRatio) / 1000);
     }
 
     function calculateReserveRatio(
