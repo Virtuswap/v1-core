@@ -106,12 +106,6 @@ library vSwapMath {
         uint256 addBalance,
         uint256 reserveRatio
     ) public pure returns (uint256 lpAmount) {
-        /* t(add_currency_base,add_currency_quote,LP)=
-                lag_t(add_currency_base,add_currency_quote,LP)+Add*
-                sum(lag_t(add_currency_base,add_currency_quote,:))/
-                (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
-                (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
-
         lpAmount = ((reserve0 / totalSupply) * addBalance);
 
         //deduct reserve from lptokens
