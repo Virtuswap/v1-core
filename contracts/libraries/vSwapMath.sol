@@ -117,22 +117,4 @@ library vSwapMath {
         //deduct reserve from lptokens
         lpAmount = lpAmount - ((lpAmount * reserveRatio) / 1000);
     }
-
-    function calculateReserveRatio(
-        uint256 reserveBalance,
-        uint256 ikTokenABalance,
-        uint256 ikTokenBBalance,
-        uint256 jkTokenABalance,
-        uint256 jkTokenBBalance,
-        uint256 ijtokenABalance,
-        uint256 ijtokenBBalance
-    ) public pure returns (uint256) {
-        return
-            (reserveBalance *
-                Math.max(
-                    (ikTokenABalance / Math.max(ikTokenBBalance, EPSILON)),
-                    (((jkTokenABalance / Math.max(jkTokenBBalance, EPSILON)) *
-                        ijtokenABalance) / Math.max(ijtokenBBalance, EPSILON))
-                )) / (2 * Math.max(ijtokenABalance, EPSILON));
-    }
 }
