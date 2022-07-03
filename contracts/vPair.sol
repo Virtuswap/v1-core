@@ -33,9 +33,6 @@ contract vPair is IvPair, vSwapERC20 {
         unlocked = 1;
     }
 
-    event Debug(string message, uint256 value);
-    event DebugA(string message, address value);
-
     function onlyFactoryAdmin() private view {
         require(msg.sender == IvPairFactory(factory).admin());
     }
@@ -256,8 +253,6 @@ contract vPair is IvPair, vSwapERC20 {
         _update(balance0, balance1, address(0), 0);
         emit Mint(msg.sender, amount0, amount1);
     }
-
-    // update reserves and, on the first call per block, price accumulators
 
     function burn(address to)
         external

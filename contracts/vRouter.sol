@@ -37,11 +37,43 @@ contract vRouter is IvRouter {
         WETH = _WETH;
     }
 
+    // function calculateVirtualPool(address ikAddress, address jkAddress)
+    //     internal
+    //     returns (VirtualPoolModel memory vPool)
+    // {
+    //     (
+    //         address _ikToken0,
+    //         address _ikToken1,
+    //         address _jkToken0,
+    //         address _jkToken1
+    //     ) = (
+    //             IvPair(ikAddress).token0(),
+    //             IvPair(ikAddress).token1(),
+    //             IvPair(jkAddress).token0(),
+    //             IvPair(jkAddress).token1()
+    //         );
+
+    //     (_ikToken0, _ikToken1, _jkToken0, _jkToken1) = vSwapMath
+    //         .findCommonToken(_ikToken0, _ikToken1, _jkToken0, _jkToken1);
+
+    //     uint256 ikReserve0 = IvPair(ikAddress).reserve0();
+    //     uint256 ikReserve1 = IvPair(ikAddress).reserve1();
+    //     uint256 jkReserve0 = IvPair(ikAddress).reserve0();
+    //     uint256 jkReserve1 = IvPair(ikAddress).reserve1();
+
+    //     vPool = vSwapMath.calculateVPool(
+    //         ikReserve0,
+    //         ikReserve1,
+    //         jkReserve0,
+    //         jkReserve1
+    //     );
+    // }
+
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
-        address[] memory iks,
+        VirtualPoolModel[] memory vPools,
         address inputToken,
         address outputToken,
         address to,
@@ -81,6 +113,39 @@ contract vRouter is IvRouter {
             }
         }
     }
+
+    // function swapExactTokensForTokens(
+    //     address[] calldata pools,
+    //     uint256[] calldata amountsIn,
+    //     uint256[] calldata amountsOut,
+    //     address[] memory iks,
+    //     address inputToken,
+    //     address outputToken,
+    //     address to,
+    //     uint256 deadline
+    // ) {
+    //     for (uint256 i = 0; i < pools.length; i++) {
+    //         if (iks[i] > address(0)) {
+    //             VirtualPoolModel memory vPool = calculateVirtualPool(
+    //                 iks[i],
+    //                 pools[i]
+    //             );
+
+    //             uint256 amountOut = vSwapMath.getAmountOut(
+    //                 amountsIn[i],
+    //                 vPool.tokenABalance,
+    //                 vPool.tokenBBalance,
+    //                 vPool.fee,
+    //                 true
+    //             );
+
+    //             require(
+    //                 amountsOut[i] >= amountOut,
+    //                 "VSWAP:INSUFFICIENT_AMOUNT_OUT"
+    //             );
+    //         }
+    //     }
+    // }
 
     function changeFactory(address _factory) external onlyOwner {
         factory = _factory;
