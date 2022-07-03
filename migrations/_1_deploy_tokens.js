@@ -31,7 +31,8 @@ async function queryDB(sql) {
 }
 
 module.exports = async function (deployer, network) {
-  const enviroment = network == "dev" ? 0 : 1;
+  // const enviroment = network == "dev" ? 0 : 1;
+  const enviroment = 1;
 
   const tokens = [
     { name: "Bitcoin", sym: "BTC" }, //
@@ -58,11 +59,13 @@ module.exports = async function (deployer, network) {
       "1000000000000000000000000000000"
     );
 
+    let ERC20Address = ERC20.networks[Object.keys(ERC20.networks)[0]].address;
+
     //update tokens table
     const sql = utils.generateTokenSQL(
       token.name,
       token.sym,
-      ERC20.networks["80001"].address,
+      ERC20Address,
       enviroment
     );
 

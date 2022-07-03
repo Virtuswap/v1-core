@@ -33,6 +33,9 @@ contract vPair is IvPair, vSwapERC20 {
         unlocked = 1;
     }
 
+    event Debug(string message, uint256 value);
+    event DebugA(string message, address value);
+
     function onlyFactoryAdmin() private view {
         require(msg.sender == IvPairFactory(factory).admin());
     }
@@ -47,9 +50,7 @@ contract vPair is IvPair, vSwapERC20 {
         token0 = _tokenA;
         token1 = _tokenB;
         fee = _fee;
-        // maxReserveRatio = 2000; //2PCT
 
-        //sync
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this)),
@@ -128,15 +129,14 @@ contract vPair is IvPair, vSwapERC20 {
     }
 
     function calculateReserveRatio() external view returns (uint256 rRatio) {
+        uint256 _baseReserve = reserve0;
         for (uint256 i = 0; i < whitelist.length; i++) {
-            rRatio += reserveRatio[whitelist[i]];
+            uint256 _rReserve = reserveRatio[whitelist[i]];
+            if (_rReserve > 0) {
+                rRatio = rRatio + (_rReserve * 100 * 1000) / (_baseReserve * 2);
+            }
         }
     }
-
-    function calculateVirtualPool(uint256 ikReserve0, uint256 ikReserve1)
-        internal
-        returns (VirtualPoolModel memory vPool)
-    {}
 
     function swapReserves(
         uint256 amountOut,
@@ -152,11 +152,11 @@ contract vPair is IvPair, vSwapERC20 {
         require(this.calculateReserveRatio() < 2000, "PRF");
 
         (address _jkToken0, address _jkToken1) = (token0, token1);
-        //find common token
+        // find common token
         (_ikToken0, _ikToken1, _jkToken0, _jkToken1) = vSwapMath
             .findCommonToken(_ikToken0, _ikToken1, _jkToken0, _jkToken1);
 
-        //validate with factory
+        // validate with factory
         require(
             IvPairFactory(factory).getPair(_ikToken0, _ikToken1) ==
                 ikPairAddress &&
@@ -168,16 +168,19 @@ contract vPair is IvPair, vSwapERC20 {
 
         SafeERC20.safeTransfer(IERC20(_jkToken0), to, amountOut);
 
-        VirtualPoolModel memory vPool = vSwapMath.calculateVPool(
-            _ikToken0 == IvPair(ikPairAddress).token0()
-                ? IvPair(ikPairAddress).reserve0()
-                : IvPair(ikPairAddress).reserve1(),
-            _ikToken0 == IvPair(ikPairAddress).token0()
-                ? IvPair(ikPairAddress).reserve1()
-                : IvPair(ikPairAddress).reserve0(),
-            _jkToken0 == token0 ? reserve0 : reserve1,
-            _jkToken0 == token0 ? reserve1 : reserve0
-        );
+        VirtualPoolModel memory vPool;
+        {
+            uint256 ikReserve0 = IvPair(ikPairAddress).reserve0();
+            uint256 ikReserve1 = IvPair(ikPairAddress).reserve1();
+            address ikPair0 = IvPair(ikPairAddress).token0();
+
+            vPool = vSwapMath.calculateVPool(
+                _ikToken0 == ikPair0 ? ikReserve0 : ikReserve1,
+                _ikToken0 == ikPair0 ? ikReserve1 : ikReserve0,
+                _jkToken0 == token0 ? reserve0 : reserve1,
+                _jkToken0 == token0 ? reserve1 : reserve0
+            );
+        }
 
         uint256 requiredAmountIn = vSwapMath.getAmountIn(
             amountOut,
@@ -202,25 +205,17 @@ contract vPair is IvPair, vSwapERC20 {
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
         if (_jkToken0 == token0) {
-            //reserve ratio
-            updateReserveRatio(_jkToken0, amountOut);
+            updateReserveRatio(_ikToken0, amountOut);
         } else {
-            PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
-                _jkToken0,
-                token0,
-                reserve0,
-                reserve1
-            );
-
-            uint256 baseTokenBid = vSwapMath.getAmountIn(
+            uint256 baseTokenBid = vSwapMath.getAmountOut(
                 amountOut,
-                reserves.reserve0,
-                reserves.reserve1,
+                reserve1,
+                reserve0,
                 fee,
                 true
             );
 
-            updateReserveRatio(token1, baseTokenBid);
+            updateReserveRatio(_ikToken0, baseTokenBid);
         }
 
         _update(
@@ -231,8 +226,10 @@ contract vPair is IvPair, vSwapERC20 {
         );
     }
 
-    function updateReserveRatio(address token, uint256 amountOut) internal {
-        reserveRatio[token] = ((amountOut * 100 * 100000) / reserve0) * 2;
+    function updateReserveRatio(address token, uint256 baseTokenAmount)
+        internal
+    {
+        reserveRatio[token] = reserveRatio[token] + baseTokenAmount;
     }
 
     function mint(address to) external lock returns (uint256 liquidity) {

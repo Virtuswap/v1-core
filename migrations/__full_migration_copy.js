@@ -53,31 +53,24 @@ module.exports = async function (deployer, network) {
   await deployer.link(vSwapMath, vPairFactory);
   await deployer.deploy(vPairFactory);
 
+  let address =
+    vPairFactory.networks[Object.keys(vPairFactory.networks)[0]].address;
+
   await deployer.link(Address, vRouter);
   await deployer.link(SafeERC20, vRouter);
   await deployer.link(vSwapMath, vRouter);
-  let vPairFactoryAddress =
-  vPairFactory.networks[Object.keys(vPairFactory.networks)[0]].address;
-
-  await deployer.deploy(vRouter, vPairFactoryAddress, WETH);
-
-  // const enviroment = network == "dev" ? 0 : 1;
-  const enviroment = 1;
-
-  let vRouterAddress =
-    vRouter.networks[Object.keys(vRouter.networks)[0]].address;
+  await deployer.deploy(vRouter, address, WETH);
 
   var sql = utils.generateVersionsSQL(
-    vRouterAddress,
+    vRouter.networks[80001].address,
     vRouter.abi,
     "vpool",
     enviroment
   );
   await queryDB(sql);
 
-
   sql = utils.generateVersionsSQL(
-    vPairFactoryAddress,
+    vPairFactory.networks[80001].address,
     vPairFactory.abi,
     "vfactory",
     enviroment
