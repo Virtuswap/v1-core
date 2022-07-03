@@ -20,7 +20,7 @@ contract vPair is IvPair, vSwapERC20 {
     uint256 public override reserve1;
 
     address[] public whitelist;
-    mapping(address => bool) whitelistAllowance;
+    mapping(address => bool) public whitelistAllowance;
 
     mapping(address => uint256) public reserveRatio;
     mapping(address => uint256) reserves;
@@ -303,14 +303,6 @@ contract vPair is IvPair, vSwapERC20 {
         whitelist = _whitelist;
         for (uint256 i = 0; i < _whitelist.length; i++)
             whitelistAllowance[_whitelist[i]] = true;
-    }
-
-    function isReserveAllowed(address reserveToken)
-        external
-        view
-        returns (bool)
-    {
-        return whitelistAllowance[reserveToken];
     }
 
     function setFactory(address _factory) external {

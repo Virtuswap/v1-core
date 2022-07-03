@@ -73,7 +73,7 @@ contract vRouter is IvRouter {
         address[] calldata pools,
         uint256[] calldata amountsIn,
         uint256[] calldata amountsOut,
-        VirtualPoolModel[] memory vPools,
+        address[] memory iks,
         address inputToken,
         address outputToken,
         address to,
