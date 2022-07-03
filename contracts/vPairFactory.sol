@@ -45,18 +45,13 @@ contract vPairFactory is IvPairFactory {
 
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
-        vPair newPair = new vPair(address(this), token0, token1, 997); // 997 = 0.03%
+        vPair newPair = new vPair(address(this), token0, token1, 997, 996); // 997 = 0.03%
 
         pairs[token0][token1] = address(newPair);
         pairs[token1][token0] = address(newPair);
         allPairs.push(address(newPair));
 
-        emit PairCreated(
-            address(newPair),
-            address(this),
-            token0,
-            token1
-        );
+        emit PairCreated(address(newPair), address(this), token0, token1);
 
         return address(newPair);
     }

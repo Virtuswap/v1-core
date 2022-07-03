@@ -15,6 +15,7 @@ contract vPair is IvPair, vSwapERC20 {
     address public immutable override token1;
 
     uint256 public override fee;
+    uint256 public override vFee;
 
     uint256 public override reserve0;
     uint256 public override reserve1;
@@ -41,13 +42,14 @@ contract vPair is IvPair, vSwapERC20 {
         address _factory,
         address _tokenA,
         address _tokenB,
-        uint256 _fee
+        uint256 _fee,
+        uint256 _vFee
     ) {
         factory = _factory;
         token0 = _tokenA;
         token1 = _tokenB;
         fee = _fee;
-
+        vFee = _vFee;
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this)),
@@ -183,7 +185,7 @@ contract vPair is IvPair, vSwapERC20 {
             amountOut,
             vPool.tokenABalance,
             vPool.tokenBBalance,
-            fee,
+            vFee,
             true
         );
 
@@ -208,8 +210,8 @@ contract vPair is IvPair, vSwapERC20 {
                 amountOut,
                 reserve1,
                 reserve0,
-                fee,
-                true
+                0,
+                false
             );
 
             updateReserveRatio(_ikToken0, baseTokenBid);
@@ -310,8 +312,9 @@ contract vPair is IvPair, vSwapERC20 {
         factory = _factory;
     }
 
-    function setFee(uint256 _fee) external {
+    function setFee(uint256 _fee, uint256 _vFee) external {
         onlyFactoryAdmin();
         fee = _fee;
+        vFee = _vFee;
     }
 }
