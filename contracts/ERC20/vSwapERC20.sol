@@ -12,9 +12,9 @@ contract vSwapERC20 is IvSwapERC20 {
     string public constant name = "Virtuswap V1";
     string public constant symbol = "VSWAP-V1";
     uint8 public constant decimals = 18;
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
+    uint256 public override totalSupply;
+    mapping(address => uint256) override public balanceOf;
+    mapping(address => mapping(address => uint256)) override public allowance;
 
     constructor() {}
 
@@ -49,12 +49,12 @@ contract vSwapERC20 is IvSwapERC20 {
         emit Transfer(from, to, value);
     }
 
-    function approve(address spender, uint256 value) external returns (bool) {
+    function approve(address spender, uint256 value) external override returns (bool) {
         _approve(msg.sender, spender, value);
         return true;
     }
-
-    function transfer(address to, uint256 value) external returns (bool) {
+ 
+    function transfer(address to, uint256 value) external override returns (bool) {
         _transfer(msg.sender, to, value);
         return true;
     }
@@ -63,7 +63,7 @@ contract vSwapERC20 is IvSwapERC20 {
         address from,
         address to,
         uint256 value
-    ) external returns (bool) {
+    ) external override returns (bool) {
         if (allowance[from][msg.sender] != 0) {
             allowance[from][msg.sender] = allowance[from][msg.sender].sub(
                 value

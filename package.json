@@ -4,7 +4,6 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
@@ -17,6 +16,8 @@
     "mysql": "^2.18.1",
     "truffle-contract": "^4.0.31",
     "truffle-contract-size": "^2.0.1",
-    "web3": "^1.6.0"
+    "web3": "^1.7.4"
+  },
+  "devDependencies": {
   }
 }

@@ -19,12 +19,13 @@ contract vPairFactory is IvPairFactory {
         admin = msg.sender;
     }
 
-    function allPairsLength() external view returns (uint256) {
+    function allPairsLength() external view override returns (uint256) {
         return allPairs.length;
     }
 
     function getPair(address tokenA, address tokenB)
         external
+        override
         view
         returns (address)
     {
@@ -33,6 +34,7 @@ contract vPairFactory is IvPairFactory {
 
     function createPair(address tokenA, address tokenB)
         external
+        override
         returns (address)
     {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");

@@ -50,12 +50,14 @@ contract vPair is IvPair, vSwapERC20 {
         token1 = _tokenB;
         fee = _fee;
         vFee = _vFee;
-        _update(
-            IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this)),
-            address(0),
-            0
-        );
+        // threw this error when testing
+        // TypeError: Immutable variables cannot be read during contract creation time, which means they cannot be read in the constructor or any function or modifier called from it.
+        // _update(
+        //     IERC20(token0).balanceOf(address(this)),
+        //     IERC20(token1).balanceOf(address(this)),
+        //     address(0),
+        //     0
+        // );
     }
 
     function _update(
@@ -78,7 +80,7 @@ contract vPair is IvPair, vSwapERC20 {
         address tokenOut,
         address to,
         bytes memory data
-    ) external lock {
+    ) external override lock {
         require(to > address(0), "IT"); // INVALID TO
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
@@ -127,7 +129,7 @@ contract vPair is IvPair, vSwapERC20 {
         _update(_reserve0, _reserve1, address(0), 0);
     }
 
-    function calculateReserveRatio() external view returns (uint256 rRatio) {
+    function calculateReserveRatio() external override view returns (uint256 rRatio) {
         uint256 _baseReserve = reserve0;
         for (uint256 i = 0; i < whitelist.length; i++) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
@@ -142,7 +144,7 @@ contract vPair is IvPair, vSwapERC20 {
         address ikPairAddress,
         address to,
         bytes calldata data
-    ) external lock {
+    ) external override lock {
         (address _ikToken0, address _ikToken1) = (
             IvPair(ikPairAddress).token0(),
             IvPair(ikPairAddress).token1()
@@ -231,7 +233,7 @@ contract vPair is IvPair, vSwapERC20 {
         reserveRatio[token] = reserveRatio[token] + baseTokenAmount;
     }
 
-    function mint(address to) external lock returns (uint256 liquidity) {
+    function mint(address to) external lock override returns (uint256 liquidity) {
         (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
@@ -259,6 +261,7 @@ contract vPair is IvPair, vSwapERC20 {
     function burn(address to)
         external
         lock
+        override
         returns (uint256 amount0, uint256 amount1)
     {
         address _token0 = token0; // gas savings
@@ -292,7 +295,7 @@ contract vPair is IvPair, vSwapERC20 {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setWhitelist(address[] memory _whitelist) external {
+    function setWhitelist(address[] memory _whitelist) external override {
         onlyFactoryAdmin();
         require(_whitelist.length <= 8, "MW");
 
@@ -307,12 +310,12 @@ contract vPair is IvPair, vSwapERC20 {
             whitelistAllowance[_whitelist[i]] = true;
     }
 
-    function setFactory(address _factory) external {
+    function setFactory(address _factory) external  {
         onlyFactoryAdmin();
         factory = _factory;
     }
 
-    function setFee(uint256 _fee, uint256 _vFee) external {
+    function setFee(uint256 _fee, uint256 _vFee) external override {
         onlyFactoryAdmin();
         fee = _fee;
         vFee = _vFee;
