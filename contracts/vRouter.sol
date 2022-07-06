@@ -7,7 +7,6 @@ import "./libraries/SafeERC20.sol";
 import "./libraries/vSwapMath.sol";
 import "./libraries/TransferHelper.sol";
 import "./interfaces/IvPair.sol";
-import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IWETH.sol";
@@ -79,7 +78,6 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     ) external ensure(deadline) {
-        //check for real pool
         for (uint256 i = 0; i < pools.length; i++) {
             if (iks[i] == address(0)) {
                 // REAL POOL
@@ -385,24 +383,63 @@ contract vRouter is IvRouter {
         TransferHelper.safeTransferETH(to, amountETH);
     }
 
-    // function getAmountOut(
-    //     address tokenA,
-    //     address tokenB,
-    //     uint256 amountIn
-    // ) public pure virtual override returns (uint256 amountOut) {
-    //     (uint256 reserve0, uint256 reserve1) = IvPairFactory(factory)
-    //         .getPair(tokenA, tokenB)
-    //         .getNativeReserves();
+    function getAmountOut(
+        address tokenA,
+        address tokenB,
+        address tokenIn,
+        uint256 amountIn
+    ) public view virtual override returns (uint256 amountOut) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-    //     vSwapMath.quoteOutput(reserve0, reserve1);
-    //     return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
-    // }
+        (uint256 reserve0, uint256 reserve1) = (
+            IvPair(pair).reserve0(),
+            IvPair(pair).reserve1()
+        );
+
+        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+            tokenIn,
+            IvPair(pair).token0(),
+            reserve0,
+            reserve1
+        );
+
+        return
+            vSwapMath.getAmountOut(
+                amountIn,
+                reserves.reserve0,
+                reserves.reserve1,
+                IvPair(pair).fee(),
+                true
+            );
+    }
 
     // function getAmountIn(
-    //     uint256 amountOut,
-    //     uint256 reserveIn,
-    //     uint256 reserveOut
+    //     address tokenA,
+    //     address tokenB,
+    //     address tokenIn,
+    //     uint256 amountOut
     // ) public pure virtual override returns (uint256 amountIn) {
-    //     return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
+    //     IvPair pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+    //     (uint256 reserve0, uint256 reserve1) = (
+    //         pair.reserve0(),
+    //         pair.reserve1()
+    //     );
+
+    //     PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+    //         tokenIn,
+    //         pair.token0(),
+    //         reserve0,
+    //         reserve1
+    //     );
+
+    //     return
+    //         vSwapMath.getAmountIn(
+    //             amountOut,
+    //             reserves.reserve0,
+    //             reserves.reserve1,
+    //             pair.fee(),
+    //             true
+    //         );
     // }
 }
