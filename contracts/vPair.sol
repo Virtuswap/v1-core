@@ -21,6 +21,10 @@ contract vPair is IvPair, ERC20 {
     uint256 public override reserve0;
     uint256 public override reserve1;
 
+    uint256 private constant FIRST_LP_TOKEN_AMOUNT = 10000 * 1e18;
+    uint256 private constant RESERVE_RATIO_FACTOR = 1000;
+    uint256 private constant MAX_RESERVE_RATIO = 2 * RESERVE_RATIO_FACTOR;
+
     address[] public whitelist;
     mapping(address => bool) public whitelistAllowance;
 
@@ -93,9 +97,6 @@ contract vPair is IvPair, ERC20 {
             reserve1
         );
 
-        uint256 _amountIn = IERC20(_inputToken).balanceOf(address(this)) -
-            poolReserves.reserve0;
-
         uint256 _expectedAmountIn = vSwapMath.getAmountIn(
             amountOut,
             poolReserves.reserve0,
@@ -112,6 +113,9 @@ contract vPair is IvPair, ERC20 {
                 _inputToken,
                 data
             );
+
+        uint256 _amountIn = IERC20(_inputToken).balanceOf(address(this)) -
+            poolReserves.reserve0;
 
         require(_amountIn > 0 && _amountIn > _expectedAmountIn, "IIA");
 
@@ -133,7 +137,10 @@ contract vPair is IvPair, ERC20 {
         for (uint256 i = 0; i < whitelist.length; i++) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
             if (_rReserve > 0) {
-                rRatio = rRatio + (_rReserve * 100 * 1000) / (_baseReserve * 2);
+                rRatio =
+                    rRatio +
+                    (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
+                    (_baseReserve * 2);
             }
         }
     }
@@ -149,7 +156,7 @@ contract vPair is IvPair, ERC20 {
             IvPair(ikPairAddress).token1()
         );
 
-        require(this.calculateReserveRatio() < 2000, "PRF");
+        require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "PRF");
 
         (address _jkToken0, address _jkToken1) = (token0, token1);
         // find common token
@@ -241,7 +248,7 @@ contract vPair is IvPair, ERC20 {
 
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
-            liquidity = 10000 * 1e18;
+            liquidity = FIRST_LP_TOKEN_AMOUNT;
         } else {
             liquidity = vSwapMath.calculateLPTokensAmount(
                 _reserve0,

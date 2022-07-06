@@ -2,7 +2,6 @@ pragma solidity ^0.8.15;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
-import "../interfaces/IvPair.sol";
 
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
@@ -104,9 +103,9 @@ library vSwapMath {
         uint256 addBalance,
         uint256 reserveRatio
     ) public pure returns (uint256 lpAmount) {
-        lpAmount = ((reserve0 / totalSupply) * addBalance);
+        lpAmount = ((totalSupply / reserve0) * addBalance);
 
         //deduct reserve from lptokens
-        lpAmount = lpAmount - ((lpAmount * reserveRatio) / 1000);
+        lpAmount = lpAmount / (1 + reserveRatio / 1000);
     }
 }
