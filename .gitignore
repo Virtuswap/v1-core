@@ -50,6 +50,5 @@ Thumbs.db
 
 /.vscode
 /build
-/package-lock.json
 bin/contracts/VirtuPool-solc-output.json
 /bin
