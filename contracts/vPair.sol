@@ -1,14 +1,15 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
-import "./ERC20/vSwapERC20.sol";
-import "./libraries/SafeERC20.sol";
-import "./libraries/Math.sol";
 import "./libraries/vSwapMath.sol";
 import "./interfaces/IvSwapCallee.sol";
 
-contract vPair is IvPair, vSwapERC20 {
+contract vPair is IvPair, ERC20 {
     address factory;
 
     address public immutable override token0;
@@ -44,7 +45,7 @@ contract vPair is IvPair, vSwapERC20 {
         address _tokenB,
         uint256 _fee,
         uint256 _vFee
-    ) {
+    ) ERC20("Virtuswap-LP", "VSWAPLP") {
         factory = _factory;
         token0 = _tokenA;
         token1 = _tokenB;
@@ -238,13 +239,13 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
-        uint256 _totalSupply = totalSupply;
+        uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
             liquidity = 10000 * 1e18;
         } else {
             liquidity = vSwapMath.calculateLPTokensAmount(
                 _reserve0,
-                totalSupply,
+                totalSupply(),
                 amount0,
                 this.calculateReserveRatio()
             );
@@ -265,9 +266,9 @@ contract vPair is IvPair, vSwapERC20 {
         address _token1 = token1; // gas savings
         uint256 balance0 = IERC20(_token0).balanceOf(address(this));
         uint256 balance1 = IERC20(_token1).balanceOf(address(this));
-        uint256 liquidity = balanceOf[address(this)];
+        uint256 liquidity = this.balanceOf(address(this));
 
-        uint256 _totalSupply = totalSupply;
+        uint256 _totalSupply = totalSupply();
         amount0 = (liquidity / _totalSupply) * balance0;
         amount1 = (liquidity / _totalSupply) * balance1;
 

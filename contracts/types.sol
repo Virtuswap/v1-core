@@ -1,3 +1,5 @@
+pragma solidity ^0.8.15;
+
 struct VirtualPoolModel {
     uint256 fee;
     address token0;

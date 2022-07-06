@@ -1,3 +1,4 @@
+pragma solidity ^0.8.15;
 interface IvPairActions {
     function swapNative(
         uint256 amountOut,

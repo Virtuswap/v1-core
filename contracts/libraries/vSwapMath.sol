@@ -1,9 +1,7 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
-import "../ERC20/IERC20.sol";
-import "../ERC20/ERC20.sol";
-import "./Math.sol";
 import "../interfaces/IvPair.sol";
 
 library vSwapMath {

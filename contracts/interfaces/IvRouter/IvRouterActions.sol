@@ -1,4 +1,4 @@
-import "../../types.sol";
+pragma solidity ^0.8.15;
 
 interface IvRouterActions {
     function swap(

@@ -1,3 +1,5 @@
+pragma solidity ^0.8.15;
+
 interface IvPairState {
     // function tokens() external view returns (address, address);
 
