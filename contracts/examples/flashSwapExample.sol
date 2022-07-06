@@ -73,7 +73,7 @@ contract flashSwapExample is IvSwapCallee {
     function testFlashSwap() external {
         address nativePool = IvPairFactory(_factory).getPair(USDC, ETH);
 
-        uint256 amountOut = 1 ether;
+        uint256 amountOut = 1 * 1e18;
 
         bytes memory data = abi.encodePacked("1");
         IvPair(nativePool).swapNative(amountOut, ETH, address(this), data);

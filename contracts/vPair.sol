@@ -240,7 +240,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         uint256 _totalSupply = totalSupply;
         if (_totalSupply == 0) {
-            liquidity = 10000 ether;
+            liquidity = 10000 * 1e18;
         } else {
             liquidity = vSwapMath.calculateLPTokensAmount(
                 _reserve0,
