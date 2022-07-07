@@ -55,10 +55,6 @@ contract vPair is IvPair, ERC20 {
         token1 = _tokenB;
         fee = _fee;
         vFee = _vFee;
-        _update(
-            IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
-        );
     }
 
     function _update(uint256 balance0, uint256 balance1) private {
