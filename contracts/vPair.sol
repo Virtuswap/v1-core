@@ -120,7 +120,7 @@ contract vPair is IvPair, ERC20 {
 
     function calculateReserveRatio() external view returns (uint256 rRatio) {
         uint256 _baseReserve = reserve0;
-        for (uint256 i = 0; i < whitelist.length; i++) {
+        for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
             if (_rReserve > 0) {
                 rRatio = vSwapMath.calculateReserveRatio(
@@ -138,29 +138,27 @@ contract vPair is IvPair, ERC20 {
         address to,
         bytes calldata data
     ) external lock {
-        (address _ikToken0, address _ikToken1) = (
-            IvPair(ikPairAddress).token0(),
-            IvPair(ikPairAddress).token1()
-        );
-
         require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "PRF");
 
-        (address _jkToken0, address _jkToken1) = (token0, token1);
         // find common token
-        (_ikToken0, _ikToken1, _jkToken0, _jkToken1) = vSwapMath
-            .findCommonToken(_ikToken0, _ikToken1, _jkToken0, _jkToken1);
+        VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
+            IvPair(ikPairAddress).token0(),
+            IvPair(ikPairAddress).token1(),
+            token0,
+            token1
+        );
 
         // validate with factory
         require(
-            IvPairFactory(factory).getPair(_ikToken0, _ikToken1) ==
+            IvPairFactory(factory).getPair(vPoolTokens.ik0, vPoolTokens.ik1) ==
                 ikPairAddress &&
-                _ikToken1 == _jkToken1,
+                vPoolTokens.ik0 == vPoolTokens.jk0,
             "IIKP"
         );
 
-        require(whitelistAllowance[_ikToken0] == true, "TNW");
+        require(whitelistAllowance[vPoolTokens.ik0], "TNW");
 
-        SafeERC20.safeTransfer(IERC20(_jkToken0), to, amountOut);
+        SafeERC20.safeTransfer(IERC20(vPoolTokens.jk0), to, amountOut);
 
         VirtualPoolModel memory vPool;
         {
@@ -169,10 +167,10 @@ contract vPair is IvPair, ERC20 {
             address ikPair0 = IvPair(ikPairAddress).token0();
 
             vPool = vSwapMath.calculateVPool(
-                _ikToken0 == ikPair0 ? ikReserve0 : ikReserve1,
-                _ikToken0 == ikPair0 ? ikReserve1 : ikReserve0,
-                _jkToken0 == token0 ? reserve0 : reserve1,
-                _jkToken0 == token0 ? reserve1 : reserve0
+                vPoolTokens.ik0 == ikPair0 ? ikReserve0 : ikReserve1,
+                vPoolTokens.ik0 == ikPair0 ? ikReserve1 : ikReserve0,
+                vPoolTokens.jk0 == token0 ? reserve0 : reserve1,
+                vPoolTokens.jk0 == token0 ? reserve1 : reserve0
             );
         }
 
@@ -189,19 +187,19 @@ contract vPair is IvPair, ERC20 {
                 msg.sender,
                 amountOut,
                 requiredAmountIn,
-                _ikToken0,
+                vPoolTokens.ik0,
                 data
             );
 
-        uint256 amountIn = IERC20(_ikToken0).balanceOf(address(this)) -
-            reserves[_ikToken0];
+        uint256 amountIn = IERC20(vPoolTokens.ik0).balanceOf(address(this)) -
+            reserves[vPoolTokens.ik0];
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
-        reserveRatio[_ikToken0] =
-            reserveRatio[_ikToken0] +
+        reserveRatio[vPoolTokens.ik0] =
+            reserveRatio[vPoolTokens.ik0] +
             (
-                (_jkToken0 == token0)
+                (vPoolTokens.jk0 == token0)
                     ? amountOut
                     : vSwapMath.getAmountOut(
                         amountOut,
@@ -212,7 +210,7 @@ contract vPair is IvPair, ERC20 {
                     )
             );
 
-        reserves[_ikToken0] + amountIn;
+        reserves[vPoolTokens.ik0] + amountIn;
 
         _update(
             IERC20(token0).balanceOf(address(this)),
@@ -268,7 +266,7 @@ contract vPair is IvPair, ERC20 {
         SafeERC20.safeTransfer(IERC20(_token0), to, amount0);
         SafeERC20.safeTransfer(IERC20(_token1), to, amount1);
 
-        for (uint256 i = 0; i < whitelist.length; i++) {
+        for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 balance = IERC20(whitelist[i]).balanceOf(address(this));
             if (balance > 0) {
                 uint256 amount = balance * (liquidity / _totalSupply);
@@ -289,12 +287,12 @@ contract vPair is IvPair, ERC20 {
 
         address[] memory _oldWL = whitelist;
 
-        for (uint256 i = 0; i < _oldWL.length; i++)
+        for (uint256 i = 0; i < _oldWL.length; ++i)
             whitelistAllowance[_oldWL[i]] = false;
 
         //set new whitelist
         whitelist = _whitelist;
-        for (uint256 i = 0; i < _whitelist.length; i++)
+        for (uint256 i = 0; i < _whitelist.length; ++i)
             whitelistAllowance[_whitelist[i]] = true;
     }
 

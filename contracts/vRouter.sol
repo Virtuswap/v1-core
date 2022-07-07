@@ -79,7 +79,7 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     ) external ensure(deadline) {
-        for (uint256 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; ++i) {
             if (iks[i] == address(0)) {
                 // REAL POOL
                 SafeERC20.safeTransferFrom(

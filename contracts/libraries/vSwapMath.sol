@@ -13,24 +13,24 @@ library vSwapMath {
         address ikToken1,
         address jkToken0,
         address jkToken1
-    )
-        public
-        pure
-        returns (
-            address,
-            address,
-            address,
-            address
-        )
-    {
-        return
-            (ikToken0 == jkToken0)
+    ) public pure returns (VirtualPoolTokens memory vPoolTokens) {
+        (
+            address _ikToken0,
+            address _ikToken1,
+            address _jkToken0,
+            address _jkToken1
+        ) = (ikToken0 == jkToken0)
                 ? (ikToken1, ikToken0, jkToken1, jkToken0)
                 : (ikToken0 == jkToken1)
                 ? (ikToken1, ikToken0, jkToken0, jkToken1)
                 : (ikToken1 == jkToken0)
                 ? (ikToken0, ikToken1, jkToken1, jkToken0)
                 : (ikToken0, ikToken1, jkToken0, jkToken1); //default
+
+        vPoolTokens.ik0 = _ikToken0;
+        vPoolTokens.ik1 = _ikToken1;
+        vPoolTokens.jk0 = _jkToken0;
+        vPoolTokens.jk1 = _jkToken1;
     }
 
     function calculateReserveRatio(
