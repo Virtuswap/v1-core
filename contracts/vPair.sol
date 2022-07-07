@@ -57,24 +57,14 @@ contract vPair is IvPair, ERC20 {
         vFee = _vFee;
         _update(
             IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this)),
-            address(0),
-            0
+            IERC20(token1).balanceOf(address(this))
         );
     }
 
-    function _update(
-        uint256 balance0,
-        uint256 balance1,
-        address reserveToken,
-        uint256 reserveAmount
-    ) private {
+    function _update(uint256 balance0, uint256 balance1) private {
         reserve0 = balance0;
         reserve1 = balance1;
 
-        if (reserveToken > address(0) && reserveAmount > 0) {
-            reserves[reserveToken] = reserveAmount;
-        }
         emit Sync(balance0, balance1);
     }
 
@@ -129,7 +119,7 @@ contract vPair is IvPair, ERC20 {
                 (poolReserves.reserve0 + _amountIn)
             );
 
-        _update(_reserve0, _reserve1, address(0), 0);
+        _update(_reserve0, _reserve1);
     }
 
     function calculateReserveRatio() external view returns (uint256 rRatio) {
@@ -212,24 +202,25 @@ contract vPair is IvPair, ERC20 {
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
-        if (_jkToken0 == token0) {
-            reserveRatio[_ikToken0] = reserveRatio[_ikToken0] + amountOut;
-        } else {
-            uint256 baseTokenBid = vSwapMath.getAmountOut(
-                amountOut,
-                reserve1,
-                reserve0,
-                0,
-                false
+        reserveRatio[_ikToken0] =
+            reserveRatio[_ikToken0] +
+            (
+                (_jkToken0 == token0)
+                    ? amountOut
+                    : vSwapMath.getAmountOut(
+                        amountOut,
+                        reserve1,
+                        reserve0,
+                        0,
+                        false
+                    )
             );
-            reserveRatio[_ikToken0] = reserveRatio[_ikToken0] + baseTokenBid;
-        }
+
+        reserves[_ikToken0] + amountIn;
 
         _update(
             IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this)),
-            _ikToken0,
-            reserves[_ikToken0] + amountIn
+            IERC20(token1).balanceOf(address(this))
         );
     }
 
@@ -256,7 +247,7 @@ contract vPair is IvPair, ERC20 {
         require(liquidity > 0, "ILM");
         _mint(to, liquidity);
 
-        _update(balance0, balance1, address(0), 0);
+        _update(balance0, balance1);
         emit Mint(msg.sender, amount0, amount1);
     }
 
@@ -292,7 +283,7 @@ contract vPair is IvPair, ERC20 {
         balance0 = IERC20(_token0).balanceOf(address(this));
         balance1 = IERC20(_token1).balanceOf(address(this));
 
-        _update(balance0, balance1, address(0), 0);
+        _update(balance0, balance1);
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
