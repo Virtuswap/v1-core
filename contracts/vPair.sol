@@ -254,6 +254,10 @@ contract vPair is IvPair, vSwapERC20 {
         require(liquidity > 0, "ILM");
         _mint(to, liquidity);
 
+        // When minting lp tokens after the first time this function sets reserve0 = balance0
+        // after that trying to mint will always result in failure due to the above require statement on line 254
+        // amount0 on line 240 is going to equal 0 since reserve0 = balance0
+        // and vSwapMath.calculateLpTokensAmount(reserve0, totalSupply, amount0 = 0, reserveRatio) is always going to return 0
         _update(balance0, balance1, address(0), 0);
         emit Mint(msg.sender, amount0, amount1);
     }

@@ -18,17 +18,18 @@ function getMethods(obj) {
 }
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 contract('vRouter',  (accounts) => {
-    let tokenA, tokenB, tokenC;
+    let tokenA, tokenB, tokenC, WETH;
     let vRouterInstance, vPairInstance, vPairFactoryInstance, vSwapMathInstance;
-    const WETH = accounts[2];
     const wallet = accounts[0]
     beforeEach(async () => {
         tokenA = await ERC20.new("tokenA", "A", 0);
         tokenB = await ERC20.new("tokenB", "B", 0);
         tokenC = await ERC20.new("tokenC", "C", 0);
+        WETH = await ERC20.new("WETH", "WETH", 0);
         await tokenA._mint(wallet, 100000000000)
         await tokenB._mint(wallet, 100000000000)
         await tokenC._mint(wallet, 100000000000)
+        await WETH._mint(wallet, 100000000000)
         vPairFactoryInstance = await vPairFactory.deployed();
         vRouterInstance = await vRouter.deployed();
         vSwapMathInstance = await vSwapMath.deployed();
@@ -144,8 +145,6 @@ contract('vRouter',  (accounts) => {
 
         const vRouterInstance = await vRouter.deployed(vPairFactoryInstance.address, WETH);
         // wip
-        let amountADesired = 100;
-        let amountBDesired = 1000;
         const pool = await vPairFactoryInstance.getPair(tokenA.address, tokenB.address);
         let amountIn = 10;
         let amountOut = 100;
