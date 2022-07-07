@@ -104,7 +104,7 @@ library vSwapMath {
         uint256 addBalance,
         uint256 reserveRatio
     ) public pure returns (uint256 lpAmount) {
-        lpAmount = ((totalSupply / reserve0) * addBalance);
+        lpAmount = (addBalance * (totalSupply / reserve0));
 
         //deduct reserve from lptokens
         lpAmount = lpAmount / (1 + reserveRatio / 1000);

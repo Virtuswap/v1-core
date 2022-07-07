@@ -21,7 +21,7 @@ contract vPair is IvPair, ERC20 {
     uint256 public override reserve0;
     uint256 public override reserve1;
 
-    uint256 private constant MINIMUM_LIQUIDITY = 10**3;
+    uint256 private constant MINIMUM_LIQUIDITY = 10 * 1e3;
     uint256 private constant FIRST_LP_TOKEN_AMOUNT = 10000 * 1e18;
     uint256 private constant MAX_RESERVE_RATIO = 2 * 1000;
 
@@ -259,8 +259,8 @@ contract vPair is IvPair, ERC20 {
         uint256 liquidity = this.balanceOf(address(this));
 
         uint256 _totalSupply = totalSupply();
-        amount0 = (liquidity / _totalSupply) * balance0;
-        amount1 = (liquidity / _totalSupply) * balance1;
+        amount0 = balance0 * (liquidity / _totalSupply);
+        amount1 = balance1 * (liquidity / _totalSupply);
 
         require(amount0 > 0 && amount1 > 0, "ILB");
 
@@ -271,7 +271,7 @@ contract vPair is IvPair, ERC20 {
         for (uint256 i = 0; i < whitelist.length; i++) {
             uint256 balance = IERC20(whitelist[i]).balanceOf(address(this));
             if (balance > 0) {
-                uint256 amount = (liquidity / _totalSupply) * balance;
+                uint256 amount = balance * (liquidity / _totalSupply);
                 SafeERC20.safeTransfer(IERC20(_token0), to, amount);
             }
         }
