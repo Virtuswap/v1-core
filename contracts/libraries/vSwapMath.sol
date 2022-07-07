@@ -5,19 +5,9 @@ import "../types.sol";
 
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
+    uint256 private constant RESERVE_RATIO_FACTOR = 1000;
 
     //find common token and assign to ikToken1 and jkToken1
-    function orderTokens(
-        address tokenInput,
-        address jkToken0,
-        address jkToken1
-    ) public pure returns (address, address) {
-        return
-            tokenInput == jkToken0
-                ? (jkToken0, jkToken1)
-                : (jkToken1, jkToken0);
-    }
-
     function findCommonToken(
         address ikToken0,
         address ikToken1,
@@ -41,6 +31,17 @@ library vSwapMath {
                 : (ikToken1 == jkToken0)
                 ? (ikToken0, ikToken1, jkToken1, jkToken0)
                 : (ikToken0, ikToken1, jkToken0, jkToken1); //default
+    }
+
+    function calculateReserveRatio(
+        uint256 rRatio,
+        uint256 _rReserve,
+        uint256 _baseReserve
+    ) public pure returns (uint256) {
+        return
+            rRatio +
+            (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
+            (_baseReserve * 2);
     }
 
     function calculateVPool(

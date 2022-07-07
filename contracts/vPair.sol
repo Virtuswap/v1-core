@@ -10,7 +10,7 @@ import "./libraries/vSwapMath.sol";
 import "./interfaces/IvSwapCallee.sol";
 
 contract vPair is IvPair, ERC20 {
-    address factory;
+    address public factory;
 
     address public immutable override token0;
     address public immutable override token1;
@@ -21,9 +21,9 @@ contract vPair is IvPair, ERC20 {
     uint256 public override reserve0;
     uint256 public override reserve1;
 
+    uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint256 private constant FIRST_LP_TOKEN_AMOUNT = 10000 * 1e18;
-    uint256 private constant RESERVE_RATIO_FACTOR = 1000;
-    uint256 private constant MAX_RESERVE_RATIO = 2 * RESERVE_RATIO_FACTOR;
+    uint256 private constant MAX_RESERVE_RATIO = 2 * 1000;
 
     address[] public whitelist;
     mapping(address => bool) public whitelistAllowance;
@@ -137,10 +137,11 @@ contract vPair is IvPair, ERC20 {
         for (uint256 i = 0; i < whitelist.length; i++) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
             if (_rReserve > 0) {
-                rRatio =
-                    rRatio +
-                    (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
-                    (_baseReserve * 2);
+                rRatio = vSwapMath.calculateReserveRatio(
+                    rRatio,
+                    _rReserve,
+                    _baseReserve
+                );
             }
         }
     }
@@ -212,7 +213,7 @@ contract vPair is IvPair, ERC20 {
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
         if (_jkToken0 == token0) {
-            updateReserveRatio(_ikToken0, amountOut);
+            reserveRatio[_ikToken0] = reserveRatio[_ikToken0] + amountOut;
         } else {
             uint256 baseTokenBid = vSwapMath.getAmountOut(
                 amountOut,
@@ -221,8 +222,7 @@ contract vPair is IvPair, ERC20 {
                 0,
                 false
             );
-
-            updateReserveRatio(_ikToken0, baseTokenBid);
+            reserveRatio[_ikToken0] = reserveRatio[_ikToken0] + baseTokenBid;
         }
 
         _update(
@@ -231,12 +231,6 @@ contract vPair is IvPair, ERC20 {
             _ikToken0,
             reserves[_ikToken0] + amountIn
         );
-    }
-
-    function updateReserveRatio(address token, uint256 baseTokenAmount)
-        internal
-    {
-        reserveRatio[token] = reserveRatio[token] + baseTokenAmount;
     }
 
     function mint(address to) external lock returns (uint256 liquidity) {
@@ -248,6 +242,8 @@ contract vPair is IvPair, ERC20 {
 
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
+            // liquidity = Math.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
+            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
             liquidity = FIRST_LP_TOKEN_AMOUNT;
         } else {
             liquidity = vSwapMath.calculateLPTokensAmount(
