@@ -23,5 +23,8 @@ contract('vPair',  (accounts) => {
 
     it("mints lp tokens", async() => {
         await vPairInstance.mint(wallet)
+        expect((await vPairInstance.balanceOf(wallet)).eq(toDecimalUnits(18, 10000))).to.equal(true)
     })
+
+
 });
