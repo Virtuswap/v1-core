@@ -23,5 +23,8 @@ contract('vPair',  (accounts) => {
 
     it("mints lp tokens", async() => {
         await vPairInstance.mint(wallet)
+        console.log((await vPairInstance.balanceOf(wallet)).toString())
     })
+
+
 });
