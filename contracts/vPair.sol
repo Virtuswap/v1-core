@@ -69,7 +69,7 @@ contract vPair is IvPair, ERC20 {
         address tokenOut,
         address to,
         bytes memory data
-    ) external override lock {
+    ) external lock {
         require(to > address(0), "IT"); // INVALID TO
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
@@ -101,24 +101,24 @@ contract vPair is IvPair, ERC20 {
             );
 
         uint256 _amountIn = IERC20(_inputToken).balanceOf(address(this)) -
-            poolReserves.reserve0;
+        poolReserves.reserve0;
 
         require(_amountIn > 0 && _amountIn > _expectedAmountIn, "IIA");
 
         (uint256 _reserve0, uint256 _reserve1) = _inputToken < tokenOut
-            ? (
-                (poolReserves.reserve0 + _amountIn),
-                (poolReserves.reserve1 - amountOut)
-            )
-            : (
-                (poolReserves.reserve1 - amountOut),
-                (poolReserves.reserve0 + _amountIn)
-            );
+        ? (
+        (poolReserves.reserve0 + _amountIn),
+        (poolReserves.reserve1 - amountOut)
+        )
+        : (
+        (poolReserves.reserve1 - amountOut),
+        (poolReserves.reserve0 + _amountIn)
+        );
 
         _update(_reserve0, _reserve1);
     }
 
-    function calculateReserveRatio() external override view returns (uint256 rRatio) {
+    function calculateReserveRatio() external view returns (uint256 rRatio) {
         uint256 _baseReserve = reserve0;
         for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
@@ -151,8 +151,8 @@ contract vPair is IvPair, ERC20 {
         // validate with factory
         require(
             IvPairFactory(factory).getPair(vPoolTokens.ik0, vPoolTokens.ik1) ==
-                ikPairAddress &&
-                vPoolTokens.ik0 == vPoolTokens.jk0,
+            ikPairAddress &&
+            vPoolTokens.ik0 == vPoolTokens.jk0,
             "IIKP"
         );
 
@@ -192,23 +192,23 @@ contract vPair is IvPair, ERC20 {
             );
 
         uint256 amountIn = IERC20(vPoolTokens.ik0).balanceOf(address(this)) -
-            reserves[vPoolTokens.ik0];
+        reserves[vPoolTokens.ik0];
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
         reserveRatio[vPoolTokens.ik0] =
-            reserveRatio[vPoolTokens.ik0] +
-            (
-                (vPoolTokens.jk0 == token0)
-                    ? amountOut
-                    : vSwapMath.getAmountOut(
-                        amountOut,
-                        reserve1,
-                        reserve0,
-                        0,
-                        false
-                    )
-            );
+        reserveRatio[vPoolTokens.ik0] +
+        (
+        (vPoolTokens.jk0 == token0)
+        ? amountOut
+        : vSwapMath.getAmountOut(
+            amountOut,
+            reserve1,
+            reserve0,
+            0,
+            false
+        )
+        );
 
         reserves[vPoolTokens.ik0] + amountIn;
 
@@ -228,7 +228,8 @@ contract vPair is IvPair, ERC20 {
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
             // liquidity = Math.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
-            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
+            // this throws ERC20: mint to the zero address
+            //_mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
             liquidity = FIRST_LP_TOKEN_AMOUNT;
         } else {
             liquidity = vSwapMath.calculateLPTokensAmount(
@@ -240,20 +241,18 @@ contract vPair is IvPair, ERC20 {
         }
         require(liquidity > 0, "ILM");
         _mint(to, liquidity);
-
         // When minting lp tokens after the first time this function sets reserve0 = balance0
         // after that trying to mint will always result in failure due to the above require statement on line 254
         // amount0 on line 240 is going to equal 0 since reserve0 = balance0
         // and vSwapMath.calculateLpTokensAmount(reserve0, totalSupply, amount0 = 0, reserveRatio) is always going to return 0
-        _update(balance0, balance1, address(0), 0);
+        _update(balance0, balance1);
         emit Mint(msg.sender, amount0, amount1);
     }
 
     function burn(address to)
-        external
-        lock
-        override
-        returns (uint256 amount0, uint256 amount1)
+    external
+    lock
+    returns (uint256 amount0, uint256 amount1)
     {
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
@@ -286,7 +285,7 @@ contract vPair is IvPair, ERC20 {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setWhitelist(address[] memory _whitelist) external override {
+    function setWhitelist(address[] memory _whitelist) external {
         onlyFactoryAdmin();
         require(_whitelist.length <= 8, "MW");
 
@@ -301,12 +300,12 @@ contract vPair is IvPair, ERC20 {
             whitelistAllowance[_whitelist[i]] = true;
     }
 
-    function setFactory(address _factory) external  {
+    function setFactory(address _factory) external {
         onlyFactoryAdmin();
         factory = _factory;
     }
 
-    function setFee(uint256 _fee, uint256 _vFee) external override {
+    function setFee(uint256 _fee, uint256 _vFee) external {
         onlyFactoryAdmin();
         fee = _fee;
         vFee = _vFee;
