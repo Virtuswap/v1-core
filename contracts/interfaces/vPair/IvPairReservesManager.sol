@@ -1,3 +1,4 @@
+pragma solidity ^0.8.15;
 interface IvPairReservesManager {
     function setWhitelist(address[] memory _whitelist) external;
 

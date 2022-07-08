@@ -1,49 +1,47 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
-import "../ERC20/IERC20.sol";
-import "../ERC20/ERC20.sol";
-import "./Math.sol";
-import "../interfaces/IvPair.sol";
 
 library vSwapMath {
     uint256 constant EPSILON = 1 wei;
+    uint256 private constant RESERVE_RATIO_FACTOR = 1000;
 
     //find common token and assign to ikToken1 and jkToken1
-    function orderTokens(
-        address tokenInput,
-        address jkToken0,
-        address jkToken1
-    ) public pure returns (address, address) {
-        return
-            tokenInput == jkToken0
-                ? (jkToken0, jkToken1)
-                : (jkToken1, jkToken0);
-    }
-
     function findCommonToken(
         address ikToken0,
         address ikToken1,
         address jkToken0,
         address jkToken1
-    )
-        public
-        pure
-        returns (
-            address,
-            address,
-            address,
-            address
-        )
-    {
-        return
-            (ikToken0 == jkToken0)
+    ) public pure returns (VirtualPoolTokens memory vPoolTokens) {
+        (
+            address _ikToken0,
+            address _ikToken1,
+            address _jkToken0,
+            address _jkToken1
+        ) = (ikToken0 == jkToken0)
                 ? (ikToken1, ikToken0, jkToken1, jkToken0)
                 : (ikToken0 == jkToken1)
                 ? (ikToken1, ikToken0, jkToken0, jkToken1)
                 : (ikToken1 == jkToken0)
                 ? (ikToken0, ikToken1, jkToken1, jkToken0)
                 : (ikToken0, ikToken1, jkToken0, jkToken1); //default
+
+        vPoolTokens.ik0 = _ikToken0;
+        vPoolTokens.ik1 = _ikToken1;
+        vPoolTokens.jk0 = _jkToken0;
+        vPoolTokens.jk1 = _jkToken1;
+    }
+
+    function calculateReserveRatio(
+        uint256 rRatio,
+        uint256 _rReserve,
+        uint256 _baseReserve
+    ) public pure returns (uint256) {
+        return
+            rRatio +
+            (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
+            (_baseReserve * 2);
     }
 
     function calculateVPool(
@@ -106,15 +104,9 @@ library vSwapMath {
         uint256 addBalance,
         uint256 reserveRatio
     ) public pure returns (uint256 lpAmount) {
-        /* t(add_currency_base,add_currency_quote,LP)=
-                lag_t(add_currency_base,add_currency_quote,LP)+Add*
-                sum(lag_t(add_currency_base,add_currency_quote,:))/
-                (lag_R(add_currency_base,add_currency_quote,add_currency_base)*
-                (1+reserve_ratio(add_currency_base,add_currency_quote)));*/
-
-        lpAmount = ((reserve0 / totalSupply) * addBalance);
+        lpAmount = (addBalance * (totalSupply / reserve0));
 
         //deduct reserve from lptokens
-        lpAmount = lpAmount - ((lpAmount * reserveRatio) / 1000);
+        lpAmount = lpAmount / (1 + reserveRatio / 1000);
     }
 }

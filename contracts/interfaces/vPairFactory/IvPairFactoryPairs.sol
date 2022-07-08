@@ -1,3 +1,5 @@
+pragma solidity ^0.8.15;
+
 interface IvPairFactoryPairs {
     function allPairsLength() external view returns (uint256);
 

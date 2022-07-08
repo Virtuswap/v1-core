@@ -1,3 +1,5 @@
+pragma solidity ^0.8.15;
+
 struct VirtualPoolModel {
     uint256 fee;
     address token0;
@@ -13,4 +15,11 @@ struct VirtualPoolModel {
 struct PoolReserve {
     uint256 reserve0;
     uint256 reserve1;
+}
+
+struct VirtualPoolTokens {
+    address jk0;
+    address jk1;
+    address ik0;
+    address ik1;
 }

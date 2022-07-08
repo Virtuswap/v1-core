@@ -1,21 +1,9 @@
+const {toDecimalUnits} = require("./utils");
 const vRouter = artifacts.require('vRouter')
 const vPair = artifacts.require('vPair')
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapMath = artifacts.require("vSwapMath");
 const ERC20 = artifacts.require("ERC20");
-function getMethods(obj) {
-    let result = [];
-    for (let id in obj) {
-        try {
-            if (typeof(obj[id]) == "function") {
-                result.push(id + ": " + obj[id].toString());
-            }
-        } catch (err) {
-            result.push(id + ": inaccessible");
-        }
-    }
-    return result;
-}
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 contract('vRouter',  (accounts) => {
     let tokenA, tokenB, tokenC, WETH;
@@ -26,10 +14,10 @@ contract('vRouter',  (accounts) => {
         tokenB = await ERC20.new("tokenB", "B", 0);
         tokenC = await ERC20.new("tokenC", "C", 0);
         WETH = await ERC20.new("WETH", "WETH", 0);
-        await tokenA._mint(wallet, 100000000000)
-        await tokenB._mint(wallet, 100000000000)
-        await tokenC._mint(wallet, 100000000000)
-        await WETH._mint(wallet, 100000000000)
+        await tokenA._mint(wallet, toDecimalUnits(18, 100000))
+        await tokenB._mint(wallet, toDecimalUnits(18, 100000))
+        await tokenC._mint(wallet, toDecimalUnits(18, 100000))
+        await WETH._mint(wallet, toDecimalUnits(18, 100000))
         vPairFactoryInstance = await vPairFactory.deployed();
         vRouterInstance = await vRouter.deployed();
         vSwapMathInstance = await vSwapMath.deployed();
@@ -37,38 +25,38 @@ contract('vRouter',  (accounts) => {
         await vPairFactoryInstance.createPair(tokenA.address, tokenC.address);
         await vPairFactoryInstance.createPair(tokenB.address, tokenC.address);
 
-        await tokenA.approve(vRouterInstance.address, 10000000000)
-        await tokenB.approve(vRouterInstance.address, 10000000000)
-        await tokenC.approve(vRouterInstance.address, 10000000000)
+        await tokenA.approve(vRouterInstance.address, toDecimalUnits(18, 100000))
+        await tokenB.approve(vRouterInstance.address, toDecimalUnits(18, 100000))
+        await tokenC.approve(vRouterInstance.address, toDecimalUnits(18, 100000))
 
 
         await vRouterInstance.addLiquidity(
             tokenA.address,
             tokenB.address,
-            10000,
-            100000,
-            10000,
-            100000,
+            toDecimalUnits(18, 10),
+            toDecimalUnits(18, 100),
+            toDecimalUnits(18, 10),
+            toDecimalUnits(18, 100),
             wallet,
             new Date().getTime() + 1000 * 60 * 60
         )
         await vRouterInstance.addLiquidity(
             tokenA.address,
             tokenC.address,
-            100000,
-            1000,
-            100000,
-            1000,
+            toDecimalUnits(18, 10000),
+            toDecimalUnits(18, 100),
+            toDecimalUnits(18, 10000),
+            toDecimalUnits(18, 100),
             wallet,
             new Date().getTime() + 1000 * 60 * 60
         )
         await vRouterInstance.addLiquidity(
             tokenB.address,
             tokenC.address,
-            10000000,
-            10000,
-            10000000,
-            10000,
+            toDecimalUnits(18, 10000),
+            toDecimalUnits(18, 10),
+            toDecimalUnits(18, 10000),
+            toDecimalUnits(18, 10),
             wallet,
             new Date().getTime() + 1000 * 60 * 60
         )
@@ -79,8 +67,8 @@ contract('vRouter',  (accounts) => {
             await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
         }
 
-        let amountADesired = 100;
-        let amountBDesired = 10;
+        let amountADesired = toDecimalUnits(18, 1);
+        let amountBDesired = toDecimalUnits(18, 10);
         const pool = await vPair.at(await vPairFactoryInstance.getPair(tokenA.address, tokenB.address));
 
 

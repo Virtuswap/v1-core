@@ -1,4 +1,4 @@
-import "../../types.sol";
+pragma solidity ^0.8.15;
 
 interface IvRouterActions {
     function swap(
@@ -63,4 +63,11 @@ interface IvRouterActions {
         address to,
         uint256 deadline
     ) external returns (uint256 amountToken, uint256 amountETH);
+
+    function getAmountOut(
+        address tokenA,
+        address tokenB,
+        address tokenIn,
+        uint256 amountIn
+    ) external view returns (uint256 amountOut);
 }

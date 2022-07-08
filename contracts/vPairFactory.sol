@@ -1,8 +1,7 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
 import "./interfaces/IvPairFactory.sol";
 import "./vPair.sol";
-import "./ERC20/IERC20.sol";
 
 contract vPairFactory is IvPairFactory {
     mapping(address => mapping(address => address)) public pairs;

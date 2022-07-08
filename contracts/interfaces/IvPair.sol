@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
 import "./vPair/IvPairState.sol";
 import "./vPair/IvPairEvents.sol";

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 
 import "./types.sol";
-import "./ERC20/IERC20.sol";
-import "./libraries/SafeERC20.sol";
 import "./libraries/vSwapMath.sol";
-import "./libraries/TransferHelper.sol";
 import "./interfaces/IvPair.sol";
-import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
-import "./interfaces/IWETH.sol";
 
 contract vRouter is IvRouter {
     address public override factory;
@@ -79,8 +79,7 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     ) external ensure(deadline) {
-        //check for real pool
-        for (uint256 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; ++i) {
             if (iks[i] == address(0)) {
                 // REAL POOL
                 SafeERC20.safeTransferFrom(
@@ -219,8 +218,8 @@ contract vRouter is IvRouter {
             pool = IvPairFactory(factory).createPair(tokenA, tokenB);
 
         (uint256 reserveA, uint256 reserveB) = (
-            IvPair(pool).reserve0(),
-            IvPair(pool).reserve1()
+        IvPair(pool).reserve0(),
+        IvPair(pool).reserve1()
         );
 
         if (reserveA == 0 && reserveB == 0) {
@@ -269,14 +268,14 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     )
-        external
-        virtual
-        ensure(deadline)
-        returns (
-            uint256 amountA,
-            uint256 amountB,
-            uint256 liquidity
-        )
+    external
+    virtual
+    ensure(deadline)
+    returns (
+        uint256 amountA,
+        uint256 amountB,
+        uint256 liquidity
+    )
     {
         (amountA, amountB) = _addLiquidity(
             tokenA,
@@ -302,15 +301,15 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     )
-        external
-        payable
-        virtual
-        ensure(deadline)
-        returns (
-            uint256 amountToken,
-            uint256 amountETH,
-            uint256 liquidity
-        )
+    external
+    payable
+    virtual
+    ensure(deadline)
+    returns (
+        uint256 amountToken,
+        uint256 amountETH,
+        uint256 liquidity
+    )
     {
         (amountToken, amountETH) = _addLiquidity(
             token,
@@ -351,8 +350,8 @@ contract vRouter is IvRouter {
         (uint256 amount0, uint256 amount1) = IvPair(pair).burn(to);
         address token0 = tokenA > tokenB ? tokenA : tokenB;
         (amountA, amountB) = tokenA == token0
-            ? (amount0, amount1)
-            : (amount1, amount0);
+        ? (amount0, amount1)
+        : (amount1, amount0);
         require(amountA >= amountAMin, "VSWAP: INSUFFICIENT_A_AMOUNT");
         require(amountB >= amountBMin, "VSWAP: INSUFFICIENT_B_AMOUNT");
     }
@@ -365,11 +364,11 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     )
-        public
-        virtual
-        override
-        ensure(deadline)
-        returns (uint256 amountToken, uint256 amountETH)
+    public
+    virtual
+    override
+    ensure(deadline)
+    returns (uint256 amountToken, uint256 amountETH)
     {
         (amountToken, amountETH) = this.removeLiquidity(
             token,
@@ -385,24 +384,63 @@ contract vRouter is IvRouter {
         TransferHelper.safeTransferETH(to, amountETH);
     }
 
-    // function getAmountOut(
-    //     address tokenA,
-    //     address tokenB,
-    //     uint256 amountIn
-    // ) public pure virtual override returns (uint256 amountOut) {
-    //     (uint256 reserve0, uint256 reserve1) = IvPairFactory(factory)
-    //         .getPair(tokenA, tokenB)
-    //         .getNativeReserves();
+    function getAmountOut(
+        address tokenA,
+        address tokenB,
+        address tokenIn,
+        uint256 amountIn
+    ) public view virtual override returns (uint256 amountOut) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-    //     vSwapMath.quoteOutput(reserve0, reserve1);
-    //     return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
-    // }
+        (uint256 reserve0, uint256 reserve1) = (
+        IvPair(pair).reserve0(),
+        IvPair(pair).reserve1()
+        );
+
+        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+            tokenIn,
+            IvPair(pair).token0(),
+            reserve0,
+            reserve1
+        );
+
+        return
+        vSwapMath.getAmountOut(
+            amountIn,
+            reserves.reserve0,
+            reserves.reserve1,
+            IvPair(pair).fee(),
+            true
+        );
+    }
 
     // function getAmountIn(
-    //     uint256 amountOut,
-    //     uint256 reserveIn,
-    //     uint256 reserveOut
+    //     address tokenA,
+    //     address tokenB,
+    //     address tokenIn,
+    //     uint256 amountOut
     // ) public pure virtual override returns (uint256 amountIn) {
-    //     return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
+    //     IvPair pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+    //     (uint256 reserve0, uint256 reserve1) = (
+    //         pair.reserve0(),
+    //         pair.reserve1()
+    //     );
+
+    //     PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+    //         tokenIn,
+    //         pair.token0(),
+    //         reserve0,
+    //         reserve1
+    //     );
+
+    //     return
+    //         vSwapMath.getAmountIn(
+    //             amountOut,
+    //             reserves.reserve0,
+    //             reserves.reserve1,
+    //             pair.fee(),
+    //             true
+    //         );
     // }
 }
