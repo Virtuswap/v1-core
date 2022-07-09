@@ -85,6 +85,16 @@ library vSwapMath {
         amountOut = numerator / denominator;
     }
 
+    function quote(
+        uint256 amountA,
+        uint256 reserveA,
+        uint256 reserveB
+    ) internal pure returns (uint256 amountB) {
+        require(amountA > 0, "VSWAP: INSUFFICIENT_AMOUNT");
+        require(reserveA > 0 && reserveB > 0, "VSWAP: INSUFFICIENT_LIQUIDITY");
+        amountB = (amountA * reserveB) / reserveA;
+    }
+
     function SortedReservesBalances(
         address tokenIn,
         address baseToken,

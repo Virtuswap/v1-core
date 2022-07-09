@@ -204,6 +204,8 @@ contract vRouter is IvRouter {
     //     TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     // }
 
+    event Debug(string message, uint256 value);
+
     function _addLiquidity(
         address tokenA,
         address tokenB,
@@ -225,12 +227,10 @@ contract vRouter is IvRouter {
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint256 amountBOptimal = vSwapMath.getAmountOut(
+            uint256 amountBOptimal = vSwapMath.quote(
                 amountADesired,
                 reserveA,
-                reserveB,
-                0,
-                false
+                reserveB
             );
 
             if (amountBOptimal <= amountBDesired) {
@@ -240,13 +240,13 @@ contract vRouter is IvRouter {
                 );
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint256 amountAOptimal = vSwapMath.getAmountOut(
+                uint256 amountAOptimal = vSwapMath.quote(
                     amountBDesired,
                     reserveA,
-                    reserveB,
-                    0,
-                    false
+                    reserveB
                 );
+
+                emit Debug("amountAOptimal", amountBOptimal);
 
                 assert(amountAOptimal <= amountADesired);
                 require(
