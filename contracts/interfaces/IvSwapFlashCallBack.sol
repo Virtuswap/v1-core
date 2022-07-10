@@ -1,7 +1,7 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
 
-interface IvSwapCallee {
-    function vSwapcallee(
+interface IvSwapFlashCallBack {
+    function vSwapFlashCallBack(
         address sender,
         uint256 amount,
         uint256 requiredBackAmount,

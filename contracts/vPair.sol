@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./libraries/vSwapMath.sol";
-import "./interfaces/IvSwapCallee.sol";
+import "./interfaces/IvSwapFlashCallBack.sol";
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
@@ -22,8 +22,7 @@ contract vPair is IvPair, vSwapERC20 {
     uint256 public override reserve1;
 
     uint256 private constant MINIMUM_LIQUIDITY = 10 * 1e3;
-    uint256 private constant FIRST_LP_TOKEN_AMOUNT = 10000 * 1e18;
-    uint256 private constant MAX_RESERVE_RATIO = 2 * 1000;
+    uint256 private constant MAX_RESERVE_RATIO = 2000; //2%
 
     address[] public whitelist;
     mapping(address => bool) public whitelistAllowance;
@@ -91,7 +90,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvSwapCallee(to).vSwapcallee(
+            IvSwapFlashCallBack(to).vSwapFlashCallBack(
                 msg.sender,
                 amountOut,
                 _expectedAmountIn,
@@ -186,7 +185,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvSwapCallee(to).vSwapcallee(
+          IvSwapFlashCallBack(to).vSwapFlashCallBack(
                 msg.sender,
                 amountOut,
                 requiredAmountIn,
