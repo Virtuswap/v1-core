@@ -38,8 +38,13 @@ contract vPair is IvPair, vSwapERC20 {
         unlocked = 1;
     }
 
-    function onlyFactoryAdmin() private view {
+    function _onlyFactoryAdmin() internal view {
         require(msg.sender == IvPairFactory(factory).admin());
+    }
+
+    modifier onlyFactoryAdmin() {
+        _onlyFactoryAdmin();
+        _;
     }
 
     constructor(
@@ -185,7 +190,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-          IvSwapFlashCallBack(to).vSwapFlashCallBack(
+            IvSwapFlashCallBack(to).vSwapFlashCallBack(
                 msg.sender,
                 amountOut,
                 requiredAmountIn,
@@ -237,6 +242,14 @@ contract vPair is IvPair, vSwapERC20 {
             );
         }
 
+        //deduct reserve ratio from liquidity
+        // uint256 _reserveRatio = calculateReserveRatio();
+        // uint256 multiplier =  (1000 - (_reserveRatio / 1000);
+        // liquidity = (liquidity * multiplier) / 1000;
+        liquidity =
+            (liquidity * (1000 - (calculateReserveRatio() / 1000))) /
+            1000;
+
         require(liquidity > 0, "ILM");
         _mint(to, liquidity);
 
@@ -281,8 +294,11 @@ contract vPair is IvPair, vSwapERC20 {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setWhitelist(address[] memory _whitelist) external override {
-        onlyFactoryAdmin();
+    function setWhitelist(address[] memory _whitelist)
+        external
+        override
+        onlyFactoryAdmin
+    {
         require(_whitelist.length <= 8, "MW");
 
         address[] memory _oldWL = whitelist;
@@ -296,13 +312,15 @@ contract vPair is IvPair, vSwapERC20 {
             whitelistAllowance[_whitelist[i]] = true;
     }
 
-    function setFactory(address _factory) external {
-        onlyFactoryAdmin();
+    function setFactory(address _factory) external onlyFactoryAdmin {
         factory = _factory;
     }
 
-    function setFee(uint256 _fee, uint256 _vFee) external override {
-        onlyFactoryAdmin();
+    function setFee(uint256 _fee, uint256 _vFee)
+        external
+        override
+        onlyFactoryAdmin
+    {
         fee = _fee;
         vFee = _vFee;
     }
