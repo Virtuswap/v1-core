@@ -1,15 +1,15 @@
-pragma solidity ^0.8.15;
+pragma solidity =0.8.1;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./libraries/vSwapMath.sol";
 import "./interfaces/IvSwapCallee.sol";
+import "./vSwapERC20.sol";
 
-contract vPair is IvPair, ERC20 {
+contract vPair is IvPair, vSwapERC20 {
     address public factory;
 
     address public immutable override token0;
@@ -49,7 +49,7 @@ contract vPair is IvPair, ERC20 {
         address _tokenB,
         uint256 _fee,
         uint256 _vFee
-    ) ERC20("Virtuswap-LP", "VSWAPLP") {
+    ) vSwapERC20("Virtuswap-LP", "VSWAPLP") {
         factory = _factory;
         token0 = _tokenA;
         token1 = _tokenB;
@@ -69,7 +69,7 @@ contract vPair is IvPair, ERC20 {
         address tokenOut,
         address to,
         bytes memory data
-    ) external lock {
+    ) external override lock {
         require(to > address(0), "IT"); // INVALID TO
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
@@ -87,8 +87,7 @@ contract vPair is IvPair, ERC20 {
             amountOut,
             poolReserves.reserve0,
             poolReserves.reserve1,
-            fee,
-            true
+            fee
         );
 
         if (data.length > 0)
@@ -118,7 +117,7 @@ contract vPair is IvPair, ERC20 {
         _update(_reserve0, _reserve1);
     }
 
-    function calculateReserveRatio() external view returns (uint256 rRatio) {
+    function calculateReserveRatio() external override view returns (uint256 rRatio) {
         uint256 _baseReserve = reserve0;
         for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
@@ -137,7 +136,7 @@ contract vPair is IvPair, ERC20 {
         address ikPairAddress,
         address to,
         bytes calldata data
-    ) external lock {
+    ) external override lock {
         require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "PRF");
 
         // find common token
@@ -178,8 +177,7 @@ contract vPair is IvPair, ERC20 {
             amountOut,
             vPool.tokenABalance,
             vPool.tokenBBalance,
-            vFee,
-            true
+            vFee
         );
 
         if (data.length > 0)
@@ -201,13 +199,7 @@ contract vPair is IvPair, ERC20 {
             (
                 (vPoolTokens.jk0 == token0)
                     ? amountOut
-                    : vSwapMath.getAmountOut(
-                        amountOut,
-                        reserve1,
-                        reserve0,
-                        0,
-                        false
-                    )
+                    : vSwapMath.quote(amountOut, reserve1, reserve0)
             );
 
         reserves[vPoolTokens.ik0] + amountIn;
@@ -218,7 +210,7 @@ contract vPair is IvPair, ERC20 {
         );
     }
 
-    function mint(address to) external lock returns (uint256 liquidity) {
+    function mint(address to) external override lock returns (uint256 liquidity) {
         (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
@@ -247,6 +239,7 @@ contract vPair is IvPair, ERC20 {
 
     function burn(address to)
         external
+        override
         lock
         returns (uint256 amount0, uint256 amount1)
     {
@@ -281,7 +274,7 @@ contract vPair is IvPair, ERC20 {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setWhitelist(address[] memory _whitelist) external {
+    function setWhitelist(address[] memory _whitelist) external override {
         onlyFactoryAdmin();
         require(_whitelist.length <= 8, "MW");
 
@@ -301,7 +294,7 @@ contract vPair is IvPair, ERC20 {
         factory = _factory;
     }
 
-    function setFee(uint256 _fee, uint256 _vFee) external {
+    function setFee(uint256 _fee, uint256 _vFee) external override {
         onlyFactoryAdmin();
         fee = _fee;
         vFee = _vFee;
