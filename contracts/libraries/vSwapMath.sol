@@ -1,4 +1,4 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
@@ -105,15 +105,12 @@ library vSwapMath {
         reserves.reserve1 = _reserve1;
     }
 
-    function calculateLPTokensAmount(
-        uint256 reserve0,
-        uint256 totalSupply,
-        uint256 addBalance,
-        uint256 reserveRatio
-    ) public pure returns (uint256 lpAmount) {
-        lpAmount = (addBalance * (totalSupply / reserve0));
-
-        //deduct reserve from lptokens
-        lpAmount = lpAmount / (1 + reserveRatio / 1000);
+    function deductReserveRatioFromLP(uint256 liquidity, uint256 reserveRatio)
+        public
+        pure
+        returns (uint256 lpAmount)
+    {
+        uint256 multiplier =  (RESERVE_RATIO_FACTOR - (_reserveRatio / RESERVE_RATIO_FACTOR);
+        lpAmount = (liquidity * multiplier) / RESERVE_RATIO_FACTOR;
     }
 }
