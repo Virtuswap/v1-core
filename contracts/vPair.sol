@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
-import "./libraries/vSwapMath.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
+import "./libraries/vSwapMath.sol";
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
@@ -22,7 +22,7 @@ contract vPair is IvPair, vSwapERC20 {
     uint256 public override reserve1;
 
     uint256 private constant MINIMUM_LIQUIDITY = 10 * 1e3;
-    uint256 private constant MAX_RESERVE_RATIO = 2000; //2%
+    uint256 private max_reserve_ratio;
 
     address[] public whitelist;
     mapping(address => bool) public whitelistAllowance;
@@ -52,13 +52,15 @@ contract vPair is IvPair, vSwapERC20 {
         address _tokenA,
         address _tokenB,
         uint256 _fee,
-        uint256 _vFee
+        uint256 _vFee,
+        uint256 maxReserveRatio
     ) vSwapERC20("Virtuswap-LP", "VSWAPLP") {
         factory = _factory;
         token0 = _tokenA;
         token1 = _tokenB;
         fee = _fee;
         vFee = _vFee;
+        max_reserve_ratio = maxReserveRatio;
     }
 
     function _update(uint256 balance0, uint256 balance1) private {
@@ -146,7 +148,7 @@ contract vPair is IvPair, vSwapERC20 {
         address to,
         bytes calldata data
     ) external override lock {
-        require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "MRR");
+        require(this.calculateReserveRatio() < max_reserve_ratio, "MRR");
 
         // find common token
         VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
@@ -325,5 +327,13 @@ contract vPair is IvPair, vSwapERC20 {
     {
         fee = _fee;
         vFee = _vFee;
+    }
+
+    function setMaxReserveThreshold(uint256 threshold)
+        external
+        override
+        onlyFactoryAdmin
+    {
+        max_reserve_ratio = threshold;
     }
 }

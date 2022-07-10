@@ -13,6 +13,4 @@ interface IvPairEvents {
     event WhitelistChanged(address[] tokens);
 
     event Sync(uint256 balance0, uint256 balance1);
-
-    event ReserveRatioThreshold(uint reserveRatio)
 }

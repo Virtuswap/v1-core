@@ -1,4 +1,4 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
 
 import "./interfaces/IvPairFactory.sol";
 import "./vPair.sol";
@@ -18,14 +18,14 @@ contract vPairFactory is IvPairFactory {
         admin = msg.sender;
     }
 
-    function allPairsLength() external override view returns (uint256) {
+    function allPairsLength() external view override returns (uint256) {
         return allPairs.length;
     }
 
     function getPair(address tokenA, address tokenB)
         external
-        override
         view
+        override
         returns (address)
     {
         return pairs[tokenA][tokenB];
@@ -46,7 +46,14 @@ contract vPairFactory is IvPairFactory {
 
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
-        vPair newPair = new vPair(address(this), token0, token1, 997, 996); // 997 = 0.03%
+        vPair newPair = new vPair(
+            address(this),
+            token0,
+            token1,
+            997,
+            996,
+            2000
+        ); // 997 = 0.03%
 
         pairs[token0][token1] = address(newPair);
         pairs[token1][token0] = address(newPair);
