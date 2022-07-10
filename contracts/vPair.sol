@@ -247,9 +247,9 @@ contract vPair is IvPair, vSwapERC20 {
         //deduct reserve ratio from liquidity
         liquidity = vSwapMath.deductReserveRatioFromLP(
             liquidity,
-            calculateReserveRatio()
+            this.calculateReserveRatio()
         );
-        
+
         require(liquidity > 0, "ILM");
 
         _mint(to, liquidity);

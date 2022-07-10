@@ -105,12 +105,13 @@ library vSwapMath {
         reserves.reserve1 = _reserve1;
     }
 
-    function deductReserveRatioFromLP(uint256 liquidity, uint256 reserveRatio)
+    function deductReserveRatioFromLP(uint256 _liquidity, uint256 _reserveRatio)
         public
         pure
         returns (uint256 lpAmount)
     {
-        uint256 multiplier =  (RESERVE_RATIO_FACTOR - (_reserveRatio / RESERVE_RATIO_FACTOR);
-        lpAmount = (liquidity * multiplier) / RESERVE_RATIO_FACTOR;
+        uint256 multiplier = (RESERVE_RATIO_FACTOR -
+            (_reserveRatio / RESERVE_RATIO_FACTOR));
+        lpAmount = (_liquidity * multiplier) / RESERVE_RATIO_FACTOR;
     }
 }
