@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./libraries/vSwapMath.sol";
-import "./interfaces/IvSwapFlashCallBack.sol";
+import "./interfaces/IvFlashSwapCallback.sol";
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
@@ -95,7 +95,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvSwapFlashCallBack(to).vSwapFlashCallBack(
+            IvFlashSwapCallback(to).vFlashSwapCallback(
                 msg.sender,
                 amountOut,
                 _expectedAmountIn,
@@ -146,7 +146,7 @@ contract vPair is IvPair, vSwapERC20 {
         address to,
         bytes calldata data
     ) external override lock {
-        require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "PRF");
+        require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "MRR");
 
         // find common token
         VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
@@ -190,7 +190,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvSwapFlashCallBack(to).vSwapFlashCallBack(
+            IvFlashSwapCallback(to).vFlashSwapCallback(
                 msg.sender,
                 amountOut,
                 requiredAmountIn,
@@ -247,7 +247,7 @@ contract vPair is IvPair, vSwapERC20 {
         // uint256 multiplier =  (1000 - (_reserveRatio / 1000);
         // liquidity = (liquidity * multiplier) / 1000;
         liquidity =
-            (liquidity * (1000 - (calculateReserveRatio() / 1000))) /
+            (liquidity * (1000 - (this.calculateReserveRatio() / 1000))) /
             1000;
 
         require(liquidity > 0, "ILM");
@@ -310,6 +310,8 @@ contract vPair is IvPair, vSwapERC20 {
         whitelist = _whitelist;
         for (uint256 i = 0; i < _whitelist.length; ++i)
             whitelistAllowance[_whitelist[i]] = true;
+
+        emit WhitelistChanged(_whitelist);
     }
 
     function setFactory(address _factory) external onlyFactoryAdmin {

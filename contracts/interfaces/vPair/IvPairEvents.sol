@@ -1,4 +1,4 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
 
 interface IvPairEvents {
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
@@ -10,7 +10,9 @@ interface IvPairEvents {
         address indexed to
     );
 
-    event WhitelistChanged(address token, bool allowed);
+    event WhitelistChanged(address[] tokens);
 
     event Sync(uint256 balance0, uint256 balance1);
+
+    event ReserveRatioThreshold(uint reserveRatio)
 }
