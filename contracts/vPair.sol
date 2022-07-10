@@ -117,7 +117,12 @@ contract vPair is IvPair, vSwapERC20 {
         _update(_reserve0, _reserve1);
     }
 
-    function calculateReserveRatio() external override view returns (uint256 rRatio) {
+    function calculateReserveRatio()
+        external
+        view
+        override
+        returns (uint256 rRatio)
+    {
         uint256 _baseReserve = reserve0;
         for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
@@ -210,26 +215,29 @@ contract vPair is IvPair, vSwapERC20 {
         );
     }
 
-    function mint(address to) external override lock returns (uint256 liquidity) {
+    function mint(address to)
+        external
+        override
+        lock
+        returns (uint256 liquidity)
+    {
         (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
-        uint256 _totalSupply = totalSupply();
+        uint256 _totalSupply = totalSupply(); // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
-            // liquidity = Math.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
-            // _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
-            liquidity = FIRST_LP_TOKEN_AMOUNT;
+            liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
+            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
         } else {
-            liquidity = vSwapMath.calculateLPTokensAmount(
-                _reserve0,
-                totalSupply(),
-                amount0,
-                this.calculateReserveRatio()
+            liquidity = Math.min(
+                (amount0 * _totalSupply) / _reserve0,
+                (amount1 * _totalSupply) / _reserve1
             );
         }
+
         require(liquidity > 0, "ILM");
         _mint(to, liquidity);
 

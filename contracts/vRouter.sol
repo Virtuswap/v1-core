@@ -246,8 +246,6 @@ contract vRouter is IvRouter {
                     reserveB
                 );
 
-                emit Debug("amountAOptimal", amountBOptimal);
-
                 assert(amountAOptimal <= amountADesired);
                 require(
                     amountAOptimal >= amountAMin,

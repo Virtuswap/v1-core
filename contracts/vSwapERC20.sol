@@ -262,6 +262,7 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
         uint256 amount
     ) public virtual {
         require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
 
         _beforeTokenTransfer(from, to, amount);
 
@@ -292,8 +293,6 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
      * - `account` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
         _beforeTokenTransfer(address(0), account, amount);
 
         _totalSupply += amount;
