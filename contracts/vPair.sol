@@ -1,15 +1,15 @@
-pragma solidity ^0.8.15;
+pragma solidity =0.8.1;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvPairFactory.sol";
+import "./interfaces/IvFlashSwapCallback.sol";
 import "./libraries/vSwapMath.sol";
-import "./interfaces/IvSwapCallee.sol";
+import "./vSwapERC20.sol";
 
-contract vPair is IvPair, ERC20 {
+contract vPair is IvPair, vSwapERC20 {
     address public factory;
 
     address public immutable override token0;
@@ -22,8 +22,7 @@ contract vPair is IvPair, ERC20 {
     uint256 public override reserve1;
 
     uint256 private constant MINIMUM_LIQUIDITY = 10 * 1e3;
-    uint256 private constant FIRST_LP_TOKEN_AMOUNT = 10000 * 1e18;
-    uint256 private constant MAX_RESERVE_RATIO = 2 * 1000;
+    uint256 private max_reserve_ratio;
 
     address[] public whitelist;
     mapping(address => bool) public whitelistAllowance;
@@ -39,8 +38,13 @@ contract vPair is IvPair, ERC20 {
         unlocked = 1;
     }
 
-    function onlyFactoryAdmin() private view {
+    function _onlyFactoryAdmin() internal view {
         require(msg.sender == IvPairFactory(factory).admin());
+    }
+
+    modifier onlyFactoryAdmin() {
+        _onlyFactoryAdmin();
+        _;
     }
 
     constructor(
@@ -48,13 +52,15 @@ contract vPair is IvPair, ERC20 {
         address _tokenA,
         address _tokenB,
         uint256 _fee,
-        uint256 _vFee
-    ) ERC20("Virtuswap-LP", "VSWAPLP") {
+        uint256 _vFee,
+        uint256 maxReserveRatio
+    ) vSwapERC20("Virtuswap-LP", "VSWAPLP") {
         factory = _factory;
         token0 = _tokenA;
         token1 = _tokenB;
         fee = _fee;
         vFee = _vFee;
+        max_reserve_ratio = maxReserveRatio;
     }
 
     function _update(uint256 balance0, uint256 balance1) private {
@@ -69,7 +75,7 @@ contract vPair is IvPair, ERC20 {
         address tokenOut,
         address to,
         bytes memory data
-    ) external lock {
+    ) external override lock {
         require(to > address(0), "IT"); // INVALID TO
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
@@ -87,12 +93,11 @@ contract vPair is IvPair, ERC20 {
             amountOut,
             poolReserves.reserve0,
             poolReserves.reserve1,
-            fee,
-            true
+            fee
         );
 
         if (data.length > 0)
-            IvSwapCallee(to).vSwapcallee(
+            IvFlashSwapCallback(to).vFlashSwapCallback(
                 msg.sender,
                 amountOut,
                 _expectedAmountIn,
@@ -118,7 +123,12 @@ contract vPair is IvPair, ERC20 {
         _update(_reserve0, _reserve1);
     }
 
-    function calculateReserveRatio() external view returns (uint256 rRatio) {
+    function calculateReserveRatio()
+        external
+        view
+        override
+        returns (uint256 rRatio)
+    {
         uint256 _baseReserve = reserve0;
         for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 _rReserve = reserveRatio[whitelist[i]];
@@ -137,8 +147,8 @@ contract vPair is IvPair, ERC20 {
         address ikPairAddress,
         address to,
         bytes calldata data
-    ) external lock {
-        require(this.calculateReserveRatio() < MAX_RESERVE_RATIO, "PRF");
+    ) external override lock {
+        require(this.calculateReserveRatio() < max_reserve_ratio, "MRR");
 
         // find common token
         VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
@@ -178,12 +188,11 @@ contract vPair is IvPair, ERC20 {
             amountOut,
             vPool.tokenABalance,
             vPool.tokenBBalance,
-            vFee,
-            true
+            vFee
         );
 
         if (data.length > 0)
-            IvSwapCallee(to).vSwapcallee(
+            IvFlashSwapCallback(to).vFlashSwapCallback(
                 msg.sender,
                 amountOut,
                 requiredAmountIn,
@@ -197,18 +206,12 @@ contract vPair is IvPair, ERC20 {
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
         reserveRatio[vPoolTokens.ik0] =
-        reserveRatio[vPoolTokens.ik0] +
-        (
-        (vPoolTokens.jk0 == token0)
-        ? amountOut
-        : vSwapMath.getAmountOut(
-            amountOut,
-            reserve1,
-            reserve0,
-            0,
-            false
-        )
-        );
+            reserveRatio[vPoolTokens.ik0] +
+            (
+                (vPoolTokens.jk0 == token0)
+                    ? amountOut
+                    : vSwapMath.quote(amountOut, reserve1, reserve0)
+            );
 
         reserves[vPoolTokens.ik0] + amountIn;
 
@@ -218,28 +221,37 @@ contract vPair is IvPair, ERC20 {
         );
     }
 
-    function mint(address to) external lock returns (uint256 liquidity) {
+    function mint(address to)
+        external
+        override
+        lock
+        returns (uint256 liquidity)
+    {
         (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
-        uint256 _totalSupply = totalSupply();
+        uint256 _totalSupply = totalSupply(); // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
-            // liquidity = Math.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
-            // this throws ERC20: mint to the zero address
+            liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
             _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
-            liquidity = FIRST_LP_TOKEN_AMOUNT;
         } else {
-            liquidity = vSwapMath.calculateLPTokensAmount(
-                _reserve0,
-                totalSupply(),
-                amount0,
-                this.calculateReserveRatio()
+            liquidity = Math.min(
+                (amount0 * _totalSupply) / _reserve0,
+                (amount1 * _totalSupply) / _reserve1
             );
         }
+
+        //deduct reserve ratio from liquidity
+        liquidity = vSwapMath.deductReserveRatioFromLP(
+            liquidity,
+            this.calculateReserveRatio()
+        );
+
         require(liquidity > 0, "ILM");
+
         _mint(to, liquidity);
         // When minting lp tokens after the first time this function sets reserve0 = balance0
         // after that trying to mint will always result in failure due to the above require statement on line 254
@@ -250,9 +262,10 @@ contract vPair is IvPair, ERC20 {
     }
 
     function burn(address to)
-    external
-    lock
-    returns (uint256 amount0, uint256 amount1)
+        external
+        override
+        lock
+        returns (uint256 amount0, uint256 amount1)
     {
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
@@ -285,8 +298,11 @@ contract vPair is IvPair, ERC20 {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setWhitelist(address[] memory _whitelist) external {
-        onlyFactoryAdmin();
+    function setWhitelist(address[] memory _whitelist)
+        external
+        override
+        onlyFactoryAdmin
+    {
         require(_whitelist.length <= 8, "MW");
 
         address[] memory _oldWL = whitelist;
@@ -298,16 +314,28 @@ contract vPair is IvPair, ERC20 {
         whitelist = _whitelist;
         for (uint256 i = 0; i < _whitelist.length; ++i)
             whitelistAllowance[_whitelist[i]] = true;
+
+        emit WhitelistChanged(_whitelist);
     }
 
-    function setFactory(address _factory) external {
-        onlyFactoryAdmin();
+    function setFactory(address _factory) external onlyFactoryAdmin {
         factory = _factory;
     }
 
-    function setFee(uint256 _fee, uint256 _vFee) external {
-        onlyFactoryAdmin();
+    function setFee(uint256 _fee, uint256 _vFee)
+        external
+        override
+        onlyFactoryAdmin
+    {
         fee = _fee;
         vFee = _vFee;
+    }
+
+    function setMaxReserveThreshold(uint256 threshold)
+        external
+        override
+        onlyFactoryAdmin
+    {
+        max_reserve_ratio = threshold;
     }
 }

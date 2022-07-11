@@ -1,4 +1,4 @@
-pragma solidity ^0.8.15;
+ pragma solidity =0.8.1;
 
 import "./vPairFactory/IvPairFactoryEvents.sol";
 import "./vPairFactory/IvPairFactoryActions.sol";

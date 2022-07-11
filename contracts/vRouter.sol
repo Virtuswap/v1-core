@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity =0.8.1;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -78,7 +78,7 @@ contract vRouter is IvRouter {
         address outputToken,
         address to,
         uint256 deadline
-    ) external ensure(deadline) {
+    ) external override ensure(deadline) {
         for (uint256 i = 0; i < pools.length; ++i) {
             if (iks[i] == address(0)) {
                 // REAL POOL
@@ -146,7 +146,7 @@ contract vRouter is IvRouter {
     //     }
     // }
 
-    function changeFactory(address _factory) external onlyOwner {
+    function changeFactory(address _factory) external override onlyOwner {
         factory = _factory;
     }
 
@@ -204,6 +204,8 @@ contract vRouter is IvRouter {
     //     TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     // }
 
+    event Debug(string message, uint256 value);
+
     function _addLiquidity(
         address tokenA,
         address tokenB,
@@ -225,12 +227,10 @@ contract vRouter is IvRouter {
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint256 amountBOptimal = vSwapMath.getAmountOut(
+            uint256 amountBOptimal = vSwapMath.quote(
                 amountADesired,
                 reserveA,
-                reserveB,
-                0,
-                false
+                reserveB
             );
 
             if (amountBOptimal <= amountBDesired) {
@@ -240,12 +240,10 @@ contract vRouter is IvRouter {
                 );
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint256 amountAOptimal = vSwapMath.getAmountOut(
+                uint256 amountAOptimal = vSwapMath.quote(
                     amountBDesired,
                     reserveA,
-                    reserveB,
-                    0,
-                    false
+                    reserveB
                 );
 
                 assert(amountAOptimal <= amountADesired);
@@ -268,14 +266,15 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     )
-    external
-    virtual
-    ensure(deadline)
-    returns (
-        uint256 amountA,
-        uint256 amountB,
-        uint256 liquidity
-    )
+
+        external
+        override
+        ensure(deadline)
+        returns (
+            uint256 amountA,
+            uint256 amountB,
+            uint256 liquidity
+        )
     {
         (amountA, amountB) = _addLiquidity(
             tokenA,
@@ -301,15 +300,16 @@ contract vRouter is IvRouter {
         address to,
         uint256 deadline
     )
-    external
-    payable
-    virtual
-    ensure(deadline)
-    returns (
-        uint256 amountToken,
-        uint256 amountETH,
-        uint256 liquidity
-    )
+
+        external
+        payable
+        override
+        ensure(deadline)
+        returns (
+            uint256 amountToken,
+            uint256 amountETH,
+            uint256 liquidity
+        )
     {
         (amountToken, amountETH) = _addLiquidity(
             token,
@@ -341,7 +341,12 @@ contract vRouter is IvRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external ensure(deadline) returns (uint256 amountA, uint256 amountB) {
+    )
+        external
+        override
+        ensure(deadline)
+        returns (uint256 amountA, uint256 amountB)
+    {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
         require(pair > address(0), "Cant find pair");
@@ -389,7 +394,7 @@ contract vRouter is IvRouter {
         address tokenB,
         address tokenIn,
         uint256 amountIn
-    ) public view virtual override returns (uint256 amountOut) {
+    ) external view virtual override returns (uint256 amountOut) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
         (uint256 reserve0, uint256 reserve1) = (
@@ -405,42 +410,42 @@ contract vRouter is IvRouter {
         );
 
         return
-        vSwapMath.getAmountOut(
-            amountIn,
-            reserves.reserve0,
-            reserves.reserve1,
-            IvPair(pair).fee(),
-            true
-        );
+
+            vSwapMath.getAmountOut(
+                amountIn,
+                reserves.reserve0,
+                reserves.reserve1,
+                IvPair(pair).fee()
+            );
     }
 
-    // function getAmountIn(
-    //     address tokenA,
-    //     address tokenB,
-    //     address tokenIn,
-    //     uint256 amountOut
-    // ) public pure virtual override returns (uint256 amountIn) {
-    //     IvPair pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+    function getAmountIn(
+        address tokenA,
+        address tokenB,
+        address tokenIn,
+        uint256 amountOut
+    ) external view virtual override returns (uint256 amountIn) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-    //     (uint256 reserve0, uint256 reserve1) = (
-    //         pair.reserve0(),
-    //         pair.reserve1()
-    //     );
+        (uint256 reserve0, uint256 reserve1) = (
+            IvPair(pair).reserve0(),
+            IvPair(pair).reserve1()
+        );
 
-    //     PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
-    //         tokenIn,
-    //         pair.token0(),
-    //         reserve0,
-    //         reserve1
-    //     );
 
-    //     return
-    //         vSwapMath.getAmountIn(
-    //             amountOut,
-    //             reserves.reserve0,
-    //             reserves.reserve1,
-    //             pair.fee(),
-    //             true
-    //         );
-    // }
+        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+            tokenIn,
+            IvPair(pair).token0(),
+            reserve0,
+            reserve1
+        );
+
+        return
+            vSwapMath.getAmountIn(
+                amountOut,
+                reserves.reserve0,
+                reserves.reserve1,
+                IvPair(pair).fee()
+            );
+    }
 }

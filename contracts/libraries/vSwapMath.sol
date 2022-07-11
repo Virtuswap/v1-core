@@ -1,4 +1,4 @@
-pragma solidity ^0.8.15;
+pragma solidity =0.8.1;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
@@ -63,12 +63,10 @@ library vSwapMath {
         uint256 amountOut,
         uint256 reserveIn,
         uint256 reserveOut,
-        uint256 fee,
-        bool deductFees
+        uint256 fee
     ) public pure returns (uint256 amountIn) {
         uint256 numerator = (reserveIn * amountOut) * 1000;
-        uint256 denominator = (reserveOut - amountOut) *
-            (deductFees ? fee : 1000);
+        uint256 denominator = (reserveOut - amountOut) * fee;
         amountIn = (numerator / denominator) + 1;
     }
 
@@ -76,13 +74,22 @@ library vSwapMath {
         uint256 amountIn,
         uint256 reserveIn,
         uint256 reserveOut,
-        uint256 fee,
-        bool deductFees
+        uint256 fee
     ) public pure returns (uint256 amountOut) {
-        uint256 amountInWithFee = amountIn * (deductFees ? fee : 1000);
+        uint256 amountInWithFee = amountIn * fee;
         uint256 numerator = amountInWithFee * reserveOut;
         uint256 denominator = (reserveIn * 1000) + amountInWithFee;
         amountOut = numerator / denominator;
+    }
+
+    function quote(
+        uint256 amountA,
+        uint256 reserveA,
+        uint256 reserveB
+    ) internal pure returns (uint256 amountB) {
+        require(amountA > 0, "VSWAP: INSUFFICIENT_AMOUNT");
+        require(reserveA > 0 && reserveB > 0, "VSWAP: INSUFFICIENT_LIQUIDITY");
+        amountB = (amountA * reserveB) / reserveA;
     }
 
     function SortedReservesBalances(
@@ -98,15 +105,13 @@ library vSwapMath {
         reserves.reserve1 = _reserve1;
     }
 
-    function calculateLPTokensAmount(
-        uint256 reserve0,
-        uint256 totalSupply,
-        uint256 addBalance,
-        uint256 reserveRatio
-    ) public pure returns (uint256 lpAmount) {
-        lpAmount = (addBalance * (totalSupply / reserve0));
-
-        //deduct reserve from lptokens
-        lpAmount = lpAmount / (1 + reserveRatio / 1000);
+    function deductReserveRatioFromLP(uint256 _liquidity, uint256 _reserveRatio)
+        public
+        pure
+        returns (uint256 lpAmount)
+    {
+        uint256 multiplier = (RESERVE_RATIO_FACTOR -
+            (_reserveRatio / RESERVE_RATIO_FACTOR));
+        lpAmount = (_liquidity * multiplier) / RESERVE_RATIO_FACTOR;
     }
 }
