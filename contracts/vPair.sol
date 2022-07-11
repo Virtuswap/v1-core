@@ -54,7 +54,7 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 _fee,
         uint256 _vFee,
         uint256 maxReserveRatio
-    ) vSwapERC20("Virtuswap-LP", "VSWAPLP") {
+    ) {
         factory = _factory;
         token0 = _tokenA;
         token1 = _tokenB;
@@ -147,7 +147,7 @@ contract vPair is IvPair, vSwapERC20 {
         address ikPairAddress,
         address to,
         bytes calldata data
-    ) external override lock {
+    ) external override onlyFactoryAdmin lock {
         // find common token
         VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
             IvPair(ikPairAddress).token0(),
@@ -156,7 +156,7 @@ contract vPair is IvPair, vSwapERC20 {
             token1
         );
 
-        // validate with factory
+        // validate oracle with factory
         require(
             IvPairFactory(factory).getPair(vPoolTokens.ik0, vPoolTokens.ik1) ==
                 ikPairAddress &&
@@ -164,7 +164,11 @@ contract vPair is IvPair, vSwapERC20 {
             "IIKP"
         );
 
-        require(whitelistAllowance[vPoolTokens.ik0], "TNW");
+        //require tokenIn is native token
+        require(vPoolTokens.ik0 == token0 || vPoolTokens.ik0 == token1, "NT");
+
+        //require tokenOut is whitelisted
+        require(whitelistAllowance[vPoolTokens.jk0], "TNW");
 
         SafeERC20.safeTransfer(IERC20(vPoolTokens.jk0), to, amountOut);
 
@@ -194,24 +198,22 @@ contract vPair is IvPair, vSwapERC20 {
                 msg.sender,
                 amountOut,
                 requiredAmountIn,
-                vPoolTokens.ik0,
+                vPoolTokens.jk0,
                 data
             );
 
-        uint256 amountIn = IERC20(vPoolTokens.ik0).balanceOf(address(this)) -
-            reserves[vPoolTokens.ik0];
+        uint256 amountIn = IERC20(vPoolTokens.jk0).balanceOf(address(this)) -
+            reserves[vPoolTokens.jk0];
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
-        reserveRatio[vPoolTokens.ik0] =
-            reserveRatio[vPoolTokens.ik0] -
+        reserveRatio[vPoolTokens.jk0] =
+            reserveRatio[vPoolTokens.jk0] -
             (
-                (vPoolTokens.jk0 == token0)
+                (vPoolTokens.ik0 == token0)
                     ? amountOut
                     : vSwapMath.quote(amountOut, reserve1, reserve0)
             );
-
-        reserves[vPoolTokens.ik0] + amountIn;
 
         _update(
             IERC20(token0).balanceOf(address(this)),
@@ -290,8 +292,7 @@ contract vPair is IvPair, vSwapERC20 {
                     : vSwapMath.quote(amountOut, reserve1, reserve0)
             );
 
-        reserves[vPoolTokens.ik0] + amountIn;
-
+        //check reserve ratio after trade is not larger then threshold
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this))

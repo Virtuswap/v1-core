@@ -355,6 +355,7 @@ contract vRouter is IvRouter {
         (amountA, amountB) = tokenA == token0
             ? (amount0, amount1)
             : (amount1, amount0);
+            
         require(amountA >= amountAMin, "VSWAP: INSUFFICIENT_A_AMOUNT");
         require(amountB >= amountBMin, "VSWAP: INSUFFICIENT_B_AMOUNT");
     }
