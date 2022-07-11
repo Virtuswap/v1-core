@@ -1,4 +1,5 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
+
 interface IvPairActions {
     function swapNative(
         uint256 amountOut,
@@ -8,6 +9,13 @@ interface IvPairActions {
     ) external;
 
     function swapReserves(
+        uint256 amountOut,
+        address ikPairAddress,
+        address to,
+        bytes calldata data
+    ) external;
+
+    function exchangeReserve(
         uint256 amountOut,
         address ikPairAddress,
         address to,

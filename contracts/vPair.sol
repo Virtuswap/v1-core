@@ -142,6 +142,83 @@ contract vPair is IvPair, vSwapERC20 {
         }
     }
 
+    function exchangeReserve(
+        uint256 amountOut,
+        address ikPairAddress,
+        address to,
+        bytes calldata data
+    ) external override lock {
+        // find common token
+        VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
+            IvPair(ikPairAddress).token0(),
+            IvPair(ikPairAddress).token1(),
+            token0,
+            token1
+        );
+
+        // validate with factory
+        require(
+            IvPairFactory(factory).getPair(vPoolTokens.ik0, vPoolTokens.ik1) ==
+                ikPairAddress &&
+                vPoolTokens.ik1 == vPoolTokens.jk1,
+            "IIKP"
+        );
+
+        require(whitelistAllowance[vPoolTokens.ik0], "TNW");
+
+        SafeERC20.safeTransfer(IERC20(vPoolTokens.jk0), to, amountOut);
+
+        VirtualPoolModel memory vPool;
+        {
+            uint256 ikReserve0 = IvPair(ikPairAddress).reserve0();
+            uint256 ikReserve1 = IvPair(ikPairAddress).reserve1();
+            address ikPair0 = IvPair(ikPairAddress).token0();
+
+            vPool = vSwapMath.calculateVPool(
+                vPoolTokens.ik0 == ikPair0 ? ikReserve0 : ikReserve1,
+                vPoolTokens.ik0 == ikPair0 ? ikReserve1 : ikReserve0,
+                vPoolTokens.jk0 == token0 ? reserve0 : reserve1,
+                vPoolTokens.jk0 == token0 ? reserve1 : reserve0
+            );
+        }
+
+        uint256 requiredAmountIn = vSwapMath.getAmountIn(
+            amountOut,
+            vPool.tokenABalance,
+            vPool.tokenBBalance,
+            vFee
+        );
+
+        if (data.length > 0)
+            IvFlashSwapCallback(to).vFlashSwapCallback(
+                msg.sender,
+                amountOut,
+                requiredAmountIn,
+                vPoolTokens.ik0,
+                data
+            );
+
+        uint256 amountIn = IERC20(vPoolTokens.ik0).balanceOf(address(this)) -
+            reserves[vPoolTokens.ik0];
+
+        require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
+
+        reserveRatio[vPoolTokens.ik0] =
+            reserveRatio[vPoolTokens.ik0] -
+            (
+                (vPoolTokens.jk0 == token0)
+                    ? amountOut
+                    : vSwapMath.quote(amountOut, reserve1, reserve0)
+            );
+
+        reserves[vPoolTokens.ik0] + amountIn;
+
+        _update(
+            IERC20(token0).balanceOf(address(this)),
+            IERC20(token1).balanceOf(address(this))
+        );
+    }
+
     function swapReserves(
         uint256 amountOut,
         address ikPairAddress,
@@ -162,7 +239,7 @@ contract vPair is IvPair, vSwapERC20 {
         require(
             IvPairFactory(factory).getPair(vPoolTokens.ik0, vPoolTokens.ik1) ==
                 ikPairAddress &&
-                vPoolTokens.ik0 == vPoolTokens.jk0,
+                vPoolTokens.ik1 == vPoolTokens.jk1,
             "IIKP"
         );
 
