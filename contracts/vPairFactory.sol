@@ -26,7 +26,6 @@ contract vPairFactory is IvPairFactory {
         external
         override
         view
-        override
         returns (address)
     {
         return pairs[tokenA][tokenB];
