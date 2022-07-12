@@ -1,4 +1,4 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
 
 interface IvRouterActions {
     function swap(
@@ -77,4 +77,10 @@ interface IvRouterActions {
         address tokenIn,
         uint256 amountOut
     ) external view returns (uint256 amountIn);
+
+    function quote(
+        address tokenA,
+        address tokenB,
+        uint256 amount
+    ) external view returns (uint256 quote);
 }

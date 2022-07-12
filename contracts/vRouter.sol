@@ -219,18 +219,25 @@ contract vRouter is IvRouter {
         if (pool == address(0))
             pool = IvPairFactory(factory).createPair(tokenA, tokenB);
 
-        (uint256 reserveA, uint256 reserveB) = (
+        (uint256 reserve0, uint256 reserve1) = (
             IvPair(pool).reserve0(),
             IvPair(pool).reserve1()
         );
 
-        if (reserveA == 0 && reserveB == 0) {
+        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+            tokenA,
+            IvPair(pool).token0(),
+            reserve0,
+            reserve1
+        );
+
+        if (reserves.reserve0 == 0 && reserves.reserve1 == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
             uint256 amountBOptimal = vSwapMath.quote(
                 amountADesired,
-                reserveA,
-                reserveB
+                reserves.reserve0,
+                reserves.reserve1
             );
 
             if (amountBOptimal <= amountBDesired) {
@@ -242,8 +249,8 @@ contract vRouter is IvRouter {
             } else {
                 uint256 amountAOptimal = vSwapMath.quote(
                     amountBDesired,
-                    reserveA,
-                    reserveB
+                    reserves.reserve0,
+                    reserves.reserve1
                 );
 
                 assert(amountAOptimal <= amountADesired);
@@ -355,9 +362,9 @@ contract vRouter is IvRouter {
         (amountA, amountB) = tokenA == token0
             ? (amount0, amount1)
             : (amount1, amount0);
-            
-        require(amountA >= amountAMin, "VSWAP: INSUFFICIENT_A_AMOUNT");
-        require(amountB >= amountBMin, "VSWAP: INSUFFICIENT_B_AMOUNT");
+
+        // require(amountA >= amountAMin, "VSWAP: INSUFFICIENT_A_AMOUNT");
+        // require(amountB >= amountBMin, "VSWAP: INSUFFICIENT_B_AMOUNT");
     }
 
     function removeLiquidityETH(
@@ -415,6 +422,28 @@ contract vRouter is IvRouter {
                 reserves.reserve1,
                 IvPair(pair).fee()
             );
+    }
+
+    function quote(
+        address tokenA,
+        address tokenB,
+        uint256 amount
+    ) external view override returns (uint256 quote) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+        (uint256 reserve0, uint256 reserve1) = (
+            IvPair(pair).reserve0(),
+            IvPair(pair).reserve1()
+        );
+
+        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+            tokenA,
+            IvPair(pair).token0(),
+            reserve0,
+            reserve1
+        );
+
+        quote = vSwapMath.quote(amount, reserves.reserve0, reserves.reserve1);
     }
 
     function getAmountIn(

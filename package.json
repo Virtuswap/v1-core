@@ -10,7 +10,9 @@
   "license": "ISC",
   "devDependencies": {
     "@openzeppelin/contracts": "^4.7.0",
+    "@openzeppelin/test-helpers": "^0.5.15",
     "@truffle/hdwallet-provider": "^1.5.1",
+    "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "express": "^4.17.1",
     "express-ws": "^5.0.2",
@@ -21,7 +23,5 @@
     "truffle-contract-size": "^2.0.1",
     "web3": "^1.6.0"
   },
-  "dependencies": {
-    "@uniswap/lib": "^4.0.1-alpha"
-  }
+  "dependencies": {}
 }

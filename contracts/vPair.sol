@@ -207,6 +207,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
+        //change to PCT out
         reserveRatio[vPoolTokens.jk0] =
             reserveRatio[vPoolTokens.jk0] -
             (
@@ -336,6 +337,8 @@ contract vPair is IvPair, vSwapERC20 {
         emit Mint(msg.sender, amount0, amount1);
     }
 
+    event Debug(string message, uint256 value);
+
     function burn(address to)
         external
         override
@@ -349,8 +352,8 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 liquidity = this.balanceOf(address(this));
 
         uint256 _totalSupply = totalSupply();
-        amount0 = balance0 * (liquidity / _totalSupply);
-        amount1 = balance1 * (liquidity / _totalSupply);
+        amount0 = (balance0 * liquidity) / _totalSupply;
+        amount1 = (balance1 * liquidity) / _totalSupply;
 
         require(amount0 > 0 && amount1 > 0, "ILB");
 
