@@ -1,4 +1,5 @@
 pragma solidity =0.8.1;
+import "../../types.sol";
 
 interface IvRouterActions {
     function swap(
@@ -97,4 +98,10 @@ interface IvRouterActions {
         address ikPair,
         uint256 amountIn
     ) external view returns (uint256 amountOut);
+
+    function getVirtualPool(
+        address jkPair,
+        address ikPair,
+        address inputToken
+    ) external view returns (VirtualPoolModel memory vPool);
 }

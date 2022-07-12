@@ -92,7 +92,7 @@ library vSwapMath {
         amountB = (amountA * reserveB) / reserveA;
     }
 
-    function SortedReservesBalances(
+    function sortReserves(
         address tokenIn,
         address baseToken,
         uint256 reserve0,

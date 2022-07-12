@@ -72,8 +72,8 @@ contract vPair is IvPair, vSwapERC20 {
 
     function getReserves()
         external
-        override
         view
+        override
         returns (uint256 _reserve0, uint256 _reserve1)
     {
         _reserve0 = reserve0;
@@ -82,8 +82,8 @@ contract vPair is IvPair, vSwapERC20 {
 
     function getTokens()
         external
-        override
         view
+        override
         returns (address _token0, address _token1)
     {
         _token0 = token0;
@@ -102,7 +102,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         address _inputToken = tokenOut == token0 ? token1 : token0;
 
-        PoolReserve memory poolReserves = vSwapMath.SortedReservesBalances(
+        PoolReserve memory poolReserves = vSwapMath.sortReserves(
             _inputToken,
             token0,
             reserve0,
