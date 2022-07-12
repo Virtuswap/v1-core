@@ -540,7 +540,7 @@ contract("vRouter", (accounts) => {
     //   }
   });
 
-  it("Should calculate virtual pool", async () => {
+  it("Should calculate virtual pool A/C using B/C as oracle", async () => {
     const jk = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenB.address
