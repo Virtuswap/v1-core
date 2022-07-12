@@ -370,7 +370,7 @@ contract vRouter is IvRouter {
     ) external view override returns (uint256 quote) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-        (uint256 reserve0, uint256 reserve0) = IvPair(pair).getReserves();
+        (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
             tokenA,
@@ -390,7 +390,7 @@ contract vRouter is IvRouter {
     ) external view virtual override returns (uint256 amountOut) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-        (uint256 reserve0, uint256 reserve0) = IvPair(pair).getReserves();
+        (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
             tokenIn,
@@ -416,7 +416,7 @@ contract vRouter is IvRouter {
     ) external view virtual override returns (uint256 amountIn) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-        (uint256 reserve0, uint256 reserve0) = IvPair(pair).getReserves();
+        (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
             tokenIn,
@@ -491,7 +491,7 @@ contract vRouter is IvRouter {
         address tokenA,
         address tokenB,
         address ikPair,
-        uint256 amountOut
+        uint256 amountIn
     ) external view override returns (uint256 amountOut) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
@@ -499,7 +499,7 @@ contract vRouter is IvRouter {
 
         return
             vSwapMath.getAmountOut(
-                amountOut,
+                amountIn,
                 vPool.reserve0,
                 vPool.reserve1,
                 IvPair(pair).vFee()

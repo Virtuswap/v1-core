@@ -95,6 +95,6 @@ interface IvRouterActions {
         address tokenA,
         address tokenB,
         address ikPair,
-        uint256 amountOut
+        uint256 amountIn
     ) external view returns (uint256 amountOut);
 }
