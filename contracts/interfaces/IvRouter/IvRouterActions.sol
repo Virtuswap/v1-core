@@ -83,4 +83,18 @@ interface IvRouterActions {
         address tokenB,
         uint256 amount
     ) external view returns (uint256 quote);
+
+    function getVirtualAmountIn(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut
+    ) external view returns (uint256 amountIn);
+
+    function getVirtualAmountOut(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut
+    ) external view returns (uint256 amountOut);
 }

@@ -10,14 +10,14 @@ interface IvPairActions {
 
     function swapReserves(
         uint256 amountOut,
-        address ikPairAddress,
+        address ikPair,
         address to,
         bytes calldata data
     ) external;
 
     function exchangeReserve(
         uint256 amountOut,
-        address ikPairAddress,
+        address ikPair,
         address to,
         bytes calldata data
     ) external;

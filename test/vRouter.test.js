@@ -6,6 +6,12 @@ const { catchRevert } = require("./exceptions");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
 
 contract("vRouter", (accounts) => {
+  async function getFutureBlockTimestamp() {
+    const blockNumber = await web3.eth.getBlockNumber();
+    const block = await web3.eth.getBlock(blockNumber);
+    return block.timestamp + 1000000;
+  }
+
   let tokenA, tokenB, tokenC, WETH;
 
   const issueAmount = web3.utils.toWei("100000000000000", "ether");
@@ -32,10 +38,10 @@ contract("vRouter", (accounts) => {
     await vRouterInstance.addLiquidity(
       tokenA.address,
       tokenB.address,
-      web3.utils.toWei("10", "ether"),
-      web3.utils.toWei("100", "ether"),
-      web3.utils.toWei("10", "ether"),
-      web3.utils.toWei("100", "ether"),
+      web3.utils.toWei("100000", "ether"),
+      web3.utils.toWei("1000000", "ether"),
+      web3.utils.toWei("100000", "ether"),
+      web3.utils.toWei("1000000", "ether"),
       accounts[0],
       futureTs
     );
@@ -44,10 +50,10 @@ contract("vRouter", (accounts) => {
     await vRouterInstance.addLiquidity(
       tokenA.address,
       tokenC.address,
-      web3.utils.toWei("1000", "ether"),
-      web3.utils.toWei("1000", "ether"),
-      web3.utils.toWei("1000", "ether"),
-      web3.utils.toWei("1000", "ether"),
+      web3.utils.toWei("1000000", "ether"),
+      web3.utils.toWei("1000000", "ether"),
+      web3.utils.toWei("1000000", "ether"),
+      web3.utils.toWei("1000000", "ether"),
       accounts[0],
       futureTs
     );
@@ -56,10 +62,10 @@ contract("vRouter", (accounts) => {
     await vRouterInstance.addLiquidity(
       tokenB.address,
       tokenC.address,
-      web3.utils.toWei("5000", "ether"),
-      web3.utils.toWei("10000", "ether"),
-      web3.utils.toWei("1000", "ether"),
-      web3.utils.toWei("1000", "ether"),
+      web3.utils.toWei("5000000", "ether"),
+      web3.utils.toWei("10000000", "ether"),
+      web3.utils.toWei("5000000", "ether"),
+      web3.utils.toWei("10000000", "ether"),
       accounts[0],
       futureTs
     );
@@ -134,7 +140,7 @@ contract("vRouter", (accounts) => {
     );
   });
 
-  it("Should error when trying to provide unbalanced A amount", async function () {
+  it("Should revert when trying to provide unbalanced A amount", async function () {
     const amountADesired = web3.utils.toWei("12", "ether");
 
     const amountBDesired = web3.utils.toWei("10", "ether");
@@ -153,7 +159,7 @@ contract("vRouter", (accounts) => {
     );
   });
 
-  it("Should error when trying to provide unbalanced B amount", async function () {
+  it("Should revert when trying to provide unbalanced B amount", async function () {
     const amountADesired = web3.utils.toWei("1", "ether");
 
     const amountBDesired = web3.utils.toWei("3", "ether");
@@ -172,25 +178,14 @@ contract("vRouter", (accounts) => {
     );
   });
 
-  async function getFutureBlockTimestamp() {
-    const blockNumber = await web3.eth.getBlockNumber();
-    const block = await web3.eth.getBlock(blockNumber);
-    return block.timestamp + 1000000;
-  }
-
   it("Should (amountIn(amountOut(x)) = x)", async () => {
-    const X = web3.utils.toWei("3", "ether");
+    const X = web3.utils.toWei("395", "ether");
     const fee = 997;
 
     const address = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenB.address
     );
-
-    const pool = await vPair.at(address);
-
-    const reserve0 = await pool.reserve0();
-    const reserve1 = await pool.reserve1();
 
     const amountIn = await vRouterInstance.getAmountIn(
       tokenA.address,
@@ -374,7 +369,7 @@ contract("vRouter", (accounts) => {
     );
   });
 
-  it("Should swap total pool A/C with 2 transaction - 1. Real pool A/C 2. Virtual Pool (B/C , A/B)", async () => {
+  it("Should swap A to C on total pool A/C with 2 transaction", async () => {
     const pool1 = await vPair.at(
       await vPairFactoryInstance.getPair(tokenA.address, tokenC.address) // BTC, USDC
     );
@@ -386,7 +381,6 @@ contract("vRouter", (accounts) => {
     );
     let pools = [pool1.address, pool2.address];
     let amountsIn = ["0.043", "0.957"];
-    let amountsOut = ["810.918", "20207.008"];
     let amountsInWei = [];
     let amountsOutWei = [];
     let iks = ["0x0000000000000000000000000000000000000000", pool3.address];

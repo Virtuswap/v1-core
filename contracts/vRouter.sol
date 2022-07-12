@@ -37,38 +37,6 @@ contract vRouter is IvRouter {
         WETH = _WETH;
     }
 
-    // function calculateVirtualPool(address ikAddress, address jkAddress)
-    //     internal
-    //     returns (VirtualPoolModel memory vPool)
-    // {
-    //     (
-    //         address _ikToken0,
-    //         address _ikToken1,
-    //         address _jkToken0,
-    //         address _jkToken1
-    //     ) = (
-    //             IvPair(ikAddress).token0(),
-    //             IvPair(ikAddress).token1(),
-    //             IvPair(jkAddress).token0(),
-    //             IvPair(jkAddress).token1()
-    //         );
-
-    //     (_ikToken0, _ikToken1, _jkToken0, _jkToken1) = vSwapMath
-    //         .findCommonToken(_ikToken0, _ikToken1, _jkToken0, _jkToken1);
-
-    //     uint256 ikReserve0 = IvPair(ikAddress).reserve0();
-    //     uint256 ikReserve1 = IvPair(ikAddress).reserve1();
-    //     uint256 jkReserve0 = IvPair(ikAddress).reserve0();
-    //     uint256 jkReserve1 = IvPair(ikAddress).reserve1();
-
-    //     vPool = vSwapMath.calculateVPool(
-    //         ikReserve0,
-    //         ikReserve1,
-    //         jkReserve0,
-    //         jkReserve1
-    //     );
-    // }
-
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
@@ -395,6 +363,25 @@ contract vRouter is IvRouter {
         TransferHelper.safeTransferETH(to, amountETH);
     }
 
+    function quote(
+        address tokenA,
+        address tokenB,
+        uint256 amount
+    ) external view override returns (uint256 quote) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+        (uint256 reserve0, uint256 reserve0) = IvPair(pair).getReserves();
+
+        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
+            tokenA,
+            IvPair(pair).token0(),
+            reserve0,
+            reserve1
+        );
+
+        quote = vSwapMath.quote(amount, reserves.reserve0, reserves.reserve1);
+    }
+
     function getAmountOut(
         address tokenA,
         address tokenB,
@@ -403,10 +390,7 @@ contract vRouter is IvRouter {
     ) external view virtual override returns (uint256 amountOut) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-        (uint256 reserve0, uint256 reserve1) = (
-            IvPair(pair).reserve0(),
-            IvPair(pair).reserve1()
-        );
+        (uint256 reserve0, uint256 reserve0) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
             tokenIn,
@@ -424,28 +408,6 @@ contract vRouter is IvRouter {
             );
     }
 
-    function quote(
-        address tokenA,
-        address tokenB,
-        uint256 amount
-    ) external view override returns (uint256 quote) {
-        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
-
-        (uint256 reserve0, uint256 reserve1) = (
-            IvPair(pair).reserve0(),
-            IvPair(pair).reserve1()
-        );
-
-        PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
-            tokenA,
-            IvPair(pair).token0(),
-            reserve0,
-            reserve1
-        );
-
-        quote = vSwapMath.quote(amount, reserves.reserve0, reserves.reserve1);
-    }
-
     function getAmountIn(
         address tokenA,
         address tokenB,
@@ -454,10 +416,7 @@ contract vRouter is IvRouter {
     ) external view virtual override returns (uint256 amountIn) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
-        (uint256 reserve0, uint256 reserve1) = (
-            IvPair(pair).reserve0(),
-            IvPair(pair).reserve1()
-        );
+        (uint256 reserve0, uint256 reserve0) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.SortedReservesBalances(
             tokenIn,
@@ -472,6 +431,78 @@ contract vRouter is IvRouter {
                 reserves.reserve0,
                 reserves.reserve1,
                 IvPair(pair).fee()
+            );
+    }
+
+    function getVirtualPool(address jkPair, address ikPair)
+        internal
+        view
+        returns (VirtualPoolModel memory vPool)
+    {
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+
+        (address jk0, address jk1) = IvPair(jkPair).getTokens();
+
+        VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
+            ik0,
+            ik1,
+            jk0,
+            jk1
+        );
+
+        require(vPoolTokens.ik1 == vPoolTokens.jk1, "IOP");
+
+        (uint256 ikReserve0, uint256 ikReserve1) = IvPair(ikPair).getReserves();
+
+        (uint256 jkReserve0, uint256 jkReserve1) = IvPair(jkPair).getReserves();
+
+        vPool = vSwapMath.calculateVPool(
+            vPoolTokens.ik0 == ik0 ? ikReserve0 : ikReserve1,
+            vPoolTokens.ik0 == ik0 ? ikReserve1 : ikReserve0,
+            vPoolTokens.jk0 == jk0 ? jkReserve0 : jkReserve1,
+            vPoolTokens.jk0 == jk0 ? jkReserve1 : jkReserve0
+        );
+
+        vPool.token0 = vPoolTokens.ik0;
+        vPool.token1 = vPoolTokens.jk0;
+        vPool.commonToken = vPoolTokens.ik1;
+    }
+
+    function getVirtualAmountIn(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut
+    ) external view override returns (uint256 amountIn) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+        VirtualPoolModel memory vPool = getVirtualPool(pair, ikPair);
+
+        return
+            vSwapMath.getAmountIn(
+                amountOut,
+                vPool.reserve0,
+                vPool.reserve1,
+                IvPair(pair).vFee()
+            );
+    }
+
+    function getVirtualAmountOut(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut
+    ) external view override returns (uint256 amountOut) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+
+        VirtualPoolModel memory vPool = getVirtualPool(pair, ikPair);
+
+        return
+            vSwapMath.getAmountOut(
+                amountOut,
+                vPool.reserve0,
+                vPool.reserve1,
+                IvPair(pair).vFee()
             );
     }
 }

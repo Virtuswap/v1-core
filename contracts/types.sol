@@ -1,15 +1,16 @@
- pragma solidity =0.8.1;
+pragma solidity =0.8.1;
 
 struct VirtualPoolModel {
     uint256 fee;
     address token0;
     address token1;
-    uint256 tokenABalance;
-    uint256 tokenBBalance;
+    uint256 reserve0;
+    uint256 reserve1;
     bool balanced;
     address vPairAddress;
     uint256 sumTokenA;
     uint256 sumTokenB;
+    address commonToken;
 }
 
 struct PoolReserve {

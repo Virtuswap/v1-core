@@ -50,11 +50,11 @@ library vSwapMath {
         uint256 jkTokenABalance,
         uint256 jkTokenBBalance
     ) public pure returns (VirtualPoolModel memory vPool) {
-        vPool.tokenABalance =
+        vPool.reserve0 =
             (ikTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
             Math.max(ikTokenBBalance, EPSILON);
 
-        vPool.tokenBBalance =
+        vPool.reserve1 =
             (jkTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
             Math.max(jkTokenBBalance, EPSILON);
     }
