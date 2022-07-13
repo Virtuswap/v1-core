@@ -96,30 +96,12 @@ contract("vSwapMath", (accounts) => {
   });
 
   it("Should sort pool reserves", async () => {
-    //   function sortReserves(
-    //     address tokenIn,
-    //     address baseToken,
-    //     uint256 reserve0,
-    //     uint256 reserve1
-    // ) public pure returns (PoolReserve memory reserves) {
-    //     (uint256 _reserve0, uint256 _reserve1) = baseToken == tokenIn
-    //         ? (reserve0, reserve1)
-    //         : (reserve1, reserve0);
-    //     reserves.reserve0 = _reserve0;
-    //     reserves.reserve1 = _reserve1;
-    // }
-
-    const ikPair = await vPairFactoryInstance.getPair(
-      tokenC.address,
-      tokenB.address
-    );
-
-    const jkPair = await vPairFactoryInstance.getPair(
+    const address = await vPairFactoryInstance.getPair(
       tokenB.address,
       tokenA.address
     );
 
-    const pool = await vPair.at(jkPair);
+    const pool = await vPair.at(address);
 
     let poolReserves = await pool.getReserves();
     let poolToken0 = await pool.token0();
@@ -132,7 +114,10 @@ contract("vSwapMath", (accounts) => {
       poolReserves._reserve1
     );
 
-    assert(reserves.reserve0 == poolReserves._reserve0, "Reserve not in order");
+    assert(
+      poolReserves._reserve0 == reserves._reserve0,
+      "Reserve not in order"
+    );
 
     let reserves2 = await vSwapMathInstance.sortReserves(
       poolToken1,

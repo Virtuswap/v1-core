@@ -346,7 +346,7 @@ contract("vRouter", (accounts) => {
     const poolAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenC.address
-    ); 
+    );
 
     const tokenAInstance = await ERC20.at(tokenA.address);
     const tokenCInstance = await ERC20.at(tokenC.address);
@@ -662,9 +662,12 @@ contract("vRouter", (accounts) => {
     let reserve0 = await pool.reserve0();
     let reserve1 = await pool.reserve1();
 
+    console.log("amountADesired", fromWeiToNumber(amountADesired));
+    console.log("amountBDesired", fromWeiToNumber(amountBDesired));
+
     const futureTs = await getFutureBlockTimestamp();
 
-    await vRouterInstance.addLiquidity(
+    await vRouterInstance.addLiquidity2(
       tokenA.address,
       tokenB.address,
       amountADesired,

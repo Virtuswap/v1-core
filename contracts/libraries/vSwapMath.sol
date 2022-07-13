@@ -97,12 +97,10 @@ library vSwapMath {
         address baseToken,
         uint256 reserve0,
         uint256 reserve1
-    ) public pure returns (PoolReserve memory reserves) {
-        (uint256 _reserve0, uint256 _reserve1) = baseToken == tokenIn
+    ) public pure returns (uint256 _reserve0, uint256 _reserve1) {
+        (_reserve0, _reserve1) = baseToken == tokenIn
             ? (reserve0, reserve1)
             : (reserve1, reserve0);
-        reserves.reserve0 = _reserve0;
-        reserves.reserve1 = _reserve1;
     }
 
     function deductReserveRatioFromLP(uint256 _liquidity, uint256 _reserveRatio)

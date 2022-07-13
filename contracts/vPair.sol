@@ -102,7 +102,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         address _inputToken = tokenOut == token0 ? token1 : token0;
 
-        PoolReserve memory poolReserves = vSwapMath.sortReserves(
+        (uint256 _reserve0, uint256 _reserve1) = vSwapMath.sortReserves(
             _inputToken,
             token0,
             reserve0,
@@ -111,8 +111,8 @@ contract vPair is IvPair, vSwapERC20 {
 
         uint256 _expectedAmountIn = vSwapMath.getAmountIn(
             amountOut,
-            poolReserves.reserve0,
-            poolReserves.reserve1,
+            _reserve0,
+            _reserve1,
             fee
         );
 
@@ -126,21 +126,11 @@ contract vPair is IvPair, vSwapERC20 {
             );
 
         uint256 _amountIn = IERC20(_inputToken).balanceOf(address(this)) -
-            poolReserves.reserve0;
+            _reserve0;
 
         require(_amountIn > 0 && _amountIn >= _expectedAmountIn, "IIA");
 
-        (uint256 _reserve0, uint256 _reserve1) = _inputToken < tokenOut
-            ? (
-                (poolReserves.reserve0 + _amountIn),
-                (poolReserves.reserve1 - amountOut)
-            )
-            : (
-                (poolReserves.reserve1 - amountOut),
-                (poolReserves.reserve0 + _amountIn)
-            );
-
-        _update(_reserve0, _reserve1);
+        _update(_reserve0 + _amountIn, _reserve1 - amountOut);
     }
 
     function calculateReserveRatio()
@@ -335,10 +325,10 @@ contract vPair is IvPair, vSwapERC20 {
         }
 
         //deduct reserve ratio from liquidity
-        liquidity = vSwapMath.deductReserveRatioFromLP(
-            liquidity,
-            this.calculateReserveRatio()
-        );
+        // liquidity = vSwapMath.deductReserveRatioFromLP(
+        //     liquidity,
+        //     this.calculateReserveRatio()
+        // );
 
         require(liquidity > 0, "ILM");
 

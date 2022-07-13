@@ -13,11 +13,6 @@ struct VirtualPoolModel {
     address commonToken;
 }
 
-struct PoolReserve {
-    uint256 reserve0;
-    uint256 reserve1;
-}
-
 struct VirtualPoolTokens {
     address jk0;
     address jk1;
