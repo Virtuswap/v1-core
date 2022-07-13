@@ -347,8 +347,6 @@ contract vPair is IvPair, vSwapERC20 {
         emit Mint(msg.sender, amount0, amount1);
     }
 
-    event Debug(string message, uint256 value);
-
     function burn(address to)
         external
         override
