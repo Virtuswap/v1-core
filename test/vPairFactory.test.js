@@ -3,14 +3,18 @@ const vPairFactory = artifacts.require("vPairFactory");
 const vPair = artifacts.require('vPair')
 const ERC20 = artifacts.require('ERC20PresetFixedSupply')
 
-contract('vPairFactory', (accounts) => {
-	const wallet = accounts[0]
+chai.use(solidity);
+const { expect } = chai;
 
-	it('Creates and adds a new pair', async () => {
+contract('vPairFactory', (accounts) => {
+	const wallet = accounts[0];
+  	const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+	it('[SUCCESS] Creates and adds a new pair', async () => {
 		const vPairFactoryInstance = await vPairFactory.deployed();
 
-		let tokenA = await ERC20.new("tokenA", "A", toDecimalUnits(18, 1000000), wallet);
-		let tokenB = await ERC20.new("tokenB", "B", toDecimalUnits(18, 1000000), wallet);
+		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
+		let tokenB = await ERC20.new("tokenB", "B", toBn(18, 1000000), wallet);
 		let lengthBefore = (await vPairFactoryInstance.allPairsLength()).toNumber();
 
 		await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
@@ -19,5 +23,33 @@ contract('vPairFactory', (accounts) => {
 		expect(lengthBefore + 1).to.equal((await vPairFactoryInstance.allPairsLength()).toNumber());
 		expect(pair.address).to.equal(createdPair)
 	});
-	
+
+	it('[FAIL] Creates new pair wit the same token', async () => {
+		const vPairFactoryInstance = await vPairFactory.deployed();
+
+		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
+
+		await except(vPairFactoryInstance.createPair(tokenA.address, tokenA.address)).to.revertedWith('VSWAP: IDENTICAL_ADDRESSES');
+	});
+
+	it('[FAIL] Creates and adds a new pair', async () => {
+		const vPairFactoryInstance = await vPairFactory.deployed();
+
+		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
+		let tokenB = await ERC20.new("tokenB", "B", toBn(18, 1000000), wallet);
+
+		await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
+
+		//try to create the same pair second time 
+		await except(vPairFactoryInstance.createPair(tokenA.address, tokenB.address)).to.revertedWith('VSWAP: PAIR_EXISTS');
+	});
+
+	it('[FAIL] Creates and adds a new pair', async () => {
+		const vPairFactoryInstance = await vPairFactory.deployed();
+
+		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
+
+		// try to create the new pair with zero address
+		await except(vPairFactoryInstance.createPair(tokenA.address, zeroAddress)).to.revertedWith('VSWAP: PAIR_EXISTS');
+	});
 });
