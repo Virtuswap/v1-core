@@ -9,6 +9,8 @@ contract vPairFactory is IvPairFactory {
 
     address public immutable override admin;
 
+    uint256 constant MAX_RESERVE_RATIO_DEFAULT = 2000 * 1e18;
+
     modifier onlyAdmin() {
         require(msg.sender == admin);
         _;
@@ -52,7 +54,7 @@ contract vPairFactory is IvPairFactory {
             token1,
             997,
             996,
-            2000
+            MAX_RESERVE_RATIO_DEFAULT //2 pct
         ); // 997 = 0.03%
 
         pairs[token0][token1] = address(newPair);

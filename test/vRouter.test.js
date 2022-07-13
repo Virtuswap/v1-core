@@ -464,7 +464,7 @@ contract("vRouter", (accounts) => {
     );
   });
 
-  it("Should Total Pool swap. C to A on pool A/C and C to A on pool A/B", async () => {
+  it("Should Total Pool swap -> C to A on pool A/C & C to A on pool A/B", async () => {
     const ikPair = await vPairFactoryInstance.getPair(
       tokenC.address,
       tokenB.address
@@ -662,9 +662,6 @@ contract("vRouter", (accounts) => {
     let reserve0 = await pool.reserve0();
     let reserve1 = await pool.reserve1();
 
-    console.log("amountADesired", fromWeiToNumber(amountADesired));
-    console.log("amountBDesired", fromWeiToNumber(amountBDesired));
-
     const futureTs = await getFutureBlockTimestamp();
 
     await vRouterInstance.addLiquidity2(
@@ -749,14 +746,14 @@ contract("vRouter", (accounts) => {
     expect(tokenBBalanceAfter).to.be.above(tokenBBalanceBefore);
 
     assert.equal(
-      (reserve0 * 0.75).toFixed(6),
-      reserve0After.toFixed(6),
+      (reserve0 * 0.75).toFixed(3),
+      reserve0After.toFixed(3),
       "Pool reserve did not decrease by 1/4"
     );
 
     assert.equal(
-      (reserve1 * 0.75).toFixed(6),
-      reserve1After.toFixed(6),
+      (reserve1 * 0.75).toFixed(3),
+      reserve1After.toFixed(3),
       "Pool reserve did not decrease by 1/4"
     );
   });

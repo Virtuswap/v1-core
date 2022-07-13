@@ -33,15 +33,41 @@ library vSwapMath {
         vPoolTokens.jk1 = _jkToken1;
     }
 
+    function percent(
+        uint256 numerator,
+        uint256 denominator,
+        uint256 precision
+    ) internal pure returns (uint256 quotient) {
+        // caution, check safe-to-multiply here
+        uint256 _numerator = numerator * 10**(precision + 1);
+        // with rounding of last digit
+        uint256 _quotient = ((_numerator / denominator) + 5) / 10;
+        return (_quotient);
+    }
+
+    function getPercent(uint256 part, uint256 whole)
+        public
+        pure
+        returns (uint256 percent)
+    {
+        uint256 numerator = part * 1000;
+        require(numerator > part); // overflow. Should use SafeMath throughout if this was a real implementation.
+        uint256 temp = numerator / whole + 5; // proper rounding up
+        return temp / 10;
+    }
+
     function calculateReserveRatio(
         uint256 rRatio,
         uint256 _rReserve,
         uint256 _baseReserve
     ) public pure returns (uint256) {
+        // return
+        //     rRatio +
+        //     (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
+        //     (_baseReserve * 2);
         return
             rRatio +
-            (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
-            (_baseReserve * 2);
+            (percent(_rReserve, (_baseReserve * 2), 18) * RESERVE_RATIO_FACTOR);
     }
 
     function calculateVPool(
@@ -108,8 +134,8 @@ library vSwapMath {
         pure
         returns (uint256 lpAmount)
     {
-        uint256 multiplier = (RESERVE_RATIO_FACTOR -
-            (_reserveRatio / RESERVE_RATIO_FACTOR));
-        lpAmount = (_liquidity * multiplier) / RESERVE_RATIO_FACTOR;
+        lpAmount = getPercent(_reserveRatio / 1000, _liquidity);
+        // uint256 liquidityFactored = _liquidity * (10000000 - _reserveRatio);
+        // lpAmount = liquidityFactored / 10000000;
     }
 }
