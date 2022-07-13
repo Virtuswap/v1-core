@@ -227,29 +227,30 @@ contract vPair is IvPair, vSwapERC20 {
         view
         returns (VirtualPoolModel memory vPool)
     {
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        (address jk0, address jk1) = (token0, token1); //gas saving
         VirtualPoolTokens memory vPoolTokens = vSwapMath.findCommonToken(
-            IvPair(ikPair).token0(),
-            IvPair(ikPair).token1(),
-            token0,
-            token1
+            ik0,
+            ik1,
+            jk0,
+            jk1
         );
 
-        uint256 ikReserve0 = IvPair(ikPair).reserve0();
-        uint256 ikReserve1 = IvPair(ikPair).reserve1();
-        address ikPair0 = IvPair(ikPair).token0();
+        require(vPoolTokens.ik1 == vPoolTokens.jk1, "IOP");
+
+        (uint256 ikReserve0, uint256 ikReserve1) = IvPair(ikPair).getReserves();
+        (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1); //gas saving
 
         vPool = vSwapMath.calculateVPool(
-            vPoolTokens.ik0 == ikPair0 ? ikReserve0 : ikReserve1,
-            vPoolTokens.ik0 == ikPair0 ? ikReserve1 : ikReserve0,
-            vPoolTokens.jk0 == token0 ? reserve0 : reserve1,
-            vPoolTokens.jk0 == token0 ? reserve1 : reserve0
+            vPoolTokens.ik0 == ik0 ? ikReserve0 : ikReserve1,
+            vPoolTokens.ik0 == ik0 ? ikReserve1 : ikReserve0,
+            vPoolTokens.jk0 == jk0 ? _reserve0 : _reserve1,
+            vPoolTokens.jk0 == jk0 ? _reserve1 : _reserve0
         );
 
         vPool.token0 = vPoolTokens.ik0;
         vPool.token1 = vPoolTokens.jk0;
         vPool.commonToken = vPoolTokens.ik1;
-
-        require(vPoolTokens.ik1 == vPoolTokens.jk1, "IOP");
     }
 
     function swapReserves(
