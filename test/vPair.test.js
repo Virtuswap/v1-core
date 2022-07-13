@@ -1,3 +1,4 @@
+const {sqrt } = require('bn-sqrt');
 const { toDecimalUnits, toBn } = require("./utils");
 
 const vPair = artifacts.require("vPair");
@@ -22,7 +23,7 @@ contract("vPair", (accounts) => {
       wallet
     );
 
-    vPairFactoryInstance = await vPairFactory.deployed();
+    vPairFactoryInstance = await vPairFactory.new();
 
     await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
     let createdPair = await vPairFactoryInstance.getPair(
@@ -206,36 +207,91 @@ contract("vPair", (accounts) => {
     expect(reverted).to.be.true;
   });
 
-  //   Main functionality
+    // Main functionality
 
-  it("Should mint", async () => {});
-
-  it("Should not mint if liquidity is not greater than 0 after deducting reserve ratio from liquidity", async () => {});
-
-  it("Should burn", async () => {});
-
-  //   check require in burn
-  it("Should not burn if", async () => {});
-
-  it("Should swap reserves", async () => {});
-
-  it("Should not swap reserves if calculate reserve ratio is more than max allowed", async () => {});
-
-  it("Should not swap reserves if not validated with factory", async () => {});
-
-  it("Should not swap reserves if ik0 is not whitelisted", async () => {});
-
-  it("Should calculate reserve ratio", async () => {
-    await vPairInstance.setWhitelist(accounts.slice(1, 5), {
-      from: wallet,
-    });
-
-    const res = await vPairInstance.calculateReserveRatio(2);
+  it("Should mint", async () => {
+    await vPairInstance.mint(wallet);
+    const liquidity = await vPairInstance.balanceOf(wallet);
+    
+    let liquidityCalculated = toBn(18, 100);
+    liquidityCalculated = liquidityCalculated.mul(toBn(18, 300));
+    liquidityCalculated = sqrt(liquidityCalculated);
+    liquidityCalculated = liquidityCalculated.sub(toBn(0, 10000));
+    
+    expect(liquidity.toString()).to.be.equal(liquidityCalculated.toString());
   });
+
+  it("Should not mint if liquidity is not greater than 0 after deducting reserve ratio from liquidity", async () => {
+    await vPairInstance.mint(wallet);
+    const liquidity = await vPairInstance.balanceOf(wallet);
+    
+    let liquidityCalculated = toBn(18, 100);
+    liquidityCalculated = liquidityCalculated.mul(toBn(18, 300));
+    liquidityCalculated = sqrt(liquidityCalculated);
+    liquidityCalculated = liquidityCalculated.sub(toBn(0, 10000));
+    
+    expect(liquidity.toString()).to.be.equal(liquidityCalculated.toString());
+  });
+
+  // it("Should burn", async () => {});
+
+  // //   check require in burn
+  // it("Should not burn if", async () => {});
+
+  // it("Should swap reserves", async () => {});
+
+  // it("Should not swap reserves if calculate reserve ratio is more than max allowed", async () => {});
+
+  // it("Should not swap reserves if not validated with factory", async () => {});
+
+  // it("Should not swap reserves if ik0 is not whitelisted", async () => {});
+
+  // TODO
+  // it("Should calculate reserve ratio", async () => {
+  //   await vPairInstance.setWhitelist([tokenA.address, tokenB.address], {
+  //     from: wallet,
+  //   });
+
+  //   const res1 = await vPairInstance.calculateReserveRatio();
+
+  //   // Nothing was minted reserve0 is 0
+  //   expect(res1.toNumber()).to.be.equal(0);
+
+  //   await vPairInstance.mint(wallet);
+  //   const res2 = await vPairInstance.calculateReserveRatio();
+
+  //   console.log((await vPairInstance.balanceOf(wallet)).toString());
+  //   console.log(res2.toString());
+  //   console.log((await vPairInstance.reserve0()));
+  //   // expect((await vPairInstance.balanceOf(wallet)).eq(toDecimalUnits(18, 10000))).to.equal(true)
+  // });
 
   it("Should swap native", async () => {});
 
-  it("Should not swap native if address is 0", async () => {});
+  // it("Should not swap native if address is 0", async () => {
+  //   let reverted = false;
+     
+  //   try{
+  //     await debug(await vPairInstance.swapNative(toBn(18, 20), tokenA.address, accounts[1], []));
+  //   }catch (err){
+  //     console.log((await tokenA.balanceOf(wallet)).toString())
+  //     console.log(err);
+  //     reverted = true;
+  //   }
 
-  it("Should not swap native if amount in is less than expected", async () => {});
+  //   expect(reverted).to.be.true;
+  // });
+
+  // it("Should not swap native if amount in is less than expected", async () => {
+  //   const zeroAddress = "0x0000000000000000000000000000000000000000";
+  //   let reverted = false;
+     
+  //   try{
+  //     await vPairInstance.swapNative(100, tokenA.address, zeroAddress, []);
+  //   }catch (err){
+  //     reverted = true;
+  //   }
+
+  //   expect(reverted).to.be.true;
+  // });
 });
