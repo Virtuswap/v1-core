@@ -261,6 +261,56 @@ contract("vRouter", (accounts) => {
     assert(amountOut > 0);
   });
 
+  it("Should swap A to C on pool A/C", async () => {
+    const poolAddress = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenC.address
+    ); //BTC,USDC
+
+    const tokenAInstance = await ERC20.at(tokenA.address);
+    const tokenCInstance = await ERC20.at(tokenC.address);
+
+    const tokenABalanceBefore = await tokenAInstance.balanceOf(accounts[0]);
+    const tokenCBalanceBefore = await tokenCInstance.balanceOf(accounts[0]);
+
+    let pools = [poolAddress];
+    let amountsInWei = [web3.utils.toWei("10", "ether")];
+    let amountsOutWei = [];
+    let iks = ["0x0000000000000000000000000000000000000000"];
+
+    const amountOut = await vRouterInstance.getAmountOut(
+      tokenA.address,
+      tokenC.address,
+      tokenA.address,
+      amountsInWei[0]
+    );
+
+    amountsOutWei.push((amountOut - 100000).toString()); // keep testing
+
+    const futureTs = await getFutureBlockTimestamp();
+    await vRouterInstance.swap(
+      pools,
+      amountsInWei,
+      amountsOutWei,
+      iks,
+      tokenA.address,
+      tokenC.address,
+      accounts[0],
+      futureTs
+    );
+
+    const tokenABalanceAfter = await tokenAInstance.balanceOf(accounts[0]);
+    const tokenCBalanceAfter = await tokenCInstance.balanceOf(accounts[0]);
+
+    expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
+      fromWeiToNumber(tokenCBalanceBefore)
+    );
+
+    expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
+      fromWeiToNumber(tokenABalanceBefore)
+    );
+  });
+
   it("Should swap C to A on pool A/B", async () => {
     const ikPair = await vPairFactoryInstance.getPair(
       tokenA.address,
@@ -296,77 +346,6 @@ contract("vRouter", (accounts) => {
       accounts[0],
       futureTs
     );
-
-    // for (let i = 0; i < amountsIn.length; i++) {
-    //   amountsInWei.push();
-    //   let amountOut = 0;
-    //   if (iks[i] == "0x0000000000000000000000000000000000000000") {
-    //     amountOut = await vRouterInstance.getAmountOut(
-    //       tokenA.address,
-    //       tokenC.address,
-    //       tokenA.address,
-    //       amountsInWei[i]
-    //     );
-    //     console.log("OK");
-    //   } else {
-    //     amountOut = await vRouterInstance.getVirtualAmountOut(
-    //       tokenA.address,
-    //       tokenC.address,
-    //       iks[i],
-    //       amountsInWei[i]
-    //     );
-    //     console.log("ERRROR");
-    //   }
-  });
-
-  it("Should swap A to C on pool A/C", async () => {
-    const poolAddress = await vPairFactoryInstance.getPair(
-      tokenA.address,
-      tokenC.address
-    ); //BTC,USDC
-
-    const tokenAInstance = await ERC20.at(tokenA.address);
-    const tokenCInstance = await ERC20.at(tokenC.address);
-
-    const tokenABalanceBefore = await tokenAInstance.balanceOf(accounts[0]);
-    const tokenCBalanceBefore = await tokenCInstance.balanceOf(accounts[0]);
-
-    let pools = [poolAddress];
-    let amountsInWei = [web3.utils.toWei("10", "ether")];
-    let amountsOutWei = [];
-    let iks = ["0x0000000000000000000000000000000000000000"];
-
-    const amountOut = await vRouterInstance.getAmountOut(
-      tokenA.address,
-      tokenC.address,
-      tokenA.address,
-      amountsInWei[0]
-    );
-
-    amountsOutWei.push((amountOut - 100000).toString()); // keep testing
-
-    // const futureTs = await getFutureBlockTimestamp();
-    // await vRouterInstance.swap(
-    //   pools,
-    //   amountsInWei,
-    //   amountsOutWei,
-    //   iks,
-    //   tokenA.address,
-    //   tokenC.address,
-    //   accounts[0],
-    //   futureTs
-    // );
-
-    // const tokenABalanceAfter = await tokenAInstance.balanceOf(accounts[0]);
-    // const tokenCBalanceAfter = await tokenCInstance.balanceOf(accounts[0]);
-
-    // expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
-    //   fromWeiToNumber(tokenCBalanceBefore)
-    // );
-
-    // expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
-    //   fromWeiToNumber(tokenABalanceBefore)
-    // );
   });
 
   it("Should add liquidity", async () => {
