@@ -185,14 +185,12 @@ contract("vRouter", (accounts) => {
     const amountIn = await vRouterInstance.getAmountIn(
       tokenA.address,
       tokenB.address,
-      tokenA.address,
       X
     );
 
     const amountOut = await vRouterInstance.getAmountOut(
       tokenA.address,
       tokenB.address,
-      tokenA.address,
       amountIn
     );
 
@@ -239,7 +237,7 @@ contract("vRouter", (accounts) => {
     assert(amountIn > 0);
   });
 
-  it("Should get VirtualAmountOut", async () => {
+  it("Should getVirtualAmountOut", async () => {
     const ikPair = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenB.address
@@ -259,6 +257,37 @@ contract("vRouter", (accounts) => {
     );
 
     assert(amountOut > 0);
+  });
+
+  it("Should getVirtualAmountIn(getVirtualAmountOut(x)) = x", async () => {
+    const ikPair = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenB.address
+    );
+
+    const jkPair = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address
+    );
+
+    const _amountOut = web3.utils.toWei("6", "ether");
+
+    const amountIn = await vRouterInstance.getVirtualAmountIn(
+      jkPair,
+      ikPair,
+      _amountOut
+    );
+
+    const amountOut = await vRouterInstance.getVirtualAmountOut(
+      jkPair,
+      ikPair,
+      amountIn
+    );
+
+    assert(
+      fromWeiToNumber(_amountOut) == fromWeiToNumber(amountOut),
+      "Not equal"
+    );
   });
 
   it("Should swap A to C on pool A/C", async () => {
@@ -281,11 +310,10 @@ contract("vRouter", (accounts) => {
     const amountOut = await vRouterInstance.getAmountOut(
       tokenA.address,
       tokenC.address,
-      tokenA.address,
       amountsInWei[0]
     );
 
-    amountsOutWei.push((amountOut - 100000).toString()); // keep testing
+    amountsOutWei.push((amountOut - 5000000000000000000).toString()); // keep testing
 
     const futureTs = await getFutureBlockTimestamp();
     await vRouterInstance.swap(
@@ -333,7 +361,7 @@ contract("vRouter", (accounts) => {
       amountsInWei[0]
     );
 
-    amountsOutWei.push((11).toString()); // keep testing
+    amountsOutWei.push(amountOut.toString()); // keep testing
 
     const futureTs = await getFutureBlockTimestamp();
     await vRouterInstance.swap(

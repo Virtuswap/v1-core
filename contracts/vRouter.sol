@@ -384,7 +384,6 @@ contract vRouter is IvRouter, vRouterVirtualPools {
     function getAmountOut(
         address tokenA,
         address tokenB,
-        address tokenIn,
         uint256 amountIn
     ) external view virtual override returns (uint256 amountOut) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
@@ -392,7 +391,7 @@ contract vRouter is IvRouter, vRouterVirtualPools {
         (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.sortReserves(
-            tokenIn,
+            tokenA,
             IvPair(pair).token0(),
             reserve0,
             reserve1
@@ -410,7 +409,6 @@ contract vRouter is IvRouter, vRouterVirtualPools {
     function getAmountIn(
         address tokenA,
         address tokenB,
-        address tokenIn,
         uint256 amountOut
     ) external view virtual override returns (uint256 amountIn) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
@@ -418,7 +416,7 @@ contract vRouter is IvRouter, vRouterVirtualPools {
         (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         PoolReserve memory reserves = vSwapMath.sortReserves(
-            tokenIn,
+            tokenA,
             IvPair(pair).token0(),
             reserve0,
             reserve1

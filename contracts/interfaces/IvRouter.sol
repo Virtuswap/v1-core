@@ -75,14 +75,12 @@ interface IvRouter {
     function getAmountOut(
         address tokenA,
         address tokenB,
-        address tokenIn,
         uint256 amountIn
     ) external view returns (uint256 amountOut);
 
     function getAmountIn(
         address tokenA,
         address tokenB,
-        address tokenIn,
         uint256 amountOut
     ) external view returns (uint256 amountIn);
 
