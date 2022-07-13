@@ -346,7 +346,7 @@ contract("vRouter", (accounts) => {
     const poolAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenC.address
-    ); //BTC,USDC
+    ); 
 
     const tokenAInstance = await ERC20.at(tokenA.address);
     const tokenCInstance = await ERC20.at(tokenC.address);
@@ -355,24 +355,20 @@ contract("vRouter", (accounts) => {
     const tokenCBalanceBefore = await tokenCInstance.balanceOf(accounts[0]);
 
     let pools = [poolAddress];
-    let amountsInWei = [web3.utils.toWei("10", "ether")];
-    let amountsOutWei = [];
-    let iks = ["0x0000000000000000000000000000000000000000"];
+    let amountsIn = web3.utils.toWei("10", "ether");
 
     const amountOut = await vRouterInstance.getAmountOut(
       tokenA.address,
       tokenC.address,
-      amountsInWei[0]
+      amountsIn
     );
-
-    amountsOutWei.push((amountOut * 0.98).toString()); // keep testing
 
     const futureTs = await getFutureBlockTimestamp();
     await vRouterInstance.swap(
       pools,
-      amountsInWei,
-      amountsOutWei,
-      iks,
+      [amountsIn],
+      [amountOut],
+      ["0x0000000000000000000000000000000000000000"],
       tokenA.address,
       tokenC.address,
       accounts[0],
@@ -412,12 +408,7 @@ contract("vRouter", (accounts) => {
       amountOut
     );
 
-    console.log("amountIn " + fromWeiToNumber(amountIn));
-
     const futureTs = await getFutureBlockTimestamp();
-    console.log("amountOut " + fromWeiToNumber(amountOut));
-    // amountOut = (amountOut * 0.98).toString();
-    console.log("amountOut after " + fromWeiToNumber(amountOut));
     await vRouterInstance.swap(
       [poolAddress],
       [amountIn],
