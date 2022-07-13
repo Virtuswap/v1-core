@@ -1,7 +1,9 @@
-const {toDecimalUnits} = require("./utils");
-const vPairFactory = artifacts.require("vPairFactory");
+const {solidity} =  require('ethereum-waffle');
+const chai = require('chai');
 const vPair = artifacts.require('vPair')
+const vPairFactory = artifacts.require("vPairFactory");
 const ERC20 = artifacts.require('ERC20PresetFixedSupply')
+const { toDecimalUnits, toBn } = require("./utils");
 
 chai.use(solidity);
 const { expect } = chai;
@@ -29,10 +31,10 @@ contract('vPairFactory', (accounts) => {
 
 		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
 
-		await except(vPairFactoryInstance.createPair(tokenA.address, tokenA.address)).to.revertedWith('VSWAP: IDENTICAL_ADDRESSES');
+		await expect(vPairFactoryInstance.createPair(tokenA.address, tokenA.address)).to.revertedWith('VSWAP: IDENTICAL_ADDRESSES');
 	});
 
-	it('[FAIL] Creates and adds a new pair', async () => {
+	it('[FAIL] Creates already exists pair', async () => {
 		const vPairFactoryInstance = await vPairFactory.deployed();
 
 		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
@@ -41,15 +43,15 @@ contract('vPairFactory', (accounts) => {
 		await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
 
 		//try to create the same pair second time 
-		await except(vPairFactoryInstance.createPair(tokenA.address, tokenB.address)).to.revertedWith('VSWAP: PAIR_EXISTS');
+		await expect(vPairFactoryInstance.createPair(tokenA.address, tokenB.address)).to.revertedWith('VSWAP: PAIR_EXISTS');
 	});
 
-	it('[FAIL] Creates and adds a new pair', async () => {
+	it('[FAIL] Creates new pair with zero token address', async () => {
 		const vPairFactoryInstance = await vPairFactory.deployed();
 
 		let tokenA = await ERC20.new("tokenA", "A", toBn(18, 1000000), wallet);
 
 		// try to create the new pair with zero address
-		await except(vPairFactoryInstance.createPair(tokenA.address, zeroAddress)).to.revertedWith('VSWAP: PAIR_EXISTS');
+		await expect(vPairFactoryInstance.createPair(tokenA.address, zeroAddress)).to.revertedWith('VSWAP: ZERO_ADDRESS');
 	});
 });

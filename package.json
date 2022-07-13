@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
-  "scripts": {
-  },
+  "scripts": {},
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -22,6 +21,9 @@
   },
   "dependencies": {
     "@uniswap/lib": "^4.0.1-alpha",
-    "bn.js": "^5.2.1"
+    "bn-sqrt": "^1.0.0",
+    "bn.js": "^5.2.1",
+    "chai": "^4.3.6",
+    "ethereum-waffle": "^3.4.4"
   }
 }
