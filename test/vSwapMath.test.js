@@ -95,6 +95,58 @@ contract("vSwapMath", (accounts) => {
     assert.equal(amountOut, X, "Invalid getAmountIn / getAmountOut");
   });
 
+  it("Should sort pool reserves", async () => {
+    //   function sortReserves(
+    //     address tokenIn,
+    //     address baseToken,
+    //     uint256 reserve0,
+    //     uint256 reserve1
+    // ) public pure returns (PoolReserve memory reserves) {
+    //     (uint256 _reserve0, uint256 _reserve1) = baseToken == tokenIn
+    //         ? (reserve0, reserve1)
+    //         : (reserve1, reserve0);
+    //     reserves.reserve0 = _reserve0;
+    //     reserves.reserve1 = _reserve1;
+    // }
+
+    const ikPair = await vPairFactoryInstance.getPair(
+      tokenC.address,
+      tokenB.address
+    );
+
+    const jkPair = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address
+    );
+
+    const pool = await vPair.at(jkPair);
+
+    let poolReserves = await pool.getReserves();
+    let poolToken0 = await pool.token0();
+    let poolToken1 = await pool.token1();
+
+    let reserves = await vSwapMathInstance.sortReserves(
+      poolToken0,
+      poolToken0,
+      poolReserves._reserve0,
+      poolReserves._reserve1
+    );
+
+    assert(reserves.reserve0 == poolReserves._reserve0, "Reserve not in order");
+
+    let reserves2 = await vSwapMathInstance.sortReserves(
+      poolToken1,
+      poolToken0,
+      poolReserves._reserve0,
+      poolReserves._reserve1
+    );
+
+    assert(
+      reserves2.reserve0 == poolReserves._reserve1,
+      "Reserve not in order"
+    );
+  });
+
   it("Should find common token and assing to ik1 and jk1", async () => {
     let tokens = await vSwapMathInstance.findCommonToken(
       tokenA.address,

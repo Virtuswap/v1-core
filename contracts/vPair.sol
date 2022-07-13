@@ -128,7 +128,7 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 _amountIn = IERC20(_inputToken).balanceOf(address(this)) -
             poolReserves.reserve0;
 
-        require(_amountIn > 0 && _amountIn > _expectedAmountIn, "IIA");
+        require(_amountIn > 0 && _amountIn >= _expectedAmountIn, "IIA");
 
         (uint256 _reserve0, uint256 _reserve1) = _inputToken < tokenOut
             ? (

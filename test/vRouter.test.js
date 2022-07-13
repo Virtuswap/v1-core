@@ -75,7 +75,7 @@ contract("vRouter", (accounts) => {
 
     //create pool B/C
     //create pool B/C with 10,000 B and equivalent C
-    BInput = 10000 * B_PRICE;
+    BInput = 20000 * B_PRICE;
     CInput = (C_PRICE / B_PRICE) * BInput;
     await vRouterInstance.addLiquidity(
       tokenB.address,
@@ -212,7 +212,59 @@ contract("vRouter", (accounts) => {
 
     const vPool = await vRouterInstance.getVirtualPool(jk, ik);
 
-    expect(vPool.reserve0 / vPool.reserve1 == A_PRICE / C_PRICE);
+    assert(vPool.reserve0 / vPool.reserve1 == A_PRICE / C_PRICE);
+    assert(vPool.token0 == tokenA.address && vPool.token1 == tokenC.address);
+  });
+
+  it("Should calculate virtual pool B/C using A/B as oracle", async () => {
+    const ik = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address
+    );
+
+    const jk = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenC.address
+    );
+
+    const vPool = await vRouterInstance.getVirtualPool(jk, ik);
+
+    assert(vPool.reserve0 / vPool.reserve1 == B_PRICE / C_PRICE);
+    assert(vPool.token0 == tokenB.address && vPool.token1 == tokenC.address);
+  });
+
+  it("Should calculate virtual pool A/B using B/C as oracle", async () => {
+    const ik = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenC.address
+    );
+
+    const jk = await vPairFactoryInstance.getPair(
+      tokenC.address,
+      tokenB.address
+    );
+
+    const vPool = await vRouterInstance.getVirtualPool(jk, ik);
+
+    assert(vPool.reserve0 / vPool.reserve1 == A_PRICE / B_PRICE);
+    assert(vPool.token0 == tokenA.address && vPool.token1 == tokenB.address);
+  });
+
+  it("Should calculate virtual pool B/A using B/C as oracle", async () => {
+    const ik = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address
+    );
+
+    const jk = await vPairFactoryInstance.getPair(
+      tokenC.address,
+      tokenA.address
+    );
+
+    const vPool = await vRouterInstance.getVirtualPool(jk, ik);
+
+    assert(vPool.reserve0 / vPool.reserve1 == B_PRICE / A_PRICE);
+    assert(vPool.token0 == tokenB.address && vPool.token1 == tokenA.address);
   });
 
   it("Should getVirtualAmountIn", async () => {
@@ -226,7 +278,7 @@ contract("vRouter", (accounts) => {
       tokenC.address
     );
 
-    const amountOut = web3.utils.toWei("6", "ether");
+    const amountOut = web3.utils.toWei("10", "ether");
 
     const amountIn = await vRouterInstance.getVirtualAmountIn(
       jkPair,
@@ -313,7 +365,7 @@ contract("vRouter", (accounts) => {
       amountsInWei[0]
     );
 
-    amountsOutWei.push((amountOut - 5000000000000000000).toString()); // keep testing
+    amountsOutWei.push((amountOut * 0.98).toString()); // keep testing
 
     const futureTs = await getFutureBlockTimestamp();
     await vRouterInstance.swap(
@@ -339,38 +391,133 @@ contract("vRouter", (accounts) => {
     );
   });
 
+  it("Should swap C to A on pool A/C", async () => {
+    const poolAddress = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenC.address
+    );
+
+    const tokenAInstance = await ERC20.at(tokenA.address);
+    const tokenCInstance = await ERC20.at(tokenC.address);
+
+    const tokenABalanceBefore = await tokenAInstance.balanceOf(accounts[0]);
+    const tokenCBalanceBefore = await tokenCInstance.balanceOf(accounts[0]);
+
+    let amountOut = web3.utils.toWei("10", "ether");
+    let iks = ["0x0000000000000000000000000000000000000000"];
+
+    const amountIn = await vRouterInstance.getAmountIn(
+      tokenC.address,
+      tokenA.address,
+      amountOut
+    );
+
+    console.log("amountIn " + fromWeiToNumber(amountIn));
+
+    const futureTs = await getFutureBlockTimestamp();
+    console.log("amountOut " + fromWeiToNumber(amountOut));
+    // amountOut = (amountOut * 0.98).toString();
+    console.log("amountOut after " + fromWeiToNumber(amountOut));
+    await vRouterInstance.swap(
+      [poolAddress],
+      [amountIn],
+      [amountOut],
+      iks,
+      tokenC.address,
+      tokenA.address,
+      accounts[0],
+      futureTs
+    );
+
+    const tokenABalanceAfter = await tokenAInstance.balanceOf(accounts[0]);
+    const tokenCBalanceAfter = await tokenCInstance.balanceOf(accounts[0]);
+
+    expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.lessThan(
+      fromWeiToNumber(tokenCBalanceBefore)
+    );
+
+    expect(fromWeiToNumber(tokenABalanceAfter)).to.above(
+      fromWeiToNumber(tokenABalanceBefore)
+    );
+  });
+
   it("Should swap C to A on pool A/B", async () => {
     const ikPair = await vPairFactoryInstance.getPair(
-      tokenA.address,
+      tokenC.address,
       tokenB.address
     );
 
     const jkPair = await vPairFactoryInstance.getPair(
       tokenB.address,
+      tokenA.address
+    );
+
+    let amountOut = web3.utils.toWei("10", "ether");
+
+    const amountIn = await vRouterInstance.getVirtualAmountIn(
+      jkPair,
+      ikPair,
+      amountOut
+    );
+
+    const futureTs = await getFutureBlockTimestamp();
+    await vRouterInstance.swap(
+      [jkPair],
+      [amountIn],
+      [amountOut],
+      [ikPair],
+      tokenC.address,
+      tokenA.address,
+      accounts[0],
+      futureTs
+    );
+  });
+
+  it("Should Total Pool swap. C to A on pool A/C and C to A on pool A/B", async () => {
+    const ikPair = await vPairFactoryInstance.getPair(
+      tokenC.address,
+      tokenB.address
+    );
+
+    const jkPair = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address
+    );
+
+    const realPool = await vPairFactoryInstance.getPair(
+      tokenA.address,
       tokenC.address
     );
 
-    let pools = [jkPair];
-    let amountsInWei = [web3.utils.toWei("10", "ether")];
-    let amountsOutWei = [];
-    let iks = [ikPair];
+    let pools = [realPool, jkPair];
+    let _amountOut = web3.utils.toWei("10", "ether");
+    let amountsIn = [];
+    let amountsOut = [_amountOut, _amountOut];
+    let iks = ["0x0000000000000000000000000000000000000000", ikPair];
 
-    const amountOut = await vRouterInstance.getVirtualAmountOut(
-      jkPair,
-      iks[0],
-      amountsInWei[0]
+    const realAmountIn = await vRouterInstance.getAmountIn(
+      tokenC.address,
+      tokenA.address,
+      _amountOut
     );
 
-    amountsOutWei.push(amountOut.toString()); // keep testing
+    amountsIn.push(realAmountIn); // keep testing
+    const virtualIn = await vRouterInstance.getVirtualAmountIn(
+      jkPair,
+      iks[1],
+      _amountOut
+    );
+
+    amountsIn.push(virtualIn);
 
     const futureTs = await getFutureBlockTimestamp();
     await vRouterInstance.swap(
       pools,
-      amountsInWei,
-      amountsOutWei,
+      amountsIn,
+      amountsOut,
       iks,
-      tokenA.address,
       tokenC.address,
+      tokenA.address,
       accounts[0],
       futureTs
     );
@@ -617,6 +764,17 @@ contract("vRouter", (accounts) => {
       (reserve1 * 0.75).toFixed(6),
       reserve1After.toFixed(6),
       "Pool reserve did not decrease by 1/4"
+    );
+  });
+
+  it("Should change factory", async () => {
+    const currentFactory = await vRouterInstance.factory();
+    await vRouterInstance.changeFactory(tokenA.address);
+    const newFactory = await vRouterInstance.factory();
+
+    assert(
+      currentFactory != tokenA.address && newFactory == tokenA.address,
+      "Factory did not changed"
     );
   });
 });
