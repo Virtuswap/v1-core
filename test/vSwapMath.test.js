@@ -216,8 +216,6 @@ contract("vSwapMath", (accounts) => {
       web3.utils.toWei("3000", "ether")
     );
 
-    console.log("lpTokens " + lpTokens);
-
     assert(
       lpTokens == web3.utils.toWei("97", "ether"),
       "Wrong lp tokens deduction"
@@ -274,8 +272,9 @@ contract("vSwapMath", (accounts) => {
       poolReserves._reserve1
     );
 
-    assert(
-      poolReserves._reserve0 == reserves._reserve0,
+    assert.equal(
+      fromWeiToNumber(poolReserves._reserve0),
+      fromWeiToNumber(reserves._reserve0),
       "Reserve not in order"
     );
 
@@ -286,10 +285,13 @@ contract("vSwapMath", (accounts) => {
       poolReserves._reserve1
     );
 
-    assert(
-      reserves2.reserve0 == poolReserves._reserve1,
-      "Reserve not in order"
+    assert.equal(
+      fromWeiToNumber(poolReserves._reserve1),
+      fromWeiToNumber(reserves2._reserve0),
+      "Reserve 2 not in order"
     );
+
+  
   });
 
   it("Should find common token and assing to ik1 and jk1", async () => {
