@@ -283,6 +283,38 @@ contract("vRouter", (accounts) => {
     assert(fromWeiToNumber(poolReserveRatio) > 0, "Reserve ratio invalid");
   });
 
+  it("Assert pool A/B calculateReserveRatio is correct ", async () => {
+    const jkPair = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address
+    );
+
+    let pool = await vPair.at(jkPair);
+    let poolReserveRatio = await pool.calculateReserveRatio();
+
+    let poolCReserves = await pool.reserveRatio(tokenC.address);
+    let poolDReserves = await pool.reserveRatio(tokenD.address);
+
+    poolCReserves = fromWeiToNumber(poolCReserves);
+    poolDReserves = fromWeiToNumber(poolDReserves);
+
+    let totalReserves = poolCReserves + poolDReserves;
+
+    let reserve0 = await pool.reserve0();
+    reserve0 = fromWeiToNumber(reserve0);
+    let poolLiquidity = reserve0 * 2;
+
+    let reserveRatioPCT =
+      ((totalReserves / poolLiquidity) * 100).toFixed(3) * 1;
+    poolReserveRatio = fromWeiToNumber(poolReserveRatio);
+
+    assert.equal(
+      poolReserveRatio,
+      reserveRatioPCT,
+      "Pool reserve ratio is not equal to calculated in test"
+    );
+  });
+
   // it("Should add liquidity", async () => {
   //   let amountADesired = web3.utils.toWei("1", "ether");
 

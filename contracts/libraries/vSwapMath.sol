@@ -45,29 +45,15 @@ library vSwapMath {
         return (_quotient);
     }
 
-    function getPercent(uint256 part, uint256 whole)
-        public
-        pure
-        returns (uint256 percent)
-    {
-        uint256 numerator = part * 1000;
-        require(numerator > part); // overflow. Should use SafeMath throughout if this was a real implementation.
-        uint256 temp = numerator / whole + 5; // proper rounding up
-        return temp / 10;
-    }
-
     function calculateReserveRatio(
         uint256 rRatio,
         uint256 _rReserve,
         uint256 _baseReserve
     ) public pure returns (uint256) {
-        // return
-        //     rRatio +
-        //     (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
-        //     (_baseReserve * 2);
         return
             rRatio +
-            (percent(_rReserve, (_baseReserve * 2), 18) * RESERVE_RATIO_FACTOR);
+            (percent(_rReserve * 100, (_baseReserve * 2), 18) *
+                RESERVE_RATIO_FACTOR);
     }
 
     function calculateVPool(
@@ -134,7 +120,7 @@ library vSwapMath {
         pure
         returns (uint256 lpAmount)
     {
-        lpAmount = getPercent(_reserveRatio / 1000, _liquidity);
+        // lpAmount = getPercent(_reserveRatio / 1000, _liquidity);
         // uint256 liquidityFactored = _liquidity * (10000000 - _reserveRatio);
         // lpAmount = liquidityFactored / 10000000;
     }
