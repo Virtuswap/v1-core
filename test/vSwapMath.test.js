@@ -211,11 +211,17 @@ contract("vSwapMath", (accounts) => {
   });
 
   it("Should deduct reserve ratio from lp tokens issue", async () => {
-    const lpTokens = await vSwapMathInstance.deductReserveRatioFromLP(100, 50);
+    const lpTokens = await vSwapMathInstance.deductReserveRatioFromLP(
+      web3.utils.toWei("100", "ether"),
+      web3.utils.toWei("3000", "ether")
+    );
 
     console.log("lpTokens " + lpTokens);
 
-    assert(lpTokens > 0, "Wrong lp tokens deduction");
+    assert(
+      lpTokens == web3.utils.toWei("97", "ether"),
+      "Wrong lp tokens deduction"
+    );
   });
 
   it("Should (amountIn(amountOut(x)) = x)", async () => {

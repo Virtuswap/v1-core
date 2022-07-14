@@ -120,8 +120,8 @@ library vSwapMath {
         pure
         returns (uint256 lpAmount)
     {
-        // lpAmount = getPercent(_reserveRatio / 1000, _liquidity);
-        // uint256 liquidityFactored = _liquidity * (10000000 - _reserveRatio);
-        // lpAmount = liquidityFactored / 10000000;
+        uint256 factor = 100000 * 1e18;
+        uint256 numerator = _liquidity * (factor - _reserveRatio);
+        lpAmount = numerator / factor;
     }
 }
