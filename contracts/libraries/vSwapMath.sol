@@ -33,6 +33,18 @@ library vSwapMath {
         vPoolTokens.jk1 = _jkToken1;
     }
 
+    function percent(
+        uint256 numerator,
+        uint256 denominator,
+        uint256 precision
+    ) internal pure returns (uint256 quotient) {
+        // caution, check safe-to-multiply here
+        uint256 _numerator = numerator * 10**(precision + 1);
+        // with rounding of last digit
+        uint256 _quotient = ((_numerator / denominator) + 5) / 10;
+        return (_quotient);
+    }
+
     function calculateReserveRatio(
         uint256 rRatio,
         uint256 _rReserve,
@@ -40,8 +52,8 @@ library vSwapMath {
     ) public pure returns (uint256) {
         return
             rRatio +
-            (_rReserve * 100 * RESERVE_RATIO_FACTOR) /
-            (_baseReserve * 2);
+            (percent(_rReserve * 100, (_baseReserve * 2), 18) *
+                RESERVE_RATIO_FACTOR);
     }
 
     function calculateVPool(
@@ -50,11 +62,11 @@ library vSwapMath {
         uint256 jkTokenABalance,
         uint256 jkTokenBBalance
     ) public pure returns (VirtualPoolModel memory vPool) {
-        vPool.tokenABalance =
+        vPool.reserve0 =
             (ikTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
             Math.max(ikTokenBBalance, EPSILON);
 
-        vPool.tokenBBalance =
+        vPool.reserve1 =
             (jkTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
             Math.max(jkTokenBBalance, EPSILON);
     }
@@ -86,23 +98,21 @@ library vSwapMath {
         uint256 amountA,
         uint256 reserveA,
         uint256 reserveB
-    ) internal pure returns (uint256 amountB) {
+    ) public pure returns (uint256 amountB) {
         require(amountA > 0, "VSWAP: INSUFFICIENT_AMOUNT");
         require(reserveA > 0 && reserveB > 0, "VSWAP: INSUFFICIENT_LIQUIDITY");
         amountB = (amountA * reserveB) / reserveA;
     }
 
-    function SortedReservesBalances(
+    function sortReserves(
         address tokenIn,
         address baseToken,
         uint256 reserve0,
         uint256 reserve1
-    ) public pure returns (PoolReserve memory reserves) {
-        (uint256 _reserve0, uint256 _reserve1) = baseToken == tokenIn
+    ) public pure returns (uint256 _reserve0, uint256 _reserve1) {
+        (_reserve0, _reserve1) = baseToken == tokenIn
             ? (reserve0, reserve1)
             : (reserve1, reserve0);
-        reserves.reserve0 = _reserve0;
-        reserves.reserve1 = _reserve1;
     }
 
     function deductReserveRatioFromLP(uint256 _liquidity, uint256 _reserveRatio)
@@ -110,8 +120,8 @@ library vSwapMath {
         pure
         returns (uint256 lpAmount)
     {
-        uint256 multiplier = (RESERVE_RATIO_FACTOR -
-            (_reserveRatio / RESERVE_RATIO_FACTOR));
-        lpAmount = (_liquidity * multiplier) / RESERVE_RATIO_FACTOR;
+        uint256 factor = 100000 * 1e18;
+        uint256 numerator = _liquidity * (factor - _reserveRatio);
+        lpAmount = numerator / factor;
     }
 }
