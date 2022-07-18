@@ -260,31 +260,6 @@ contract("vPair", (accounts) => {
   // });
 
   // WIP
-
-  // it("Should exchange reserves", async () => {
-  //   const tokenC = await ERC20.new("tokenC", "C", toBn(18, 1000000), wallet);
-    
-  //   await vPairFactoryInstance.createPair(tokenA.address, tokenC.address);
-  //   let createdPair = await vPairFactoryInstance.getPair(
-  //     tokenA.address,
-  //     tokenC.address,
-  //   );
-  //   vPairInstance2 = await vPair.at(createdPair);
-
-  //   await tokenA.approve(wallet, toBn(18, 1000000));
-  //   await tokenC.approve(wallet, toBn(18, 1000000));
-
-  //   await tokenA.transferFrom(wallet, vPairInstance2.address, toBn(18, 100));
-  //   await tokenC.transferFrom(wallet, vPairInstance2.address, toBn(18, 100));
-    
-  //   await vPairInstance.setWhitelist([tokenC.address], {
-  //     from: wallet,
-  //   });
-
-  //   console.log(await vPairInstance.whitelistAllowance(tokenC.address))
-  //   await vPairInstance.exchangeReserve(toBn(1), vPairInstance2.address, wallet, []);
-  // });
-
   it("Should swap reserves", async () => {
     const tokenC = await ERC20.new("tokenC", "C", toBn(18, 1000000), wallet);
     
@@ -294,32 +269,32 @@ contract("vPair", (accounts) => {
       tokenC.address,
     );
     const vPairInstance2 = await vPair.at(createdPair);
+    await vPairInstance.mint(wallet);
 
     await tokenA.approve(wallet, toBn(18, 1000000));
     await tokenC.approve(wallet, toBn(18, 1000000));
 
-    await tokenA.transferFrom(wallet, vPairInstance2.address, toBn(18, 100));
-    await tokenC.transferFrom(wallet, vPairInstance2.address, toBn(18, 100));
+    await tokenA.transferFrom(wallet, vPairInstance2.address, toBn(18, 500));
+    await tokenC.transferFrom(wallet, vPairInstance2.address, toBn(18, 500));
     
     await vPairInstance2.mint(wallet);
-    await tokenA.transferFrom(wallet, vPairInstance2.address, toBn(18, 100));
-    await tokenC.transferFrom(wallet, vPairInstance2.address, toBn(18, 100));
+    await tokenA.transferFrom(wallet, vPairInstance2.address, toBn(18, 500));
+    await tokenC.transferFrom(wallet, vPairInstance2.address, toBn(18, 500));
 
     await vPairInstance.setWhitelist([tokenC.address], {
       from: wallet,
     });
 
+    const res = await vPairInstance.getReserves();
     const strangeNumber = web3.utils.toWei("1", "ether");
     const num1 = await vPairInstance2.reserve0(); // 100 * 10^18
     const num2 = await vPairInstance2.reserve1(); // 100 * 10^18 
-    vPairInstance2.exec
-    console.log('res >>>>>>>>>>>>>', num1.toString(), num2.toString())
     await vPairInstance.swapReserves(strangeNumber, vPairInstance2.address, wallet, []);
   });
 
-  it("Should not swap reserves if calculate reserve ratio is more than max allowed", async () => {
+  // it("Should not swap reserves if calculate reserve ratio is more than max allowed", async () => {
     
-  });
+  // });
 
   // it("Should not swap reserves if not validated with factory", async () => {});
 
