@@ -144,6 +144,80 @@ contract vPair is IvPair, vSwapERC20 {
         );
     }
 
+    function swapNativeToReserve(
+        uint256 amountOut,
+        address ikPair,
+        address to,
+        bytes calldata data
+    ) external override lock {
+        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
+            ikPair,
+            address(this)
+        );
+
+        // validate ikPair with factory
+        require(
+            IvPairFactory(factory).getPair(vPool.token1, vPool.commonToken) ==
+                ikPair,
+            "IIKP"
+        );
+
+        require(whitelistAllowance[vPool.token1], "TNW");
+        require(vPool.token0 == token0 || vPool.token0 == token1, "NNT");
+
+        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
+
+        uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
+            amountOut,
+            vPool.reserve0,
+            vPool.reserve1,
+            vFee
+        );
+
+        if (data.length > 0)
+            IvFlashSwapCallback(to).vFlashSwapCallback(
+                msg.sender,
+                amountOut,
+                requiredAmountIn,
+                data
+            );
+
+        uint256 amountIn = IERC20(vPool.token0).balanceOf(address(this)) -
+            (vPool.token0 == token0 ? reserve0 : reserve1);
+
+        require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
+
+        // //update reserve balance in the equivalent of token0 value
+
+        uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
+
+        //re-calculate price of reserve asset in token0 for the whole pool blance
+        _reserveBaseValue = vSwapLibrary.quote(
+            _reserveBaseValue,
+            vPool.reserve0,
+            vPool.reserve1
+        );
+
+        if (vPool.token0 == token1) {
+            //if tokenOut is not token0 we should quote it to token0 value
+            _reserveBaseValue = vSwapLibrary.quote(
+                _reserveBaseValue,
+                reserve1,
+                reserve0
+            );
+        }
+
+        reservesBaseValue[vPool.token1] = _reserveBaseValue;
+
+        //update reserve balance
+        reserves[vPool.token1] = reserves[vPool.token1] - amountOut;
+
+        _update(
+            IERC20(token0).balanceOf(address(this)),
+            IERC20(token1).balanceOf(address(this))
+        );
+    }
+
     function swapReserveToNative(
         uint256 amountOut,
         address ikPair,
