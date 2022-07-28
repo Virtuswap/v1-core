@@ -57,10 +57,11 @@ contract flashSwapExample is IvFlashSwapCallback {
         address ik = IvPairFactory(factory).getPair(tokenB, tokenC);
         address jk = IvPairFactory(factory).getPair(tokenA, tokenC);
 
-        uint256 vAmountIn = IvRouter(router).getVirtualAmountIn(ik, jk, amount);
-
-        //FIX THIS LINE
-        vAmountIn = vAmountIn - 1e18;
+        uint256 vAmountOut = IvRouter(router).getVirtualAmountOut(
+            jk,
+            ik,
+            amount
+        );
 
         address caller = decodeAddress(data);
 
@@ -68,18 +69,18 @@ contract flashSwapExample is IvFlashSwapCallback {
 
         //swap B to A in virtual pool A/B
         IvPair(jk).swapReserveToNative(
-            vAmountIn,
+            vAmountOut,
             ik,
             poolAddress,
             new bytes(0)
         );
 
         //take delta from transaction caller
-        uint256 delta = requiredBackAmount - vAmountIn;
+        uint256 delta = requiredBackAmount - vAmountOut;
 
         if (delta > 0) {
             SafeERC20.safeTransferFrom(
-                IERC20(tokenB),
+                IERC20(tokenA),
                 caller,
                 poolAddress,
                 delta
@@ -92,9 +93,6 @@ contract flashSwapExample is IvFlashSwapCallback {
         address abPoolAddress = IvPairFactory(factory).getPair(tokenA, tokenB);
 
         uint256 amountOut = 10 * 1e18;
-
-
-
         bytes memory encodedAddress = abi.encodePacked(msg.sender);
 
         //call flashswap

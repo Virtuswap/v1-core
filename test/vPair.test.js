@@ -179,16 +179,11 @@ contract("vPair", (accounts) => {
     await tokenA.approve(vFlashSwapExample.address, issueAmount);
     await tokenB.approve(vFlashSwapExample.address, issueAmount);
     await tokenC.approve(vFlashSwapExample.address, issueAmount);
-
-    let allowance = await tokenA.allowance(
-      accounts[0],
-      vFlashSwapExample.address
-    );
   });
 
-  // it("Should flashswap buying B from A/B, swaping B (reserve) to A on pool A/C and payback loan to pool A/B", async function () {
-  //   await vFlashSwapExample.testFlashswap();
-  // });
+  it("Should flashswap buying B from A/B, swaping B (reserve) to A on pool A/C and payback loan to pool A/B", async function () {
+    await vFlashSwapExample.testFlashswap();
+  });
 
   it("Should swap native A to B on pool A/B", async () => {
     const aBalancePoolBefore = await tokenB.balanceOf(vPairInstance.address);
@@ -509,6 +504,8 @@ contract("vPair", (accounts) => {
 
     expect(factoryAddress).to.be.equal(accounts[1]);
   });
+
+  ////////////////////////////////////////////////////////////////
 
   // });
   // // WIP
