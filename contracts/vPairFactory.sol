@@ -23,7 +23,7 @@ contract vPairFactory is IvPairFactory {
         admin = msg.sender;
         max_reserve_ratio_default = 2000 * 1e18;
         max_whitelist_count_default = 8;
-        pair_fee_default = 997;
+        pair_fee_default = 997; 
         pair_vfee_default = 996;
     }
 
