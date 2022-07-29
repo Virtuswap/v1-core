@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@uniswap/v3-periphery/contracts/base/Multicall.sol";
 
 import "./types.sol";
 import "./libraries/vSwapLibrary.sol";
@@ -11,7 +12,7 @@ import "./interfaces/IvPair.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
 
-contract vRouter is IvRouter {
+contract vRouter is IvRouter, Multicall {
     address public override factory;
     address public immutable override owner;
 
@@ -28,6 +29,50 @@ contract vRouter is IvRouter {
     constructor(address _factory) {
         owner = msg.sender;
         factory = _factory;
+    }
+
+    function swapToExactNative(
+        address tokenA,
+        address tokenB,
+        uint256 amountOut,
+        address to
+    ) {
+        address pair = IvPairFactory.getPair(tokenA, tokenB);
+        uint256 amountIn = _getAmountIn(pair, tokenA, amountOut);
+
+        SafeERC20.safeTransferFrom(IERC20(tokenA), msg.sender, pair, amountIn);
+
+        IvPair(pair).swapNative(amountOut, tokenB, to, new bytes(0));
+    }
+
+    function swapExactNative(
+        address tokenA,
+        address tokenB,
+        uint256 amountIn,
+        address to
+    ) {
+        address pair = IvPairFactory.getPair(tokenA, tokenB);
+        uint256 amountOut = _getAmountOut(pair, tokenA, amountIn);
+
+        SafeERC20.safeTransferFrom(IERC20(tokenA), msg.sender, pair, amountIn);
+
+        IvPair(pair).swapNative(amountOut, tokenB, to, new bytes(0));
+    }
+
+    function swapExactReserveToNative(
+        address jkPool,
+        address ikPool,
+        uint256 amountIn,
+        address to
+    ) {
+        //validate jk pool
+        address pair = IvPairFactory.getPair(tokenA, tokenB);
+
+        uint256 amountOut = _getAmountOut(pair, tokenA, amountIn);
+
+        SafeERC20.safeTransferFrom(IERC20(tokenA), msg.sender, pair, amountIn);
+
+        IvPair(pair).swapNative(amountOut, tokenB, to, new bytes(0));
     }
 
     function swap(
@@ -243,17 +288,17 @@ contract vRouter is IvRouter {
         return vSwapLibrary.quote(amount, reserve0, reserve1);
     }
 
-    function getAmountOut(
-        address tokenA,
-        address tokenB,
+    function _getAmountOut(
+        address pair,
+        address tokenIn,
         uint256 amountIn
-    ) external view virtual override returns (uint256 amountOut) {
-        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+    ) external view returns (uint256 amountOut) {
+        require(pair > address(0), "VSWAP:INVALID_PAIR");
 
         (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         (reserve0, reserve1) = vSwapLibrary.sortReserves(
-            tokenA,
+            tokenIn,
             IvPair(pair).token0(),
             reserve0,
             reserve1
@@ -267,17 +312,17 @@ contract vRouter is IvRouter {
         );
     }
 
-    function getAmountIn(
-        address tokenA,
-        address tokenB,
+    function _getAmountIn(
+        address pair,
+        address tokenIn,
         uint256 amountOut
-    ) external view virtual override returns (uint256 amountIn) {
-        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+    ) internal view returns (uint256 amountIn) {
+        require(pair > address(0), "VSWAP:INVALID_PAIR");
 
         (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
 
         (reserve0, reserve1) = vSwapLibrary.sortReserves(
-            tokenA,
+            tokenIn,
             IvPair(pair).token0(),
             reserve0,
             reserve1
@@ -289,5 +334,23 @@ contract vRouter is IvRouter {
             reserve1,
             IvPair(pair).fee()
         );
+    }
+
+    function getAmountOut(
+        address tokenA,
+        address tokenB,
+        uint256 amountIn
+    ) external view virtual override returns (uint256 amountOut) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+        amountOut = _getAmountOut(pair, tokenA, amountIn);
+    }
+
+    function getAmountIn(
+        address tokenA,
+        address tokenB,
+        uint256 amountOut
+    ) external view virtual override returns (uint256 amountIn) {
+        address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
+        amountIn = _getAmountIn(pair, tokenA, amountOut);
     }
 }
