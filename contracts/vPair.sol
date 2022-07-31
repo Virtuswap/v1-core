@@ -9,8 +9,9 @@ import "./interfaces/IvSwapPoolDeployer.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
 
-import "./libraries/PoolAddress.sol";
 import "./libraries/vSwapLibrary.sol";
+import "./libraries/constants.sol";
+
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
@@ -24,11 +25,6 @@ contract vPair is IvPair, vSwapERC20 {
 
     uint256 public override reserve0;
     uint256 public override reserve1;
-
-    uint256 private constant MINIMUM_LIQUIDITY = 10**3;
-    uint256 private constant RESERVE_RATIO_FACTOR = 10**3;
-    uint256 private constant RESERVE_RATIO_WHOLE =
-        RESERVE_RATIO_FACTOR * 100 * 1e18;
 
     uint256 public max_reserve_ratio;
 
@@ -309,7 +305,7 @@ contract vPair is IvPair, vSwapERC20 {
             }
         }
 
-        rRatio *= RESERVE_RATIO_FACTOR;
+        rRatio *= Constants.RESERVE_RATIO_FACTOR;
     }
 
     function mint(address to)
@@ -326,8 +322,10 @@ contract vPair is IvPair, vSwapERC20 {
 
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
-            liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
-            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
+            liquidity =
+                Math.sqrt(amount0 * amount1) -
+                Constants.MINIMUM_LIQUIDITY;
+            _mint(address(0), Constants.MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
         } else {
             liquidity = Math.min(
                 (amount0 * _totalSupply) / _reserve0,
@@ -340,7 +338,8 @@ contract vPair is IvPair, vSwapERC20 {
 
         liquidity =
             liquidity -
-            ((liquidity * reserveRatio) / (RESERVE_RATIO_WHOLE + reserveRatio));
+            ((liquidity * reserveRatio) /
+                (Constants.RESERVE_RATIO_WHOLE + reserveRatio));
 
         require(liquidity > 0, "ILM");
 
