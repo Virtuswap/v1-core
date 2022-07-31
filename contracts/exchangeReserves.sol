@@ -65,12 +65,6 @@ contract exchangeReservesWrapper is IvFlashSwapCallback {
 
         bytes memory encodedAddress = abi.encodePacked(msg.sender);
 
-        //call nativeToReserve flashswap on pool AB. take out C reserve
-        IvPair(jkPool).swapNativeToReserve(
-            reserveBalance,
-            ikPool,
-            address(this),
-            encodedAddress
-        );
+
     }
 }
