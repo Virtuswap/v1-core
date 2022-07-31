@@ -7,8 +7,8 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/base/Multicall.sol";
 
 import "./types.sol";
+import "./vPair.sol";
 import "./libraries/vSwapLibrary.sol";
-import "./interfaces/IvPair.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
 
