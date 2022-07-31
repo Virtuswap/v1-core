@@ -1,7 +1,11 @@
+const { assert } = require("chai");
+
 const vRouter = artifacts.require("vRouter");
 const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapLibrary = artifacts.require("vSwapLibrary");
+const PoolAddress = artifacts.require("PoolAddress");
+
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
 
 contract("Pool address", (accounts) => {
@@ -23,7 +27,10 @@ contract("Pool address", (accounts) => {
 
   const issueAmount = web3.utils.toWei("100000000000000", "ether");
 
-  let vPairFactoryInstance, vRouterInstance, vSwapLibraryInstance;
+  let vPairFactoryInstance,
+    vRouterInstance,
+    vSwapLibraryInstance,
+    PoolAddressInstance;
 
   before(async () => {
     tokenA = await ERC20.new("tokenA", "A", issueAmount, accounts[0]);
@@ -37,6 +44,8 @@ contract("Pool address", (accounts) => {
     vPairFactoryInstance = await vPairFactory.deployed();
     vRouterInstance = await vRouter.deployed();
     vSwapLibraryInstance = await vSwapLibrary.deployed();
+    vSwapLibraryInstance = await vSwapLibrary.deployed();
+    PoolAddressInstance = await PoolAddress.deployed();
 
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
@@ -147,57 +156,20 @@ contract("Pool address", (accounts) => {
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
   });
 
+  it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
+    let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
+    let calculated = await vPairFactoryInstance.getInitCodeHash();
+    console.log("INIT_CODE_HASH: " + INIT_CODE_HASH);
+    console.log("calculated: " + calculated);
+
+    assert.equal(INIT_CODE_HASH, calculated);
+  });
+
   it("Should compute tokenA / tokenB pool address", async () => {
     let poolAddress = await vPairFactoryInstance.getPoolAddress(
       tokenA.address,
       tokenB.address
     );
     console.log("poolAddress: " + poolAddress);
-
-    console.log("poolAddress: " + poolAddress);
-    // const poolAddress = await vPairFactoryInstance.getPair(
-    //   tokenA.address,
-    //   tokenC.address
-    // );
-
-    // // const pool = await vPair.at(poolAddress);
-
-    // // const reserve0 = await pool.reserve0();
-    // // const reserve1 = await pool.reserve1();
-
-    // const tokenABalanceBefore = await tokenA.balanceOf(accounts[0]);
-    // const tokenCBalanceBefore = await tokenC.balanceOf(accounts[0]);
-
-    // let pools = [poolAddress];
-    // let amountsIn = web3.utils.toWei("10", "ether");
-
-    // const amountOut = await vRouterInstance.getAmountOut(
-    //   tokenA.address,
-    //   tokenC.address,
-    //   amountsIn
-    // );
-
-    // const futureTs = await getFutureBlockTimestamp();
-    // await vRouterInstance.swap(
-    //   pools,
-    //   [amountsIn],
-    //   [amountOut],
-    //   ["0x0000000000000000000000000000000000000000"],
-    //   tokenA.address,
-    //   tokenC.address,
-    //   accounts[0],
-    //   futureTs
-    // );
-
-    // const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
-    // const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
-
-    // expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
-    //   fromWeiToNumber(tokenCBalanceBefore)
-    // );
-
-    // expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
-    //   fromWeiToNumber(tokenABalanceBefore)
-    // );
   });
 });

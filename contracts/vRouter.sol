@@ -33,20 +33,20 @@ contract vRouter is IvRouter, Multicall {
         factory = _factory;
     }
 
-    function getPair(address tokenA, address tokenB)
-        internal
-        view
-        returns (IvPair)
-    {
-        return IvPair(PoolAddress.computeAddress(factory, tokenA, tokenB));
-    }
-
     function getPairAddress(address tokenA, address tokenB)
         internal
         view
         returns (address)
     {
         return PoolAddress.computeAddress(factory, tokenA, tokenB);
+    }
+
+    function getPair(address tokenA, address tokenB)
+        internal
+        view
+        returns (IvPair)
+    {
+        return IvPair(getPairAddress(tokenA, tokenB));
     }
 
     function vFlashSwapCallback(
