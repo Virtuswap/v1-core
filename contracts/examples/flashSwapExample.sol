@@ -55,10 +55,11 @@
 //         address ik = IvPairFactory(factory).getPair(tokenB, tokenC);
 //         address jk = IvPairFactory(factory).getPair(tokenA, tokenC);
 
-//         uint256 vAmountIn = IvRouter(router).getVirtualAmountIn(ik, jk, amount);
-
-//         //FIX THIS LINE
-//         vAmountIn = vAmountIn - 1e18;
+        // uint256 vAmountOut = IvRouter(router).getVirtualAmountOut(
+        //     jk,
+        //     ik,
+        //     amount
+        // );
 
 //         address caller = decodeAddress(data);
 

@@ -10,6 +10,7 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     address[] public allPairs;
 
     address public immutable override admin;
+    address public override exchangeReserves;
 
     uint256 max_reserve_ratio_default;
     uint24 max_whitelist_count_default;
@@ -17,7 +18,7 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     uint24 pair_vfee_default;
 
     modifier onlyAdmin() {
-        require(msg.sender == admin);
+        require(msg.sender == admin, "OA");
         _;
     }
 
@@ -27,6 +28,14 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
         max_whitelist_count_default = 8;
         pair_fee_default = 997;
         pair_vfee_default = 996;
+    }
+
+    function setExchangeReservesAddress(address _exchangeReserves)
+        external
+        override
+        onlyAdmin
+    {
+        exchangeReserves = _exchangeReserves;
     }
 
     function setMaxReserveThreshold(uint256 _max_reserve_ratio_default)

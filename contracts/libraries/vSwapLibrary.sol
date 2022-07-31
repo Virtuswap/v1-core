@@ -39,6 +39,7 @@ library vSwapLibrary {
         uint256 _quotient = ((_numerator / denominator) + 5) / 10;
         return (_quotient);
     }
+
     function calculateVPool(
         uint256 ikTokenABalance,
         uint256 ikTokenBBalance,
@@ -103,7 +104,7 @@ library vSwapLibrary {
         address jkToken1,
         uint256 jkReserve0,
         uint256 jkReserve1,
-        uint256 jkvFee,
+        uint24 jkvFee,
         address ikPair
     ) internal view returns (VirtualPoolModel memory vPool) {
         (address ik0, address ik1) = IvPair(ikPair).getTokens();
@@ -142,7 +143,7 @@ library vSwapLibrary {
     {
         (address jk0, address jk1) = IvPair(jkPair).getTokens();
         (uint256 _reserve0, uint256 _reserve1) = IvPair(jkPair).getReserves();
-        uint256 vFee = IvPair(jkPair).vFee();
+        uint24 vFee = IvPair(jkPair).vFee();
 
         vPool = getVirtualPoolBase(
             jk0,

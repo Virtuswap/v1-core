@@ -139,6 +139,7 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 amountOut,
         address ikPair,
         address to,
+        bool isER,
         bytes calldata data
     ) external override lock returns (uint256 _amountIn) {
         VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
@@ -157,13 +158,25 @@ contract vPair is IvPair, vSwapERC20 {
         require(vPool.token0 == token0 || vPool.token0 == token1, "NNT");
 
         SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
-
-        uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
-            amountOut,
-            vPool.reserve0,
-            vPool.reserve1,
-            vFee
-        );
+        uint256 requiredAmountIn = 0;
+        if (isER) {
+            require(
+                msg.sender == IvPairFactory(factory).exchangeReserves(),
+                "OER"
+            );
+            requiredAmountIn = vSwapLibrary.quote(
+                amountOut,
+                vPool.reserve1,
+                vPool.reserve0
+            );
+        } else {
+            requiredAmountIn = vSwapLibrary.getAmountIn(
+                amountOut,
+                vPool.reserve0,
+                vPool.reserve1,
+                vFee
+            );
+        }
 
         if (data.length > 0)
             IvFlashSwapCallback(to).vFlashSwapCallback(requiredAmountIn, data);

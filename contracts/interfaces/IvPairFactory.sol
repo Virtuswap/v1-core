@@ -21,6 +21,8 @@ interface IvPairFactory {
 
     function admin() external view returns (address);
 
+    function exchangeReserves() external view returns (address);
+
     function setMaxReserveThreshold(uint256 _max_reserve_ratio_default)
         external;
 
@@ -29,4 +31,6 @@ interface IvPairFactory {
     function setPairFeeDefault(uint24 _pair_fee_default) external;
 
     function setPairVFeeDefault(uint24 _pair_vfee_default) external;
+
+    function setExchangeReservesAddress(address _exchangeReserves) external;
 }

@@ -38,6 +38,7 @@ interface IvPair {
         uint256 amountOut,
         address ikPair,
         address to,
+        bool isER,
         bytes calldata data
     ) external returns (uint256 _amountIn);
 
