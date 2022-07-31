@@ -4,45 +4,35 @@ pragma solidity ^0.8.0;
 /// @title Provides functions for deriving a pool address from the factory, tokens, and the fee
 library PoolAddress {
     bytes32 internal constant POOL_INIT_CODE_HASH =
-        0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54;
+        0x8c2a44b85e33b5df1586d7ad85c38b0ff312cabd519dc5d3be0f0fbd8c48d13f;
 
-    /// @notice The identifying key of the pool
-    struct PoolKey {
-        address token0;
-        address token1;
-    }
-
-    /// @notice Returns PoolKey: the ordered tokens with the matched fee levels
-    /// @param tokenA The first token of a pool, unsorted
-    /// @param tokenB The second token of a pool, unsorted
-    /// @return Poolkey The pool details with ordered token0 and token1 assignments
-    function getPoolKey(address tokenA, address tokenB)
+    function getSalt(address token0, address token1)
         internal
         pure
-        returns (PoolKey memory)
+        returns (bytes32 salt)
     {
-        if (tokenA > tokenB) (tokenA, tokenB) = (tokenB, tokenA);
-        return PoolKey({token0: tokenA, token1: tokenB});
+        salt = keccak256(abi.encode(token0, token1));
     }
 
-    /// @notice Deterministically computes the pool address given the factory and PoolKey
-    /// @param factory The Uniswap V3 factory contract address
-    /// @param key The PoolKey
-    /// @return pool The contract address of the V3 pool
-    function computeAddress(address factory, PoolKey memory key)
-        internal
-        pure
-        returns (address pool)
-    {
-        require(key.token0 < key.token1);
+    function computeAddress(
+        address factory,
+        address token0,
+        address token1
+    ) internal pure returns (address pool) {
+        require(token0 < token1);
+
+        bytes32 _salt = getSalt(token0, token1);
+
         pool = address(
-            bytes20(
-                keccak256(
-                    abi.encodePacked(
-                        hex"ff",
-                        factory,
-                        keccak256(abi.encode(key.token0, key.token1)),
-                        POOL_INIT_CODE_HASH
+            uint160(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            bytes1(0xff),
+                            factory,
+                            _salt,
+                            POOL_INIT_CODE_HASH
+                        )
                     )
                 )
             )

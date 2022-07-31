@@ -9,6 +9,7 @@ import "./interfaces/IvSwapPoolDeployer.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
 
+import "./libraries/PoolAddress.sol";
 import "./libraries/vSwapLibrary.sol";
 import "./vSwapERC20.sol";
 

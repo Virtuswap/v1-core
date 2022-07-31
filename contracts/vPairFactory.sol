@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import "./interfaces/IvPairFactory.sol";
 import "./vPair.sol";
 import "./vSwapPoolDeployer.sol";
+import "./libraries/PoolAddress.sol";
 
 contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
@@ -73,6 +74,14 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
         return pairs[tokenA][tokenB];
     }
 
+    function orderTokens(address tokenA, address tokenB)
+        internal
+        pure
+        returns (address token0, address token1)
+    {
+        return (tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA));
+    }
+
     function createPair(address tokenA, address tokenB)
         external
         override
@@ -80,9 +89,7 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
-        (address token0, address token1) = tokenA < tokenB
-            ? (tokenA, tokenB)
-            : (tokenB, tokenA);
+        (address token0, address token1) = orderTokens(tokenA, tokenB);
 
         require(token0 != address(0), "VSWAP: ZERO_ADDRESS");
 
@@ -105,5 +112,14 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
         emit PairCreated(pair, address(this), token0, token1);
 
         return pair;
+    }
+
+    function getPoolAddress(address tokenA, address tokenB)
+        external
+        view
+        returns (address pool)
+    {
+        (address token0, address token1) = orderTokens(tokenA, tokenB);
+        pool = PoolAddress.computeAddress(address(this), token0, token1);
     }
 }

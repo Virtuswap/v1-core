@@ -4,7 +4,7 @@ const vPairFactory = artifacts.require("vPairFactory");
 const vSwapLibrary = artifacts.require("vSwapLibrary");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
 
-contract("pyotr", (accounts) => {
+contract("Pool address", (accounts) => {
   function fromWeiToNumber(number) {
     return parseFloat(web3.utils.fromWei(number, "ether")).toFixed(6) * 1;
   }
@@ -96,6 +96,7 @@ contract("pyotr", (accounts) => {
       tokenA.address,
       tokenB.address
     );
+    console.log("AB address: " + address);
     const pool = await vPair.at(address);
 
     //whitelist token C
@@ -146,9 +147,14 @@ contract("pyotr", (accounts) => {
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
   });
 
-  it("Should get vPair HASHED bytecode", async () => {
-    let hashCode = await vRouterInstance.getPOOL_BYTE_HASH();
-    console.log("hashcode: " + hashCode);
+  it("Should compute tokenA / tokenB pool address", async () => {
+    let poolAddress = await vPairFactoryInstance.getPoolAddress(
+      tokenA.address,
+      tokenB.address
+    );
+    console.log("poolAddress: " + poolAddress);
+
+    console.log("poolAddress: " + poolAddress);
     // const poolAddress = await vPairFactoryInstance.getPair(
     //   tokenA.address,
     //   tokenC.address

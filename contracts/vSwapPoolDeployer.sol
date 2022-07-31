@@ -2,6 +2,7 @@ pragma solidity ^0.8.0;
 
 import "./interfaces/IvSwapPoolDeployer.sol";
 import "./vPair.sol";
+import "./libraries/PoolAddress.sol";
 
 contract vSwapPoolDeployer is IvSwapPoolDeployer {
     struct Parameters {
@@ -40,9 +41,9 @@ contract vSwapPoolDeployer is IvSwapPoolDeployer {
             max_whitelist_count: _max_whitelist_count,
             max_reserve_ratio: _max_reserve_ratio
         });
-        pool = address(
-            new vPair{salt: keccak256(abi.encode(token0, token1))}()
-        );
+        bytes32 _salt = PoolAddress.getSalt(token0, token1);
+        pool = address(new vPair{salt: _salt}());
+
         delete parameters;
     }
 }
