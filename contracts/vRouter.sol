@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import "./types.sol";
+import "./vPair.sol";
 import "./libraries/vSwapLibrary.sol";
-import "./interfaces/IvPair.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
 
@@ -30,6 +30,7 @@ contract vRouter is IvRouter {
         factory = _factory;
     }
 
+   
     function swap(
         address[] calldata pools,
         uint256[] calldata amountsIn,
