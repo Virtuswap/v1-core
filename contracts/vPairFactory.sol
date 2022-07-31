@@ -113,13 +113,4 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
 
         return pair;
     }
-
-    function getPoolAddress(address tokenA, address tokenB)
-        external
-        view
-        returns (address pool)
-    {
-        (address token0, address token1) = orderTokens(tokenA, tokenB);
-        pool = PoolAddress.computeAddress(address(this), token0, token1);
-    }
 }
