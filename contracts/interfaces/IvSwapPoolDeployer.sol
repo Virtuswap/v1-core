@@ -10,7 +10,7 @@ interface IvSwapPoolDeployer {
     /// Returns token1 The second token of the pool by address sort order
     /// Returns fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// Returns tickSpacing The minimum number of ticks between initialized ticks
-    function parameters()
+    function poolCreationParameters()
         external
         view
         returns (

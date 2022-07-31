@@ -2,11 +2,11 @@ pragma solidity ^0.8.0;
 
 import "./vPair.sol";
 import "./interfaces/IvPairFactory.sol";
+import "./interfaces/IvSwapPoolDeployer.sol";
+import "./libraries/poolAddress.sol";
+import "./types.sol";
 
-import "./base/vSwapPoolDeployer.sol";
-import "./libraries/PoolAddress.sol";
-
-contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
+contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
     address[] public allPairs;
 
@@ -17,6 +17,8 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     uint24 max_whitelist_count_default;
     uint24 pair_fee_default;
     uint24 pair_vfee_default;
+
+    PairCreationParams public override poolCreationParameters;
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "OA");
@@ -82,6 +84,30 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
         returns (address)
     {
         return pairs[tokenA][tokenB];
+    }
+
+    function deployPair(
+        address factory,
+        address token0,
+        address token1,
+        uint24 fee,
+        uint24 vFee,
+        uint24 _max_whitelist_count,
+        uint256 _max_reserve_ratio
+    ) internal returns (address pool) {
+        poolCreationParameters = PairCreationParams({
+            factory: factory,
+            token0: token0,
+            token1: token1,
+            fee: fee,
+            vFee: vFee,
+            max_whitelist_count: _max_whitelist_count,
+            max_reserve_ratio: _max_reserve_ratio
+        });
+        bytes32 _salt = PoolAddress.getSalt(token0, token1);
+        pool = address(new vPair{salt: _salt}());
+
+        delete poolCreationParameters;
     }
 
     function createPair(address tokenA, address tokenB)

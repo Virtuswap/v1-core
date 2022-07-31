@@ -61,7 +61,7 @@ contract vPair is IvPair, vSwapERC20 {
             vFee,
             max_whitelist_count,
             max_reserve_ratio
-        ) = IvSwapPoolDeployer(msg.sender).parameters();
+        ) = IvSwapPoolDeployer(msg.sender).poolCreationParameters();
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
