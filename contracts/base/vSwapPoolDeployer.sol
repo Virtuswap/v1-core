@@ -1,9 +1,9 @@
 pragma solidity ^0.8.0;
 
-import "./interfaces/IvSwapPoolDeployer.sol";
-import "./types.sol";
-import "./vPair.sol";
-import "./libraries/PoolAddress.sol";
+import "../interfaces/IvSwapPoolDeployer.sol";
+import "../types.sol";
+import "../vPair.sol";
+import "../libraries/PoolAddress.sol";
 
 contract vSwapPoolDeployer is IvSwapPoolDeployer {
 

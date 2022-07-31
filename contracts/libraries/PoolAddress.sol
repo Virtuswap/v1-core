@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-/// @title Provides functions for deriving a pool address from the factory, tokens, and the fee
+/// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
     //PROD: change to internal TBD
     bytes32 public constant POOL_INIT_CODE_HASH =
