@@ -29,8 +29,6 @@ library PoolAddress {
         address token0,
         address token1
     ) internal pure returns (address pool) {
-        require(token0 < token1, "UOA");
-
         bytes32 _salt = getSalt(token0, token1);
 
         pool = address(
