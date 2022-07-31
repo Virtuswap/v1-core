@@ -31,6 +31,36 @@ contract vRouter is IvRouter, Multicall {
         factory = _factory;
     }
 
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
+        bytes calldata _data
+    ) external override {
+        require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
+        SwapCallbackData memory data = abi.decode(_data, (SwapCallbackData));
+        (address tokenIn, address tokenOut, uint24 fee) = data
+            .path
+            .decodeFirstPool();
+        CallbackValidation.verifyCallback(factory, tokenIn, tokenOut, fee);
+
+        (bool isExactInput, uint256 amountToPay) = amount0Delta > 0
+            ? (tokenIn < tokenOut, uint256(amount0Delta))
+            : (tokenOut < tokenIn, uint256(amount1Delta));
+        if (isExactInput) {
+            pay(tokenIn, data.payer, msg.sender, amountToPay);
+        } else {
+            // either initiate the next swap or pay
+            if (data.path.hasMultiplePools()) {
+                data.path = data.path.skipToken();
+                exactOutputInternal(amountToPay, msg.sender, 0, data);
+            } else {
+                amountInCached = amountToPay;
+                tokenIn = tokenOut; // swap in/out because exact output swaps are reversed
+                pay(tokenIn, data.payer, msg.sender, amountToPay);
+            }
+        }
+    }
+
     function swapToExactNative(
         address tokenA,
         address tokenB,
@@ -59,6 +89,13 @@ contract vRouter is IvRouter, Multicall {
         IvPair(pair).swapNative(amountOut, tokenB, to, new bytes(0));
     }
 
+    function swapToExactReserveToNative(
+        address tokenA,
+        address tokenB,
+        uint256 amountIn,
+        address to
+    ) {}
+
     function swapExactReserveToNative(
         address jkPool,
         address ikPool,
@@ -75,49 +112,63 @@ contract vRouter is IvRouter, Multicall {
         IvPair(pair).swapNative(amountOut, tokenB, to, new bytes(0));
     }
 
-    function swap(
-        address[] calldata pools,
-        uint256[] calldata amountsIn,
-        uint256[] calldata amountsOut,
-        address[] memory iks,
-        address inputToken,
-        address outputToken,
-        address to,
-        uint256 deadline
-    ) external override ensure(deadline) {
-        for (uint256 i = 0; i < pools.length; ++i) {
-            if (iks[i] == address(0)) {
-                // REAL POOL
-                SafeERC20.safeTransferFrom(
-                    IERC20(inputToken),
-                    msg.sender,
-                    pools[i],
-                    amountsIn[i]
-                );
+    function swapExactNativeToReserve(
+        address tokenA,
+        address tokenB,
+        uint256 amountIn,
+        address to
+    ) {}
 
-                IvPair(pools[i]).swapNative(
-                    amountsOut[i],
-                    outputToken,
-                    to,
-                    new bytes(0)
-                );
-            } else {
-                SafeERC20.safeTransferFrom(
-                    IERC20(inputToken),
-                    msg.sender,
-                    pools[i],
-                    amountsIn[i]
-                );
+    function swapToExactNativeToReserve(
+        address tokenA,
+        address tokenB,
+        uint256 amountIn,
+        address to
+    ) {}
 
-                IvPair(pools[i]).swapReserveToNative(
-                    amountsOut[i],
-                    iks[i],
-                    to,
-                    new bytes(0)
-                );
-            }
-        }
-    }
+    // function swap(
+    //     address[] calldata pools,
+    //     uint256[] calldata amountsIn,
+    //     uint256[] calldata amountsOut,
+    //     address[] memory iks,
+    //     address inputToken,
+    //     address outputToken,
+    //     address to,
+    //     uint256 deadline
+    // ) external override ensure(deadline) {
+    //     for (uint256 i = 0; i < pools.length; ++i) {
+    //         if (iks[i] == address(0)) {
+    //             // REAL POOL
+    //             SafeERC20.safeTransferFrom(
+    //                 IERC20(inputToken),
+    //                 msg.sender,
+    //                 pools[i],
+    //                 amountsIn[i]
+    //             );
+
+    //             IvPair(pools[i]).swapNative(
+    //                 amountsOut[i],
+    //                 outputToken,
+    //                 to,
+    //                 new bytes(0)
+    //             );
+    //         } else {
+    //             SafeERC20.safeTransferFrom(
+    //                 IERC20(inputToken),
+    //                 msg.sender,
+    //                 pools[i],
+    //                 amountsIn[i]
+    //             );
+
+    //             IvPair(pools[i]).swapReserveToNative(
+    //                 amountsOut[i],
+    //                 iks[i],
+    //                 to,
+    //                 new bytes(0)
+    //             );
+    //         }
+    //     }
+    // }
 
     function changeFactory(address _factory) external override onlyOwner {
         factory = _factory;
@@ -273,7 +324,7 @@ contract vRouter is IvRouter, Multicall {
         address tokenA,
         address tokenB,
         uint256 amount
-    ) external view override returns (uint256) {
+    ) external view override returns (uint256 quote) {
         address pair = IvPairFactory(factory).getPair(tokenA, tokenB);
 
         (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
@@ -285,14 +336,14 @@ contract vRouter is IvRouter, Multicall {
             reserve1
         );
 
-        return vSwapLibrary.quote(amount, reserve0, reserve1);
+        quote = vSwapLibrary.quote(amount, reserve0, reserve1);
     }
 
     function _getAmountOut(
         address pair,
         address tokenIn,
         uint256 amountIn
-    ) external view returns (uint256 amountOut) {
+    ) internal view returns (uint256 amountOut) {
         require(pair > address(0), "VSWAP:INVALID_PAIR");
 
         (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
