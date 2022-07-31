@@ -1,18 +1,20 @@
- pragma solidity ^0.8.0;  
+pragma solidity ^0.8.0;
 
 import "./interfaces/IvPairFactory.sol";
 import "./vPair.sol";
+import "./vSwapPoolDeployer.sol";
+import "./libraries/PoolAddress.sol";
 
-contract vPairFactory is IvPairFactory {
+contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
     address[] public allPairs;
 
     address public immutable override admin;
 
     uint256 max_reserve_ratio_default;
-    uint256 max_whitelist_count_default;
-    uint256 pair_fee_default;
-    uint256 pair_vfee_default;
+    uint24 max_whitelist_count_default;
+    uint24 pair_fee_default;
+    uint24 pair_vfee_default;
 
     modifier onlyAdmin() {
         require(msg.sender == admin);
@@ -23,7 +25,7 @@ contract vPairFactory is IvPairFactory {
         admin = msg.sender;
         max_reserve_ratio_default = 2000 * 1e18;
         max_whitelist_count_default = 8;
-        pair_fee_default = 997; 
+        pair_fee_default = 997;
         pair_vfee_default = 996;
     }
 
@@ -35,7 +37,7 @@ contract vPairFactory is IvPairFactory {
         max_reserve_ratio_default = _max_reserve_ratio_default;
     }
 
-    function setMaxWhitelistCount(uint256 _max_whitelist_count_default)
+    function setMaxWhitelistCount(uint24 _max_whitelist_count_default)
         external
         override
         onlyAdmin
@@ -43,7 +45,7 @@ contract vPairFactory is IvPairFactory {
         max_whitelist_count_default = _max_whitelist_count_default;
     }
 
-    function setPairFeeDefault(uint256 _pair_fee_default)
+    function setPairFeeDefault(uint24 _pair_fee_default)
         external
         override
         onlyAdmin
@@ -51,7 +53,7 @@ contract vPairFactory is IvPairFactory {
         pair_fee_default = _pair_fee_default;
     }
 
-    function setPairVFeeDefault(uint256 _pair_vfee_default)
+    function setPairVFeeDefault(uint24 _pair_vfee_default)
         external
         override
         onlyAdmin
@@ -72,6 +74,14 @@ contract vPairFactory is IvPairFactory {
         return pairs[tokenA][tokenB];
     }
 
+    function orderTokens(address tokenA, address tokenB)
+        internal
+        pure
+        returns (address token0, address token1)
+    {
+        return (tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA));
+    }
+
     function createPair(address tokenA, address tokenB)
         external
         override
@@ -79,30 +89,28 @@ contract vPairFactory is IvPairFactory {
     {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
-        (address token0, address token1) = tokenA < tokenB
-            ? (tokenA, tokenB)
-            : (tokenB, tokenA);
+        (address token0, address token1) = orderTokens(tokenA, tokenB);
 
         require(token0 != address(0), "VSWAP: ZERO_ADDRESS");
 
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
-        vPair newPair = new vPair(
+        address pair = deployPair(
             address(this),
             token0,
             token1,
             pair_fee_default,
             pair_vfee_default,
-            max_reserve_ratio_default,
-            max_whitelist_count_default
+            max_whitelist_count_default,
+            max_reserve_ratio_default
         );
 
-        pairs[token0][token1] = address(newPair);
-        pairs[token1][token0] = address(newPair);
-        allPairs.push(address(newPair));
+        pairs[token0][token1] = pair;
+        pairs[token1][token0] = pair;
+        allPairs.push(pair);
 
-        emit PairCreated(address(newPair), address(this), token0, token1);
+        emit PairCreated(pair, address(this), token0, token1);
 
-        return address(newPair);
+        return pair;
     }
 }

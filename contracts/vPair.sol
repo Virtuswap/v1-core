@@ -5,8 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/IvPair.sol";
+import "./interfaces/IvSwapPoolDeployer.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
+
+import "./libraries/PoolAddress.sol";
 import "./libraries/vSwapLibrary.sol";
 import "./vSwapERC20.sol";
 
@@ -16,8 +19,8 @@ contract vPair is IvPair, vSwapERC20 {
     address public immutable override token0;
     address public immutable override token1;
 
-    uint256 public override fee;
-    uint256 public override vFee;
+    uint24 public override fee;
+    uint24 public override vFee;
 
     uint256 public override reserve0;
     uint256 public override reserve1;
@@ -31,7 +34,7 @@ contract vPair is IvPair, vSwapERC20 {
 
     address[] public whitelist;
     mapping(address => bool) public whitelistAllowance;
-    uint256 public override max_whitelist_count;
+    uint24 public override max_whitelist_count;
 
     mapping(address => uint256) public override reservesBaseValue;
     mapping(address => uint256) public reserves;
@@ -53,22 +56,16 @@ contract vPair is IvPair, vSwapERC20 {
         _;
     }
 
-    constructor(
-        address _factory,
-        address _tokenA,
-        address _tokenB,
-        uint256 _fee,
-        uint256 _vFee,
-        uint256 _max_reserve_ratio,
-        uint256 _max_whitelist_count
-    ) {
-        factory = _factory;
-        token0 = _tokenA;
-        token1 = _tokenB;
-        fee = _fee;
-        vFee = _vFee;
-        max_reserve_ratio = _max_reserve_ratio;
-        max_whitelist_count = _max_whitelist_count;
+    constructor() {
+        (
+            factory,
+            token0,
+            token1,
+            fee,
+            vFee,
+            max_whitelist_count,
+            max_reserve_ratio
+        ) = IvSwapPoolDeployer(msg.sender).parameters();
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
@@ -432,7 +429,7 @@ contract vPair is IvPair, vSwapERC20 {
         factory = _factory;
     }
 
-    function setFee(uint256 _fee, uint256 _vFee)
+    function setFee(uint24 _fee, uint24 _vFee)
         external
         override
         onlyFactoryAdmin
@@ -449,7 +446,7 @@ contract vPair is IvPair, vSwapERC20 {
         max_reserve_ratio = threshold;
     }
 
-    function setMaxWhitelistCount(uint256 maxWhitelist)
+    function setMaxWhitelistCount(uint24 maxWhitelist)
         external
         override
         onlyFactoryAdmin
