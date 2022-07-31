@@ -104,6 +104,7 @@ contract vRouter is IvRouter, Multicall {
             amountOut,
             ikPair,
             to,
+            false,
             data
         );
     }
@@ -122,10 +123,6 @@ contract vRouter is IvRouter, Multicall {
             to,
             data
         );
-    }
-
-    function changeFactory(address _factory) external override onlyOwner {
-        factory = _factory;
     }
 
     function _addLiquidity(
@@ -358,5 +355,9 @@ contract vRouter is IvRouter, Multicall {
             reserve1,
             pair.fee()
         );
+    }
+
+    function changeFactory(address _factory) external override onlyOwner {
+        factory = _factory;
     }
 }

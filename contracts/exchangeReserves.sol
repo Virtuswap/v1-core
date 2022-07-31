@@ -35,8 +35,6 @@ contract exchangeReservesWrapper is IvFlashSwapCallback {
     }
 
     function vFlashSwapCallback(
-        address sender,
-        uint256 amount,
         uint256 requiredBackAmount,
         bytes memory data
     ) external override {
