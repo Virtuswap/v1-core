@@ -165,11 +165,11 @@ contract("Pool address", (accounts) => {
     assert.equal(INIT_CODE_HASH, calculated);
   });
 
-  it("Should compute tokenA / tokenB pool address", async () => {
-    let poolAddress = await vPairFactoryInstance.getPoolAddress(
-      tokenA.address,
-      tokenB.address
-    );
-    console.log("poolAddress: " + poolAddress);
-  });
+  // it("Should compute tokenA / tokenB pool address", async () => {
+  //   let poolAddress = await vPairFactoryInstance.getPoolAddress(
+  //     tokenA.address,
+  //     tokenB.address
+  //   );
+  //   console.log("poolAddress: " + poolAddress);
+  // });
 });
