@@ -74,14 +74,6 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
         return pairs[tokenA][tokenB];
     }
 
-    function orderTokens(address tokenA, address tokenB)
-        internal
-        pure
-        returns (address token0, address token1)
-    {
-        return (tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA));
-    }
-
     function createPair(address tokenA, address tokenB)
         external
         override
@@ -89,7 +81,10 @@ contract vPairFactory is IvPairFactory, vSwapPoolDeployer {
     {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
-        (address token0, address token1) = orderTokens(tokenA, tokenB);
+        (address token0, address token1) = PoolAddress.orderAddresses(
+            tokenA,
+            tokenB
+        );
 
         require(token0 != address(0), "VSWAP: ZERO_ADDRESS");
 

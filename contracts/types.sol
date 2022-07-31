@@ -1,4 +1,4 @@
- pragma solidity ^0.8.0;  
+pragma solidity ^0.8.0;
 
 struct VirtualPoolModel {
     uint256 fee;
@@ -18,4 +18,11 @@ struct VirtualPoolTokens {
     address jk1;
     address ik0;
     address ik1;
+}
+
+struct SwapCallbackData {
+    address payer;
+    address tokenIn;
+    address tokenOut;
+    uint256 tokenInMax;
 }

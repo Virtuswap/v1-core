@@ -1,22 +1,38 @@
- pragma solidity ^0.8.0;  
+pragma solidity ^0.8.0;
 import "../types.sol";
+import "./IvFlashSwapCallback.sol";
 
-interface IvRouter {
+interface IvRouter is IvFlashSwapCallback {
     function changeFactory(address factory) external;
 
     function factory() external view returns (address);
 
     function owner() external view returns (address);
 
-    function swap(
-        address[] calldata pools,
-        uint256[] calldata amountsIn,
-        uint256[] calldata amountsOut,
-        address[] calldata iks,
-        address inputToken,
-        address outputToken,
+    function swapNative(
+        address tokenA,
+        address tokenB,
+        uint256 amountOut,
         address to,
-        uint256 deadline
+        bytes calldata data
+    ) external;
+
+    function swapNativeToReserve(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut,
+        address to,
+        bytes calldata data
+    ) external;
+
+    function swapReserveToNative(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut,
+        address to,
+        bytes calldata data
     ) external;
 
     function addLiquidity(
@@ -33,6 +49,7 @@ interface IvRouter {
         returns (
             uint256 amountA,
             uint256 amountB,
+            address pairAddress,
             uint256 liquidity
         );
 

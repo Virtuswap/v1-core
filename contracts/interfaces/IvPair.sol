@@ -25,21 +25,21 @@ interface IvPair {
         address tokenOut,
         address to,
         bytes calldata data
-    ) external;
+    ) external returns (uint256 _amountIn);
 
     function swapReserveToNative(
         uint256 amountOut,
         address ikPair,
         address to,
         bytes calldata data
-    ) external;
+    ) external returns (uint256 _amountIn);
 
     function swapNativeToReserve(
         uint256 amountOut,
         address ikPair,
         address to,
         bytes calldata data
-    ) external;
+    ) external returns (uint256 _amountIn);
 
     function mint(address to) external returns (uint256 liquidity);
 
