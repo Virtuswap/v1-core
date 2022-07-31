@@ -14,11 +14,11 @@ interface IvPair {
 
     event Sync(uint256 balance0, uint256 balance1);
 
-    function fee() external view returns (uint256);
+    function fee() external view returns (uint24);
 
-    function vFee() external view returns (uint256);
+    function vFee() external view returns (uint24);
 
-    function setFee(uint256 _fee, uint256 _vFee) external;
+    function setFee(uint24 _fee, uint24 _vFee) external;
 
     function swapNative(
         uint256 amountOut,
@@ -49,7 +49,7 @@ interface IvPair {
 
     function setWhitelist(address[] memory _whitelist) external;
 
-    function setMaxWhitelistCount(uint256 maxWhitelist) external;
+    function setMaxWhitelistCount(uint24 maxWhitelist) external;
 
     function calculateReserveRatio() external view returns (uint256 rRatio);
 
@@ -63,7 +63,7 @@ interface IvPair {
 
     function reserve1() external view returns (uint256);
 
-    function max_whitelist_count() external view returns (uint256);
+    function max_whitelist_count() external view returns (uint24);
 
     function getReserves() external view returns (uint256, uint256);
 

@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import "./types.sol";
+import "./vPair.sol";
 import "./libraries/vSwapLibrary.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvRouter.sol";
@@ -29,6 +30,11 @@ contract vRouter is IvRouter {
         owner = msg.sender;
         factory = _factory;
     }
+
+    // function getPOOL_BYTE_HASH() external view returns (bytes32 HASH) {
+    //     bytes memory bytecode = type(vPair).creationCode;
+    //     HASH = keccak256(bytecode);
+    // }
 
     function swap(
         address[] calldata pools,
