@@ -94,26 +94,12 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         uint24 vFee,
         uint24 _max_whitelist_count,
         uint256 _max_reserve_ratio
-    ) internal returns (address pool) {
-        poolCreationParameters = PairCreationParams({
-            factory: factory,
-            token0: token0,
-            token1: token1,
-            fee: fee,
-            vFee: vFee,
-            max_whitelist_count: _max_whitelist_count,
-            max_reserve_ratio: _max_reserve_ratio
-        });
-        bytes32 _salt = PoolAddress.getSalt(token0, token1);
-        pool = address(new vPair{salt: _salt}());
-
-        delete poolCreationParameters;
-    }
+    ) internal returns (address pool) {}
 
     function createPair(address tokenA, address tokenB)
         external
         override
-        returns (address)
+        returns (address pair)
     {
         require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
 
@@ -126,15 +112,19 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
-        address pair = deployPair(
-            address(this),
-            token0,
-            token1,
-            pair_fee_default,
-            pair_vfee_default,
-            max_whitelist_count_default,
-            max_reserve_ratio_default
-        );
+        poolCreationParameters = PairCreationParams({
+            factory: address(this),
+            token0: token0,
+            token1: token1,
+            fee: pair_fee_default,
+            vFee: pair_vfee_default,
+            max_whitelist_count: max_whitelist_count_default,
+            max_reserve_ratio: max_reserve_ratio_default
+        });
+        bytes32 _salt = PoolAddress.getSalt(token0, token1);
+        pair = address(new vPair{salt: _salt}());
+
+        delete poolCreationParameters;
 
         pairs[token0][token1] = pair;
         pairs[token1][token0] = pair;
