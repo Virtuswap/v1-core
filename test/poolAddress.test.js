@@ -148,13 +148,13 @@ contract("Pool address", (accounts) => {
   });
 
   it("Should compute tokenA / tokenB pool address", async () => {
-    let poolAddress = await vPairFactoryInstance.getPoolAddress(
-      tokenA.address,
-      tokenB.address
-    );
-    console.log("poolAddress: " + poolAddress);
+    // let poolAddress = await vPairFactoryInstance.getPoolAddress(
+    //   tokenA.address,
+    //   tokenB.address
+    // );
+    // console.log("poolAddress: " + poolAddress);
 
-    console.log("poolAddress: " + poolAddress);
+    // console.log("poolAddress: " + poolAddress);
     // const poolAddress = await vPairFactoryInstance.getPair(
     //   tokenA.address,
     //   tokenC.address
