@@ -137,6 +137,6 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
     //PROD: remove this function TBD
     function getInitCodeHash() public pure returns (bytes32) {
-        return keccak256(abi.encode(type(vPair).creationCode));
+        return keccak256(abi.encodePacked(type(vPair).creationCode));
     }
 }

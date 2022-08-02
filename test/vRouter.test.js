@@ -145,8 +145,6 @@ contract("vRouter", (accounts) => {
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
   });
 
-
-
   it("Should swap A to C on pool A/C", async () => {
     const poolAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
@@ -163,23 +161,33 @@ contract("vRouter", (accounts) => {
       amountsIn
     );
 
-    // let data = web3.eth.abi.encodeParameter("bytes", {
-    //   payer: accounts[0],
-    //   tokenIn: tokenA.address,
-    //   tokenOut: tokenC.address,
-    //   tokenInMax: amountsIn,
-    // });
+    let data = web3.eth.abi.encodeParameter(
+      {
+        SwapCallbackData: {
+          payer: "address",
+          tokenIn: "address",
+          tokenOut: "address",
+          tokenInMax: "uint256",
+        },
+      },
+      {
+        payer: accounts[0],
+        tokenIn: tokenA.address,
+        tokenOut: tokenC.address,
+        tokenInMax: amountsIn,
+      }
+    );
 
     const futureTs = await getFutureBlockTimestamp();
 
-    // await vRouterInstance.swapReserveToExactNative(
-    //   tokenA.address,
-    //   tokenB.address,
-    //   [amountOut],
-    //   accounts[0],
-    //   data,
-    //   futureTs
-    // );
+    await vRouterInstance.swapToExactNative(
+      tokenA.address,
+      tokenC.address,
+      amountOut,
+      accounts[0],
+      data,
+      futureTs
+    );
 
     // const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
     // const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);

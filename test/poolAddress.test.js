@@ -170,29 +170,13 @@ contract("Pool address", (accounts) => {
     let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
     let calculated = await vPairFactoryInstance.getInitCodeHash();
 
-    let calculated2 = await PoolAddressInstance.getInitCodeHash();
-
     console.log("INIT_CODE_HASH: " + INIT_CODE_HASH);
     console.log("calculated: " + calculated);
-    console.log("calculated2: " + calculated2);
-
-    let calculated3 = await PoolAddressInstance._computeAddress(
-      vPairFactoryInstance.address,
-      tokenA.address,
-      tokenB.address
-    );
-
-    console.log("calculated3: " + calculated3);
 
     assert.equal(INIT_CODE_HASH, calculated);
   });
 
-
-
   it("Should compute tokenA / tokenB pool address", async () => {
-
-
-
     let poolAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenB.address
@@ -206,30 +190,5 @@ contract("Pool address", (accounts) => {
     );
 
     console.log("calculated: " + calculated);
-
-    let calculated2 = await PoolAddressInstance.computeAddress2(
-      vPairFactoryInstance.address,
-      tokenA.address,
-      tokenB.address
-    );
-
-    console.log("calculated2: " + calculated2);
-
-    let calculated3 = await PoolAddressInstance.computeAddress3(
-      vPairFactoryInstance.address,
-      tokenA.address,
-      tokenB.address
-    );
-
-    console.log("calculated3: " + calculated3);
-
-    let calculated4 = await PoolAddressInstance.computeAddress4(
-      vPairFactoryInstance.address,
-      tokenA.address,
-      tokenB.address
-    );
-
-    console.log("calculated4: " + calculated4);
-
   });
 });
