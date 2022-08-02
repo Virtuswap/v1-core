@@ -82,7 +82,7 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
-    function swapNative(
+    function swapToExactNative(
         address tokenA,
         address tokenB,
         uint256 amountOut,
@@ -92,24 +92,7 @@ contract vRouter is IvRouter, Multicall {
         getPair(tokenA, tokenB).swapNative(amountOut, tokenB, to, data);
     }
 
-    function swapNativeToReserve(
-        address tokenA,
-        address tokenB,
-        address ikPair,
-        uint256 amountOut,
-        address to,
-        bytes calldata data
-    ) external {
-        getPair(tokenA, tokenB).swapNativeToReserve(
-            amountOut,
-            ikPair,
-            to,
-            false,
-            data
-        );
-    }
-
-    function swapReserveToNative(
+    function swapReserveToExactNative(
         address tokenA,
         address tokenB,
         address ikPair,
