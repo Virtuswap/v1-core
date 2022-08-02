@@ -9,7 +9,7 @@ interface IvRouter is IvFlashSwapCallback {
 
     function owner() external view returns (address);
 
-    function swapNative(
+    function swapToExactNative(
         address tokenA,
         address tokenB,
         uint256 amountOut,
@@ -17,16 +17,7 @@ interface IvRouter is IvFlashSwapCallback {
         bytes calldata data
     ) external;
 
-    function swapNativeToReserve(
-        address tokenA,
-        address tokenB,
-        address ikPair,
-        uint256 amountOut,
-        address to,
-        bytes calldata data
-    ) external;
-
-    function swapReserveToNative(
+    function swapReserveToExactNative(
         address tokenA,
         address tokenB,
         address ikPair,
