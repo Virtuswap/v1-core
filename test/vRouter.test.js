@@ -189,16 +189,16 @@ contract("vRouter", (accounts) => {
       futureTs
     );
 
-    // const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
-    // const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
+    const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
+    const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
 
-    // expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
-    //   fromWeiToNumber(tokenCBalanceBefore)
-    // );
+    expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
+      fromWeiToNumber(tokenCBalanceBefore)
+    );
 
-    // expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
-    //   fromWeiToNumber(tokenABalanceBefore)
-    // );
+    expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
+      fromWeiToNumber(tokenABalanceBefore)
+    );
   });
 
   // it("Should quote A to B", async () => {

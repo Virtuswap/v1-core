@@ -57,7 +57,6 @@ contract vRouter is IvRouter, Multicall {
             callbackData,
             (SwapCallbackData)
         );
-
         require(
             msg.sender ==
                 PoolAddress.computeAddress(
@@ -67,13 +66,11 @@ contract vRouter is IvRouter, Multicall {
                 ),
             "VSWAP:INVALID_CALLBACK_POOL"
         );
-
         //validate amount to pay back dont exceeds
         require(
             requiredBackAmount <= data.tokenInMax,
             "VSWAP:REQUIRED_AMOUNT_EXECEDS"
         );
-
         SafeERC20.safeTransferFrom(
             IERC20(data.tokenIn),
             data.payer,

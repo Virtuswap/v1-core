@@ -115,7 +115,7 @@ contract vPair is IvPair, vSwapERC20 {
             reserve1
         );
 
-        uint256 _expectedAmountIn = vSwapLibrary.getAmountIn(
+        uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
             _reserve0,
             _reserve1,
@@ -123,12 +123,12 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0) {
-            IvFlashSwapCallback(to).vFlashSwapCallback(_expectedAmountIn, data);
+            IvFlashSwapCallback(msg.sender).vFlashSwapCallback(requiredAmountIn, data);
         }
 
         _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - _reserve0;
 
-        require(_amountIn > 0 && _amountIn >= _expectedAmountIn, "IIA");
+        require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
 
         bool _isTokenIn0 = _tokenIn == token0;
 
@@ -175,7 +175,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvFlashSwapCallback(to).vFlashSwapCallback(requiredAmountIn, data);
+            IvFlashSwapCallback(msg.sender).vFlashSwapCallback(requiredAmountIn, data);
 
         _amountIn =
             IERC20(vPool.token0).balanceOf(address(this)) -
@@ -249,7 +249,7 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvFlashSwapCallback(to).vFlashSwapCallback(requiredAmountIn, data);
+            IvFlashSwapCallback(msg.sender).vFlashSwapCallback(requiredAmountIn, data);
 
         _amountIn =
             IERC20(vPool.token0).balanceOf(address(this)) -
