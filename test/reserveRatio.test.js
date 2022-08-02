@@ -214,13 +214,23 @@ contract("ReserveRatio", (accounts) => {
 
     let reserveRatioBefore = await pool.calculateReserveRatio();
     let tokenCReserve = await pool.reservesBaseValue(tokenC.address);
-    await vRouterInstance.swap(
-      [jkPair],
+
+    //   function swapReserveToExactNative(
+    //     address tokenA,
+    //     address tokenB,
+    //     address ikPair,
+    //     uint256 amountOut,
+    //     address to,
+    //     bytes calldata data
+    // ) external;
+
+
+    await vRouterInstance.swapReserveToExactNative(
+      tokenA.address,
+      tokenB.address,
+      ikPair,
       [amountIn],
       [amountOut],
-      [ikPair],
-      tokenC.address,
-      tokenA.address,
       accounts[0],
       futureTs
     );

@@ -41,14 +41,6 @@ contract vRouter is IvRouter, Multicall {
         return PoolAddress.computeAddress(factory, tokenA, tokenB);
     }
 
-    function getPair(address tokenA, address tokenB)
-        internal
-        view
-        returns (IvPair)
-    {
-        return IvPair(getPairAddress(tokenA, tokenB));
-    }
-
     function vFlashSwapCallback(
         uint256 requiredBackAmount,
         bytes memory callbackData
@@ -87,9 +79,15 @@ contract vRouter is IvRouter, Multicall {
         address tokenB,
         uint256 amountOut,
         address to,
-        bytes calldata data
-    ) external {
-        getPair(tokenA, tokenB).swapNative(amountOut, tokenB, to, data);
+        bytes calldata data,
+        uint256 deadline
+    ) external ensure(deadline) {
+        IvPair(getPairAddress(tokenA, tokenB)).swapNative(
+            amountOut,
+            tokenB,
+            to,
+            data
+        );
     }
 
     function swapReserveToExactNative(
@@ -98,9 +96,10 @@ contract vRouter is IvRouter, Multicall {
         address ikPair,
         uint256 amountOut,
         address to,
-        bytes calldata data
-    ) external {
-        getPair(tokenA, tokenB).swapReserveToNative(
+        bytes calldata data,
+        uint256 deadline
+    ) external ensure(deadline) {
+        IvPair(getPairAddress(tokenA, tokenB)).swapReserveToNative(
             amountOut,
             ikPair,
             to,
@@ -204,7 +203,7 @@ contract vRouter is IvRouter, Multicall {
             pairAddress,
             amountB
         );
-        
+
         liquidity = IvPair(pairAddress).mint(to);
     }
 
@@ -281,13 +280,14 @@ contract vRouter is IvRouter, Multicall {
         address tokenB,
         uint256 amount
     ) external view override returns (uint256 quoteR) {
-        IvPair pair = getPair(tokenA, tokenB);
+        address pairAddress = getPairAddress(tokenA, tokenB);
 
-        (uint256 reserve0, uint256 reserve1) = pair.getReserves();
+        (uint256 reserve0, uint256 reserve1) = IvPair(pairAddress)
+            .getReserves();
 
         (reserve0, reserve1) = vSwapLibrary.sortReserves(
             tokenA,
-            pair.token0(),
+            IvPair(pairAddress).token0(),
             reserve0,
             reserve1
         );
@@ -300,22 +300,22 @@ contract vRouter is IvRouter, Multicall {
         address tokenB,
         uint256 amountIn
     ) external view virtual override returns (uint256 amountOut) {
-        IvPair pair = getPair(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1) = pair.getReserves();
+        (uint256 reserve0, uint256 reserve1) = IvPair(
+            getPairAddress(tokenA, tokenB)
+        ).getReserves();
+        // (reserve0, reserve1) = vSwapLibrary.sortReserves(
+        //     tokenA,
+        //     pair.token0(),
+        //     reserve0,
+        //     reserve1
+        // );
 
-        (reserve0, reserve1) = vSwapLibrary.sortReserves(
-            tokenA,
-            pair.token0(),
-            reserve0,
-            reserve1
-        );
-
-        amountOut = vSwapLibrary.getAmountOut(
-            amountIn,
-            reserve0,
-            reserve1,
-            pair.fee()
-        );
+        // amountOut = vSwapLibrary.getAmountOut(
+        //     amountIn,
+        //     reserve0,
+        //     reserve1,
+        //     pair.fee()
+        // );
     }
 
     function getAmountIn(
@@ -323,12 +323,14 @@ contract vRouter is IvRouter, Multicall {
         address tokenB,
         uint256 amountOut
     ) external view virtual override returns (uint256 amountIn) {
-        IvPair pair = getPair(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
+        address pairAddress = getPairAddress(tokenA, tokenB);
+
+        (uint256 reserve0, uint256 reserve1) = IvPair(pairAddress)
+            .getReserves();
 
         (reserve0, reserve1) = vSwapLibrary.sortReserves(
             tokenA,
-            pair.token0(),
+            IvPair(pairAddress).token0(),
             reserve0,
             reserve1
         );
@@ -337,7 +339,7 @@ contract vRouter is IvRouter, Multicall {
             amountOut,
             reserve0,
             reserve1,
-            pair.fee()
+            IvPair(pairAddress).fee()
         );
     }
 

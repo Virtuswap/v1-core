@@ -14,7 +14,8 @@ interface IvRouter is IvFlashSwapCallback {
         address tokenB,
         uint256 amountOut,
         address to,
-        bytes calldata data
+        bytes calldata data,
+        uint256 deadline
     ) external;
 
     function swapReserveToExactNative(
@@ -23,7 +24,8 @@ interface IvRouter is IvFlashSwapCallback {
         address ikPair,
         uint256 amountOut,
         address to,
-        bytes calldata data
+        bytes calldata data,
+        uint256 deadline
     ) external;
 
     function addLiquidity(
