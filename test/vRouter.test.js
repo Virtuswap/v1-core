@@ -384,14 +384,35 @@ contract("vRouter", (accounts) => {
 
     const futureTs = await getFutureBlockTimestamp();
 
-    await vRouterInstance.swapToExactNative(
-      tokenA.address,
-      tokenC.address,
-      amountOut,
-      accounts[0],
-      data,
-      futureTs
-    );
+    let multiData = [];
+
+    let str = await vRouterInstance.contract.methods
+      .swapToExactNative(
+        tokenA.address,
+        tokenC.address,
+        amountOut,
+        accounts[0],
+        data,
+        futureTs
+      )
+      .encodeABI();
+
+    multiData.push(str);
+
+    str = await vRouterInstance.contract.methods
+      .swapToExactNative(
+        tokenA.address,
+        tokenC.address,
+        amountOut,
+        accounts[0],
+        data,
+        futureTs
+      )
+      .encodeABI();
+
+    multiData.push(str);
+
+    await vRouterInstance.multicall(multiData, true);
 
     const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
     const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
