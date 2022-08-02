@@ -15,6 +15,8 @@ import "./libraries/constants.sol";
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
+    uint256 internal constant RESERVE_RATIO_WHOLE = (10**3) * 100 * 1e18;
+
     address public factory;
 
     address public immutable override token0;
@@ -336,8 +338,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         liquidity =
             liquidity -
-            ((liquidity * reserveRatio) /
-                (Constants.RESERVE_RATIO_WHOLE + reserveRatio));
+            ((liquidity * reserveRatio) / (RESERVE_RATIO_WHOLE + reserveRatio));
 
         require(liquidity > 0, "ILM");
 

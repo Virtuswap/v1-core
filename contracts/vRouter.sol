@@ -204,6 +204,7 @@ contract vRouter is IvRouter, Multicall {
             pairAddress,
             amountB
         );
+        
         liquidity = IvPair(pairAddress).mint(to);
     }
 

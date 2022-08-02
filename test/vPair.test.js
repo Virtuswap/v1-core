@@ -3,7 +3,7 @@ const chai = require("chai");
 const { assert } = require("chai");
 
 const vRouter = artifacts.require("vRouter");
-const FlashSwapExample = artifacts.require("flashSwapExample");
+// const FlashSwapExample = artifacts.require("flashSwapExample");
 const vPair = artifacts.require("vPair");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
 const vPairFactory = artifacts.require("vPairFactory");
@@ -168,22 +168,22 @@ contract("vPair", (accounts) => {
     //     reserve1Pool3
     // );
 
-    vFlashSwapExample = await FlashSwapExample.new(
-      vPairFactoryInstance.address,
-      vRouterInstance.address,
-      tokenA.address,
-      tokenB.address,
-      tokenC.address
-    );
+    // vFlashSwapExample = await FlashSwapExample.new(
+    //   vPairFactoryInstance.address,
+    //   vRouterInstance.address,
+    //   tokenA.address,
+    //   tokenB.address,
+    //   tokenC.address
+    // );
 
-    await tokenA.approve(vFlashSwapExample.address, issueAmount);
-    await tokenB.approve(vFlashSwapExample.address, issueAmount);
-    await tokenC.approve(vFlashSwapExample.address, issueAmount);
+    // await tokenA.approve(vFlashSwapExample.address, issueAmount);
+    // await tokenB.approve(vFlashSwapExample.address, issueAmount);
+    // await tokenC.approve(vFlashSwapExample.address, issueAmount);
   });
 
-  it("Should flashswap buying B from A/B, swaping B (reserve) to A on pool A/C and payback loan to pool A/B", async function () {
-    await vFlashSwapExample.testFlashswap();
-  });
+  // it("Should flashswap buying B from A/B, swaping B (reserve) to A on pool A/C and payback loan to pool A/B", async function () {
+  //   await vFlashSwapExample.testFlashswap();
+  // });
 
   it("Should swap native A to B on pool A/B", async () => {
     const aBalancePoolBefore = await tokenB.balanceOf(vPairInstance.address);
