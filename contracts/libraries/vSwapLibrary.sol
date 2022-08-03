@@ -4,9 +4,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
 import "../interfaces/IvPair.sol";
 
-library vSwapLibrary {
-    uint256 private constant FACTOR = 10**3;
+import "./constants.sol";
 
+library vSwapLibrary {
     //find common token and assign to ikToken1 and jkToken1
     function findCommonToken(
         address ikToken0,
@@ -39,6 +39,7 @@ library vSwapLibrary {
         uint256 _quotient = ((_numerator / denominator) + 5) / 10;
         return (_quotient);
     }
+
     function calculateVPool(
         uint256 ikTokenABalance,
         uint256 ikTokenBBalance,
@@ -60,7 +61,8 @@ library vSwapLibrary {
         uint256 reserveOut,
         uint256 fee
     ) internal pure returns (uint256 amountIn) {
-        uint256 numerator = (reserveIn * amountOut) * FACTOR;
+        uint256 numerator = (reserveIn * amountOut) *
+            Constants.PRICE_FEE_FACTOR;
         uint256 denominator = (reserveOut - amountOut) * fee;
         amountIn = (numerator / denominator) + 1;
     }
@@ -73,7 +75,8 @@ library vSwapLibrary {
     ) internal pure returns (uint256 amountOut) {
         uint256 amountInWithFee = amountIn * fee;
         uint256 numerator = amountInWithFee * reserveOut;
-        uint256 denominator = (reserveIn * FACTOR) + amountInWithFee;
+        uint256 denominator = (reserveIn * Constants.PRICE_FEE_FACTOR) +
+            amountInWithFee;
         amountOut = numerator / denominator;
     }
 
@@ -103,7 +106,7 @@ library vSwapLibrary {
         address jkToken1,
         uint256 jkReserve0,
         uint256 jkReserve1,
-        uint256 jkvFee,
+        uint24 jkvFee,
         address ikPair
     ) internal view returns (VirtualPoolModel memory vPool) {
         (address ik0, address ik1) = IvPair(ikPair).getTokens();
@@ -142,7 +145,7 @@ library vSwapLibrary {
     {
         (address jk0, address jk1) = IvPair(jkPair).getTokens();
         (uint256 _reserve0, uint256 _reserve1) = IvPair(jkPair).getReserves();
-        uint256 vFee = IvPair(jkPair).vFee();
+        uint24 vFee = IvPair(jkPair).vFee();
 
         vPool = getVirtualPoolBase(
             jk0,
