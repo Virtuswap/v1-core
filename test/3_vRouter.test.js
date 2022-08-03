@@ -294,7 +294,7 @@ contract("vRouter", (accounts) => {
       amountOut
     );
 
-    assert.equal(fromWeiToNumber(amountIn).toFixed(3), 3.348);
+    assert.equal(fromWeiToNumber(amountIn).toFixed(3), 3.344);
   });
 
   it("Should getVirtualAmountOut", async () => {
@@ -789,12 +789,17 @@ contract("vRouter", (accounts) => {
       amountADesired
     );
 
+    console.log("amountBDesired " + amountBDesired);
+
     const pool = await vPair.at(
       await vPairFactoryInstance.getPair(tokenA.address, tokenB.address)
     );
 
     let reserve0 = await pool.reserve0();
     let reserve1 = await pool.reserve1();
+
+    console.log("reserve0 " + reserve0);
+    console.log("reserve1 " + reserve1);
 
     let totalBalanceBefore0 = reserve0;
     let totalBalanceBefore1 = reserve1;

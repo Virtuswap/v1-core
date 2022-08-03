@@ -130,9 +130,9 @@ contract vRouter is IvRouter, Multicall {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
             uint256 amountBOptimal = vSwapLibrary.quote(
+                amountADesired,
                 reserve0,
-                reserve1,
-                amountADesired
+                reserve1
             );
 
             if (amountBOptimal <= amountBDesired) {
@@ -143,9 +143,9 @@ contract vRouter is IvRouter, Multicall {
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
                 uint256 amountAOptimal = vSwapLibrary.quote(
+                    amountBDesired,
                     reserve1,
-                    reserve0,
-                    amountBDesired
+                    reserve0
                 );
 
                 assert(amountAOptimal <= amountADesired);
