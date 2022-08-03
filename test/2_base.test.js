@@ -59,8 +59,6 @@ contract("Base", (accounts) => {
       tokenA.address,
       tokenB.address
     );
-
-    console.log("pairAddress " + pairAddress);
   });
 
   it("Should create pool vRouter", async () => {
@@ -93,12 +91,5 @@ contract("Base", (accounts) => {
       accounts[0],
       futureTs
     );
-
-    let balanceOfAfter = await lpToken.balanceOf(accounts[0]);
-
-    console.log("RR " + RR);
-
-    console.log("balanceOf " + balanceOf);
-    console.log("balanceOfAfter " + balanceOfAfter);
   });
 });

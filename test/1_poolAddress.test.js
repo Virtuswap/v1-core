@@ -170,9 +170,6 @@ contract("Pool address", (accounts) => {
     let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
     let calculated = await vPairFactoryInstance.getInitCodeHash();
 
-    console.log("INIT_CODE_HASH: " + INIT_CODE_HASH);
-    console.log("calculated: " + calculated);
-
     assert.equal(INIT_CODE_HASH, calculated);
   });
 
@@ -181,14 +178,12 @@ contract("Pool address", (accounts) => {
       tokenA.address,
       tokenB.address
     );
-    console.log("poolAddress: " + poolAddress);
-
     let calculated = await PoolAddressInstance.computeAddress(
       vPairFactoryInstance.address,
       tokenA.address,
       tokenB.address
     );
 
-    console.log("calculated: " + calculated);
+    assert.equal(poolAddress, calculated);
   });
 });

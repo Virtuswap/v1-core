@@ -461,8 +461,6 @@ contract("vRouter", (accounts) => {
       "ether"
     );
 
-    console.log("amountIn " + amountIn);
-
     const futureTs = await getFutureBlockTimestamp();
 
     let data = getEncodedSwapData(
@@ -564,7 +562,6 @@ contract("vRouter", (accounts) => {
     const pool = await vPair.at(ikPair);
 
     const cReserve = await pool.reserves(tokenC.address);
-    console.log("cReserve " + cReserve);
 
     //TBD: FIX THIS
     amountIn = web3.utils.toWei(
@@ -632,7 +629,7 @@ contract("vRouter", (accounts) => {
 
     const futureTs = await getFutureBlockTimestamp();
     let multiData = [];
-    
+
     str = await vRouterInstance.contract.methods
       .swapToExactNative(
         tokenC.address,

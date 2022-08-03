@@ -224,13 +224,11 @@ contract("ReserveRatio", (accounts) => {
     //     bytes calldata data
     // ) external;
 
-
     await vRouterInstance.swapReserveToExactNative(
       tokenA.address,
       tokenB.address,
       ikPair,
-      [amountIn],
-      [amountOut],
+      amountOut,
       accounts[0],
       futureTs
     );
