@@ -311,58 +311,6 @@ contract("vPair", (accounts) => {
     );
   });
 
-  it("Should swap native-to-reserve A to C on pool A/B", async () => {
-    const aBalancePoolBefore = await tokenA.balanceOf(vPairInstance.address);
-    const bBalancePoolBefore = await tokenC.balanceOf(vPairInstance.address);
-    const aBalanceWalletBefore = await tokenA.balanceOf(accounts[0]);
-    const bBalanceWalletBefore = await tokenC.balanceOf(accounts[0]);
-
-    let aAmountOut = web3.utils.toWei("10", "ether");
-
-    let jkAddress = await vPairFactoryInstance.getPair(
-      tokenB.address,
-      tokenA.address
-    );
-
-    let ikAddress = await vPairFactoryInstance.getPair(
-      tokenB.address,
-      tokenC.address
-    );
-
-    let amountIn = await vRouterInstance.getVirtualAmountIn(
-      ikAddress,
-      jkAddress,
-      aAmountOut
-    );
-
-    await tokenA.transfer(vPairInstance.address, amountIn);
-
-    await vPairInstance.swapNativeToReserve(
-      aAmountOut,
-      ikAddress,
-      accounts[0],
-      []
-    );
-
-    const aBalancePoolAfter = await tokenA.balanceOf(vPairInstance.address);
-    const bBalancePoolAfter = await tokenC.balanceOf(vPairInstance.address);
-    const aBalanceWalletAfter = await tokenA.balanceOf(accounts[0]);
-    const bBalanceWalletAfter = await tokenC.balanceOf(accounts[0]);
-
-    expect(fromWeiToNumber(aBalancePoolAfter)).to.be.above(
-      fromWeiToNumber(aBalancePoolBefore)
-    );
-    expect(fromWeiToNumber(bBalancePoolAfter)).to.be.lessThan(
-      fromWeiToNumber(bBalancePoolBefore)
-    );
-    expect(fromWeiToNumber(aBalanceWalletAfter)).to.be.lessThan(
-      fromWeiToNumber(aBalanceWalletBefore)
-    );
-    expect(fromWeiToNumber(bBalanceWalletAfter)).to.be.above(
-      fromWeiToNumber(bBalanceWalletBefore)
-    );
-  });
-
   it("Should set max whitelist count", async () => {
     const maxWhitelist = await vPairInstance.max_whitelist_count();
 

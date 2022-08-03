@@ -19,7 +19,8 @@ struct VirtualPoolTokens {
 struct SwapCallbackData {
     address payer;
     address tokenIn;
-    address tokenOut;
+    address token0;
+    address token1;
     uint256 tokenInMax;
 }
 

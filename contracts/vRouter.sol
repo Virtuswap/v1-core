@@ -59,11 +59,7 @@ contract vRouter is IvRouter, Multicall {
         );
         require(
             msg.sender ==
-                PoolAddress.computeAddress(
-                    factory,
-                    data.tokenIn,
-                    data.tokenOut
-                ),
+                PoolAddress.computeAddress(factory, data.token0, data.token1),
             "VSWAP:INVALID_CALLBACK_POOL"
         );
         //validate amount to pay back dont exceeds
