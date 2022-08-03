@@ -370,74 +370,6 @@ contract("vRouter", (accounts) => {
     );
   }
 
-  it("Should swap A to C on pool A/C", async () => {
-    const poolAddress = await vPairFactoryInstance.getPair(
-      tokenA.address,
-      tokenC.address
-    );
-    const tokenABalanceBefore = await tokenA.balanceOf(accounts[0]);
-    const tokenCBalanceBefore = await tokenC.balanceOf(accounts[0]);
-
-    let amountsIn = web3.utils.toWei("10", "ether");
-
-    const amountOut = await vRouterInstance.getAmountOut(
-      tokenA.address,
-      tokenC.address,
-      amountsIn
-    );
-
-    let data = getEncodedSwapData(
-      accounts[0],
-      tokenA.address,
-      tokenA.address,
-      tokenC.address,
-      amountsIn
-    );
-
-    const futureTs = await getFutureBlockTimestamp();
-
-    let multiData = [];
-
-    let str = await vRouterInstance.contract.methods
-      .swapToExactNative(
-        tokenA.address,
-        tokenC.address,
-        amountOut,
-        accounts[0],
-        data,
-        futureTs
-      )
-      .encodeABI();
-
-    multiData.push(str);
-
-    str = await vRouterInstance.contract.methods
-      .swapToExactNative(
-        tokenA.address,
-        tokenC.address,
-        amountOut,
-        accounts[0],
-        data,
-        futureTs
-      )
-      .encodeABI();
-
-    multiData.push(str);
-
-    await vRouterInstance.multicall(multiData, true);
-
-    const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
-    const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
-
-    expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
-      fromWeiToNumber(tokenCBalanceBefore)
-    );
-
-    expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
-      fromWeiToNumber(tokenABalanceBefore)
-    );
-  });
-
   it("Should swap C to A on pool A/C", async () => {
     const poolAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
@@ -455,13 +387,13 @@ contract("vRouter", (accounts) => {
       amountOut
     );
 
-    //TBD: FIX THIS
+    const futureTs = await getFutureBlockTimestamp();
+
+    //Conversion errors of weiToNumber
     amountIn = web3.utils.toWei(
-      (fromWeiToNumber(amountIn) * 1.001).toFixed(5),
+      (fromWeiToNumber(amountIn.toString()) * 1.001).toFixed(5),
       "ether"
     );
-
-    const futureTs = await getFutureBlockTimestamp();
 
     let data = getEncodedSwapData(
       accounts[0],
@@ -492,6 +424,67 @@ contract("vRouter", (accounts) => {
     );
   });
 
+  it("Should swap A to C on pool A/C", async () => {
+    const poolAddress = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenC.address
+    );
+    const tokenABalanceBefore = await tokenA.balanceOf(accounts[0]);
+    const tokenCBalanceBefore = await tokenC.balanceOf(accounts[0]);
+
+    let amountIn = web3.utils.toWei("10", "ether");
+
+    //Conversion errors of weiToNumber
+    amountIn = web3.utils.toWei(
+      (fromWeiToNumber(amountIn.toString()) * 1.001).toFixed(5),
+      "ether"
+    );
+
+    const amountOut = await vRouterInstance.getAmountOut(
+      tokenA.address,
+      tokenC.address,
+      amountIn
+    );
+
+    let data = getEncodedSwapData(
+      accounts[0],
+      tokenA.address,
+      tokenA.address,
+      tokenC.address,
+      amountIn
+    );
+
+    const futureTs = await getFutureBlockTimestamp();
+
+    let multiData = [];
+
+    let str = await vRouterInstance.contract.methods
+      .swapToExactNative(
+        tokenA.address,
+        tokenC.address,
+        amountOut,
+        accounts[0],
+        data,
+        futureTs
+      )
+      .encodeABI();
+
+    multiData.push(str);
+
+    await vRouterInstance.multicall(multiData, false);
+
+    const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
+    const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
+
+    expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
+      fromWeiToNumber(tokenCBalanceBefore)
+    );
+
+    expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
+      fromWeiToNumber(tokenABalanceBefore)
+    );
+  });
+
   let amountInTokenC;
 
   it("Should swap C to A on pool A/B", async () => {
@@ -513,7 +506,7 @@ contract("vRouter", (accounts) => {
       amountOut
     );
 
-    //TBD: FIX THIS
+    //Conversion errors of weiToNumber
     amountIn = web3.utils.toWei(
       (fromWeiToNumber(amountIn) * 1.001).toFixed(5),
       "ether"
@@ -563,7 +556,7 @@ contract("vRouter", (accounts) => {
 
     const cReserve = await pool.reserves(tokenC.address);
 
-    //TBD: FIX THIS
+    //Conversion errors of weiToNumber
     amountIn = web3.utils.toWei(
       (fromWeiToNumber(amountIn) * 1.001).toFixed(5),
       "ether"
@@ -607,16 +600,22 @@ contract("vRouter", (accounts) => {
 
     let _amountOut = web3.utils.toWei("10", "ether");
 
-    const realAmountIn = await vRouterInstance.getAmountIn(
+    let realAmountIn = await vRouterInstance.getAmountIn(
       tokenC.address,
       tokenA.address,
       _amountOut
     );
 
-    const virtualIn = await vRouterInstance.getVirtualAmountIn(
+    let virtualIn = await vRouterInstance.getVirtualAmountIn(
       jkPair,
       ikPair,
       _amountOut
+    );
+
+    //Conversion errors of weiToNumber
+    realAmountIn = web3.utils.toWei(
+      (fromWeiToNumber(realAmountIn) * 1.001).toFixed(5),
+      "ether"
     );
 
     let data = getEncodedSwapData(
@@ -643,6 +642,12 @@ contract("vRouter", (accounts) => {
 
     multiData.push(str);
 
+    //Conversion errors of weiToNumber
+    virtualIn = web3.utils.toWei(
+      (fromWeiToNumber(virtualIn) * 1.001).toFixed(5),
+      "ether"
+    );
+
     let data2 = getEncodedSwapData(
       accounts[0],
       tokenC.address,
@@ -665,7 +670,7 @@ contract("vRouter", (accounts) => {
 
     multiData.push(str);
 
-    await vRouterInstance.multicall(multiData, true);
+    await vRouterInstance.multicall(multiData, false);
   });
 
   it("Should revert on swap A to C on pool A/C with insuficient input amount", async () => {
@@ -789,17 +794,12 @@ contract("vRouter", (accounts) => {
       amountADesired
     );
 
-    console.log("amountBDesired " + amountBDesired);
-
     const pool = await vPair.at(
       await vPairFactoryInstance.getPair(tokenA.address, tokenB.address)
     );
 
     let reserve0 = await pool.reserve0();
     let reserve1 = await pool.reserve1();
-
-    console.log("reserve0 " + reserve0);
-    console.log("reserve1 " + reserve1);
 
     let totalBalanceBefore0 = reserve0;
     let totalBalanceBefore1 = reserve1;
