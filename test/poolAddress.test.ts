@@ -1,206 +1,187 @@
-import { VRouter } from "../typechain-types/contracts/VRouter";
-import { VPair } from "../typechain-types/contracts/VPair";
-import { VPairFactory } from "../typechain-types/contracts/VPairFactory" ;
-//import { VSwapLibrary } from "../typechain-types/contracts/VSwapLibrary";
-//const vSwapLibrary = artifacts.require("vSwapLibrary");
-import { ERC20 } from "../typechain-types/@openzeppelin/contracts/token/ERC20";
-//const ERC20 = artifacts.require("ERC20PresetFixedSupply");
-import web3 = require("web3");
+import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { ERC20PresetFixedSupply__factory, ERC20__factory, VPairFactory__factory, VPair__factory, VRouter__factory, VSwapERC20__factory } from "../typechain-types";
 
-contract("Pool address", (accounts) => {
-  function fromWeiToNumber(number) {
-    return parseFloat(web3.utils.fromWei(number, "ether")).toFixed(6) * 1;
-  }
+const ONE_GWEI = 1_000_000_000;
 
-  async function getFutureBlockTimestamp() {
-    const blockNumber = await web3.eth.getBlockNumber();
-    const block = await web3.eth.getBlock(blockNumber);
-    return block.timestamp + 1000000;
-  }
+describe("Pool address", function () {
 
-  const A_PRICE = 1;
-  const B_PRICE = 3;
-  const C_PRICE = 6;
+    // We define a fixture to reuse the same setup in every test.
+    // We use loadFixture to run this setup once, snapshot that state,
+    // and reset Hardhat Network to that snapshot in every test.
+    async function deployPools() {
 
-  let tokenA, tokenB, tokenC, WETH;
+        const issueAmount = 100000000000000 * ONE_GWEI;
 
-  const issueAmount = web3.utils.toWei("100000000000000", "ether");
+        // Contracts are deployed using the first signer/account by default
+        const [owner, otherAccount] = await ethers.getSigners();
 
-  let vPairFactoryInstance, vRouterInstance, vSwapLibraryInstance;
+        const A_PRICE = 1;
+        const B_PRICE = 3;
+        const C_PRICE = 6;
 
-  before(async () => {
-    tokenA = await ERC20.new("tokenA", "A", issueAmount, accounts[0]);
+        const erc20ContractFactory = await new ERC20PresetFixedSupply__factory(owner);
+        const tokenA = erc20ContractFactory.deploy("tokenA", "A", issueAmount, owner.address);
+        const tokenB = erc20ContractFactory.deploy("tokenB", "B", issueAmount, owner.address);
+        const tokenC = erc20ContractFactory.deploy("tokenC", "C", issueAmount, owner.address);
 
-    tokenB = await ERC20.new("tokenB", "B", issueAmount, accounts[0]);
+        const vPairFactoryInstance = await new VPairFactory__factory().deploy();
+        const vRouterInstance = await new VRouter__factory().deploy("Router");
+        // Wrong! Where is VSwapLibrary?
+        //const vSwapLibraryInstance = await new VSwapERC20__factory().deploy();
 
-    tokenC = await ERC20.new("tokenC", "C", issueAmount, accounts[0]);
+        (await tokenA).approve(vRouterInstance.address, issueAmount);
+        (await tokenB).approve(vRouterInstance.address, issueAmount);
+        (await tokenC).approve(vRouterInstance.address, issueAmount);
 
-    tokenD = await ERC20.new("tokenD", "D", issueAmount, accounts[0]);
+        const futureTs = (await time.latest()) + 1000000;
 
-    vPairFactoryInstance = await vPairFactory.deployed();
-    vRouterInstance = await VRouter.deployed();
-    vSwapLibraryInstance = await vSwapLibrary.deployed();
+        // create pool A/B with 10,000 A and equivalent B
+        let AInput = 10000 * A_PRICE;
+        let BInput = (B_PRICE / A_PRICE) * AInput;
 
-    await tokenA.approve(vRouterInstance.address, issueAmount);
-    await tokenB.approve(vRouterInstance.address, issueAmount);
-    await tokenC.approve(vRouterInstance.address, issueAmount);
+        await vRouterInstance.addLiquidity(
+            (await tokenA).address,
+            (await tokenB).address,
+            AInput * ONE_GWEI,
+            BInput * ONE_GWEI,
+            AInput * ONE_GWEI,
+            BInput * ONE_GWEI,
+            owner.address,
+            futureTs);
 
-    const futureTs = await getFutureBlockTimestamp();
+        // create pool A/C
+        // create pool A/C with 10,000 A and equivalent C
+        let CInput = (C_PRICE / A_PRICE) * AInput;
+        await vRouterInstance.addLiquidity(
+            (await tokenA).address,
+            (await tokenC).address,
+            AInput * ONE_GWEI,
+            CInput * ONE_GWEI,
+            AInput * ONE_GWEI,
+            CInput * ONE_GWEI,
+            owner.address,
+            futureTs);
 
-    //create pool A/B with 10,000 A and equivalent B
-    let AInput = 10000 * A_PRICE;
-    let BInput = (B_PRICE / A_PRICE) * AInput;
+        // create pool B/C
+        // create pool B/C with 20,000 B and equivalent C
+        BInput = 20000 * B_PRICE;
+        CInput = (C_PRICE / B_PRICE) * BInput;
+        await vRouterInstance.addLiquidity(
+            (await tokenB).address,
+            (await tokenC).address,
+            BInput * ONE_GWEI,
+            CInput * ONE_GWEI,
+            BInput * ONE_GWEI,
+            CInput * ONE_GWEI,
+            owner.address,
+            futureTs);
 
-    await vRouterInstance.addLiquidity(
-      tokenA.address,
-      tokenB.address,
-      web3.utils.toWei(AInput.toString(), "ether"),
-      web3.utils.toWei(BInput.toString(), "ether"),
-      web3.utils.toWei(AInput.toString(), "ether"),
-      web3.utils.toWei(BInput.toString(), "ether"),
-      accounts[0],
-      futureTs
-    );
+        // whitelist tokens in pools
 
-    //create pool A/C
-    //create pool A/B with 10,000 A and equivalent C
+        // pool 1
+        const address1 = await vPairFactoryInstance.getPair(
+            (await tokenA).address,
+            (await tokenB).address
+        );
+        console.log("AB address: " + address1);
+        // Wrong! Creating pool1 should use address1
+        const vPair = await new VPair__factory();
+        const pool1 = vPair.deploy();
 
-    let CInput = (C_PRICE / A_PRICE) * AInput;
-    await vRouterInstance.addLiquidity(
-      tokenA.address,
-      tokenC.address,
-      web3.utils.toWei(AInput.toString(), "ether"),
-      web3.utils.toWei(CInput.toString(), "ether"),
-      web3.utils.toWei(AInput.toString(), "ether"),
-      web3.utils.toWei(CInput.toString(), "ether"),
-      accounts[0],
-      futureTs
-    );
+        // whitelist token C
+        (await pool1).setWhitelist([(await tokenC).address]);
 
-    //create pool B/C
-    //create pool B/C with 10,000 B and equivalent C
-    BInput = 20000 * B_PRICE;
-    CInput = (C_PRICE / B_PRICE) * BInput;
-    await vRouterInstance.addLiquidity(
-      tokenB.address,
-      tokenC.address,
-      web3.utils.toWei(BInput.toString(), "ether"),
-      web3.utils.toWei(CInput.toString(), "ether"),
-      web3.utils.toWei(BInput.toString(), "ether"),
-      web3.utils.toWei(CInput.toString(), "ether"),
-      accounts[0],
-      futureTs
-    );
+        const reserve0Pool1 = (await pool1).reserve0();
+        const reserve1Pool1 = (await pool1).reserve1();
 
-    //whitelist tokens in pools
+        const pool1Reserve0 = (await reserve0Pool1).div(ONE_GWEI).toNumber();
+        const pool1Reserve1 = (await reserve1Pool1).div(ONE_GWEI).toNumber();
 
-    //pool 1
-    const address = await vPairFactoryInstance.getPair(
-      tokenA.address,
-      tokenB.address
-    );
-    console.log("AB address: " + address);
-    const pool = await vPair.at(address);
+        console.log("pool1: A/B: " + pool1Reserve0 + "/" + pool1Reserve1);
 
-    //whitelist token C
-    await pool.setWhitelist([tokenC.address]);
+        // pool 2
+        const address2 = await vPairFactoryInstance.getPair(
+            (await tokenA).address,
+            (await tokenC).address
+        );
+        console.log("AC address: " + address2);
+        // Wrong! Creating pool2 should use address2
+        const pool2 = vPair.deploy();
 
-    let reserve0 = await pool.reserve0();
-    let reserve1 = await pool.reserve1();
+        // whitelist token B
+        (await pool2).setWhitelist([(await tokenB).address]);
 
-    reserve0 = fromWeiToNumber(reserve0);
-    reserve1 = fromWeiToNumber(reserve1);
+        const reserve0Pool2 = (await pool2).reserve0();
+        const reserve1Pool2 = (await pool2).reserve1();
 
-    // console.log("pool1: A/B: " + reserve0 + "/" + reserve1);
+        const pool2Reserve0 = (await reserve0Pool2).div(ONE_GWEI).toNumber();
+        const pool2Reserve1 = (await reserve1Pool2).div(ONE_GWEI).toNumber();
 
-    //pool 2
-    const address2 = await vPairFactoryInstance.getPair(
-      tokenA.address,
-      tokenC.address
-    );
-    const pool2 = await vPair.at(address2);
+        console.log("pool2: A/C: " + pool2Reserve0 + "/" + pool2Reserve1);
 
-    //whitelist token B
-    await pool2.setWhitelist([tokenB.address]);
+        // pool 3
+        const address3 = await vPairFactoryInstance.getPair(
+            (await tokenB).address,
+            (await tokenC).address
+        );
+        console.log("BC address: " + address3);
+        // Wrong! Creating pool3 should use address3
+        const pool3 = vPair.deploy();
 
-    let reserve0Pool2 = await pool2.reserve0();
-    let reserve1Pool2 = await pool2.reserve1();
+        //whitelist token A
+        (await pool3).setWhitelist([(await tokenA).address]);
 
-    reserve0Pool2 = fromWeiToNumber(reserve0Pool2);
-    reserve1Pool2 = fromWeiToNumber(reserve1Pool2);
+        const reserve0Pool3 = (await pool3).reserve0();
+        const reserve1Pool3 = (await pool3).reserve1();
 
-    // console.log("pool2: A/C: " + reserve0Pool2 + "/" + reserve1Pool2);
+        const pool3Reserve0 = (await reserve0Pool3).div(ONE_GWEI).toNumber();
+        const pool3Reserve1 = (await reserve1Pool3).div(ONE_GWEI).toNumber();
 
-    //pool 3
-    const address3 = await vPairFactoryInstance.getPair(
-      tokenB.address,
-      tokenC.address
-    );
-    const pool3 = await vPair.at(address3);
+        console.log("pool3: B/C: " + pool3Reserve0 + "/" + pool3Reserve1);
+        return {
+            tokenA, tokenB, tokenC,
+            A_PRICE, B_PRICE, C_PRICE,
+            pool1, pool2, pool3,
+            pool1Reserve0, pool1Reserve1,
+            pool2Reserve0, pool2Reserve1,
+            pool3Reserve0, pool3Reserve1,
+            vRouterInstance,
+            owner, otherAccount };
+    }
 
-    //whitelist token A
-    await pool3.setWhitelist([tokenA.address]);
+    describe("Deployment", function () {
+        it("Should compute tokenA / tokenC pool address", async function () {
+            const { pool1, pool2, pool3, tokenA, tokenC, vRouterInstance, owner } = await loadFixture(deployPools);
 
-    let reserve0Pool3 = await pool3.reserve0();
-    let reserve1Pool3 = await pool3.reserve1();
+            const tokenABalanceBefore = (await tokenA).balanceOf(owner.address);
+            const tokenCBalanceBefore = (await tokenC).balanceOf(owner.address);
 
-    reserve0Pool3 = fromWeiToNumber(reserve0Pool3);
-    reserve1Pool3 = fromWeiToNumber(reserve1Pool3);
+            const amountIn = 10 * ONE_GWEI;
+            const amountOut = await vRouterInstance.getAmountOut(
+                (await tokenA).address,
+                (await tokenC).address,
+                amountIn);
+            const futureTs = (await time.latest()) + 1000000;
 
-    // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
-  });
+            await vRouterInstance.swap(
+                [(await pool1).address, (await pool2).address, (await pool3).address],
+                [amountIn],
+                [amountOut],
+                ["0x0000000000000000000000000000000000000000"],
+                (await tokenA).address,
+                (await tokenC).address,
+                owner.address,
+                futureTs);
 
-  it("Should compute tokenA / tokenB pool address", async () => {
-    // let poolAddress = await vPairFactoryInstance.getPoolAddress(
-    //   tokenA.address,
-    //   tokenB.address
-    // );
-    // console.log("poolAddress: " + poolAddress);
+            const tokenABalanceAfter = (await tokenA).balanceOf(owner.address);
+            const tokenCBalanceAfter = (await tokenC).balanceOf(owner.address);
 
-    // console.log("poolAddress: " + poolAddress);
-    // const poolAddress = await vPairFactoryInstance.getPair(
-    //   tokenA.address,
-    //   tokenC.address
-    // );
+            expect((await tokenCBalanceAfter).toNumber()).to.be.above((await tokenCBalanceBefore).toNumber());
+            expect((await tokenABalanceAfter).toNumber()).to.be.lessThan((await tokenABalanceBefore).toNumber());
 
-    // // const pool = await vPair.at(poolAddress);
+        });
+    });
 
-    // // const reserve0 = await pool.reserve0();
-    // // const reserve1 = await pool.reserve1();
-
-    // const tokenABalanceBefore = await tokenA.balanceOf(accounts[0]);
-    // const tokenCBalanceBefore = await tokenC.balanceOf(accounts[0]);
-
-    // let pools = [poolAddress];
-    // let amountsIn = web3.utils.toWei("10", "ether");
-
-    // const amountOut = await vRouterInstance.getAmountOut(
-    //   tokenA.address,
-    //   tokenC.address,
-    //   amountsIn
-    // );
-
-    // const futureTs = await getFutureBlockTimestamp();
-    // await vRouterInstance.swap(
-    //   pools,
-    //   [amountsIn],
-    //   [amountOut],
-    //   ["0x0000000000000000000000000000000000000000"],
-    //   tokenA.address,
-    //   tokenC.address,
-    //   accounts[0],
-    //   futureTs
-    // );
-
-    // const tokenABalanceAfter = await tokenA.balanceOf(accounts[0]);
-    // const tokenCBalanceAfter = await tokenC.balanceOf(accounts[0]);
-
-    // expect(fromWeiToNumber(tokenCBalanceAfter)).to.be.above(
-    //   fromWeiToNumber(tokenCBalanceBefore)
-    // );
-
-    // expect(fromWeiToNumber(tokenABalanceAfter)).to.lessThan(
-    //   fromWeiToNumber(tokenABalanceBefore)
-    // );
-  });
 });

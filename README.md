@@ -7,7 +7,6 @@ Virtuswap smart contracts
 ```
 git clone git@github.com:Virtuswap/v1-core.git
 cd v1-core
-npm install --save-dev hardhat ts-node typescript chai @types/node @types/mocha @types/chai
 npm i
 ```
 
