@@ -92,6 +92,15 @@ contract("Pool address", (accounts) => {
       .slice(-40)}`.toLowerCase();
   }
 
+  it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
+    let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
+    let calculated = await vPairFactoryInstance.getInitCodeHash();
+
+    console.log("calculated " + calculated);
+
+    assert.equal(INIT_CODE_HASH, calculated);
+  });
+
   it("Should compute tokenA / tokenB pool address", async () => {
     let poolAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
