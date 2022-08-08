@@ -1,7 +1,7 @@
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { ERC20PresetFixedSupply__factory, ERC20__factory, VPairFactory__factory, VPair__factory, VRouter__factory, VSwapERC20__factory } from "../typechain-types";
+import { ERC20PresetFixedSupply__factory, VPairFactory__factory, VPair__factory, VRouter__factory } from "../typechain-types";
 
 const ONE_GWEI = 1_000_000_000;
 
@@ -12,7 +12,7 @@ describe("Pool address", function () {
     // and reset Hardhat Network to that snapshot in every test.
     async function deployPools() {
 
-        const issueAmount = 100000000000000 * ONE_GWEI;
+        const issueAmount = "100000000000000000000000"; // 100000000000000 * ONE_GWEI;
 
         // Contracts are deployed using the first signer/account by default
         const [owner, otherAccount] = await ethers.getSigners();
@@ -26,10 +26,16 @@ describe("Pool address", function () {
         const tokenB = erc20ContractFactory.deploy("tokenB", "B", issueAmount, owner.address);
         const tokenC = erc20ContractFactory.deploy("tokenC", "C", issueAmount, owner.address);
 
-        const vPairFactoryInstance = await new VPairFactory__factory().deploy();
-        const vRouterInstance = await new VRouter__factory().deploy("Router");
-        // Wrong! Where is VSwapLibrary?
-        //const vSwapLibraryInstance = await new VSwapERC20__factory().deploy();
+        const vPairFactoryInstance = await new VPairFactory__factory(
+            VPairFactory__factory.createInterface(),
+            VPairFactory__factory.bytecode,
+            owner)
+            .deploy();
+        const vRouterInstance = await new VRouter__factory(
+            VRouter__factory.createInterface(),
+            VRouter__factory.bytecode,
+            owner)
+            .deploy(vPairFactoryInstance.address);
 
         (await tokenA).approve(vRouterInstance.address, issueAmount);
         (await tokenB).approve(vRouterInstance.address, issueAmount);
@@ -86,12 +92,10 @@ describe("Pool address", function () {
             (await tokenB).address
         );
         console.log("AB address: " + address1);
-        // Wrong! Creating pool1 should use address1
-        const vPair = await new VPair__factory();
-        const pool1 = vPair.deploy();
+        const pool1 = VPair__factory.connect(address1, owner);
 
         // whitelist token C
-        (await pool1).setWhitelist([(await tokenC).address]);
+        pool1.setWhitelist([(await tokenC).address]);
 
         const reserve0Pool1 = (await pool1).reserve0();
         const reserve1Pool1 = (await pool1).reserve1();
@@ -107,11 +111,10 @@ describe("Pool address", function () {
             (await tokenC).address
         );
         console.log("AC address: " + address2);
-        // Wrong! Creating pool2 should use address2
-        const pool2 = vPair.deploy();
+        const pool2 = VPair__factory.connect(address2, owner);
 
         // whitelist token B
-        (await pool2).setWhitelist([(await tokenB).address]);
+        pool2.setWhitelist([(await tokenB).address]);
 
         const reserve0Pool2 = (await pool2).reserve0();
         const reserve1Pool2 = (await pool2).reserve1();
@@ -127,11 +130,10 @@ describe("Pool address", function () {
             (await tokenC).address
         );
         console.log("BC address: " + address3);
-        // Wrong! Creating pool3 should use address3
-        const pool3 = vPair.deploy();
+        const pool3 = VPair__factory.connect(address3, owner);
 
-        //whitelist token A
-        (await pool3).setWhitelist([(await tokenA).address]);
+        // whitelist token A
+        pool3.setWhitelist([(await tokenA).address]);
 
         const reserve0Pool3 = (await pool3).reserve0();
         const reserve1Pool3 = (await pool3).reserve1();
@@ -148,23 +150,24 @@ describe("Pool address", function () {
             pool2Reserve0, pool2Reserve1,
             pool3Reserve0, pool3Reserve1,
             vRouterInstance,
-            owner, otherAccount };
+            owner, otherAccount
+        };
     }
 
     describe("Deployment", function () {
         it("Should compute tokenA / tokenC pool address", async function () {
             const { pool1, pool2, pool3, tokenA, tokenC, vRouterInstance, owner } = await loadFixture(deployPools);
 
-            const tokenABalanceBefore = (await tokenA).balanceOf(owner.address);
-            const tokenCBalanceBefore = (await tokenC).balanceOf(owner.address);
+            const tokenABalanceBefore = (await (await tokenA).balanceOf(owner.address)).div(ONE_GWEI);
+            const tokenCBalanceBefore = (await (await tokenC).balanceOf(owner.address)).div(ONE_GWEI);
 
-            const amountIn = 10 * ONE_GWEI;
+            const amountIn = "10000000000"; // 10 * ONE_GWEI;
             const amountOut = await vRouterInstance.getAmountOut(
                 (await tokenA).address,
                 (await tokenC).address,
                 amountIn);
             const futureTs = (await time.latest()) + 1000000;
-
+            console.log("Will fail at swap");
             await vRouterInstance.swap(
                 [(await pool1).address, (await pool2).address, (await pool3).address],
                 [amountIn],
@@ -174,12 +177,12 @@ describe("Pool address", function () {
                 (await tokenC).address,
                 owner.address,
                 futureTs);
+            console.log("Wow. swap worked");
+            const tokenABalanceAfter = (await (await tokenA).balanceOf(owner.address)).div(ONE_GWEI);
+            const tokenCBalanceAfter = (await (await tokenC).balanceOf(owner.address)).div(ONE_GWEI);
 
-            const tokenABalanceAfter = (await tokenA).balanceOf(owner.address);
-            const tokenCBalanceAfter = (await tokenC).balanceOf(owner.address);
-
-            expect((await tokenCBalanceAfter).toNumber()).to.be.above((await tokenCBalanceBefore).toNumber());
-            expect((await tokenABalanceAfter).toNumber()).to.be.lessThan((await tokenABalanceBefore).toNumber());
+            expect(tokenCBalanceAfter.toNumber()).to.be.above(tokenCBalanceBefore.toNumber());
+            expect(tokenABalanceAfter.toNumber()).to.be.lessThan(tokenABalanceBefore.toNumber());
 
         });
     });
