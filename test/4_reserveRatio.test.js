@@ -246,14 +246,6 @@ contract("ReserveRatio", (accounts) => {
       tokenC.address
     );
 
-    // console.log("amountCInReserve " + amountCInReserve);
-    // console.log("amountCInReserveAfter " + amountCInReserveAfter);
-
-    // console.log("amountCInReserveBaseValue " + amountCInReserveBaseValue);
-    console.log(
-      "amountCInReserveBaseValueAfter " + amountCInReserveBaseValueAfter
-    );
-
     let reserveRatioAfter = await pool.calculateReserveRatio();
 
     expect(fromWeiToNumber(reserveRatioBefore)).to.lessThan(
@@ -326,14 +318,6 @@ contract("ReserveRatio", (accounts) => {
     let amountCInReserveAfter = await pool.reserves(tokenC.address);
     let amountCInReserveBaseValueAfter = await pool.reservesBaseValue(
       tokenC.address
-    );
-
-    // console.log("amountCInReserve " + amountCInReserve);
-    // console.log("amountCInReserveAfter " + amountCInReserveAfter);
-
-    // console.log("amountCInReserveBaseValue " + amountCInReserveBaseValue);
-    console.log(
-      "amountCInReserveBaseValueAfter " + amountCInReserveBaseValueAfter
     );
 
     let reserveRatioAfter = await pool.calculateReserveRatio();
@@ -718,8 +702,6 @@ contract("ReserveRatio", (accounts) => {
     poolDReserves = fromWeiToNumber(poolDReserves);
 
     let totalReserves = poolCReserves + poolDReserves;
-
-    console.log("totalReserves " + totalReserves);
 
     let reserve0 = await pool.reserve0();
     reserve0 = fromWeiToNumber(reserve0);

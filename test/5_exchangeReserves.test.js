@@ -155,7 +155,7 @@ contract("exchangeReserves", (accounts) => {
     reserve0 = fromWeiToNumber(reserve0);
     reserve1 = fromWeiToNumber(reserve1);
 
-    console.log("pool1: A/B: " + reserve0 + "/" + reserve1);
+    // console.log("pool1: A/B: " + reserve0 + "/" + reserve1);
 
     //pool 2
     const address2 = await vPairFactoryInstance.getPair(
@@ -173,7 +173,7 @@ contract("exchangeReserves", (accounts) => {
     reserve0Pool2 = fromWeiToNumber(reserve0Pool2);
     reserve1Pool2 = fromWeiToNumber(reserve1Pool2);
 
-    console.log("pool2: A/C: " + reserve0Pool2 + "/" + reserve1Pool2);
+    // console.log("pool2: A/C: " + reserve0Pool2 + "/" + reserve1Pool2);
 
     //pool 3
     const address3 = await vPairFactoryInstance.getPair(
@@ -191,7 +191,7 @@ contract("exchangeReserves", (accounts) => {
     reserve0Pool3 = fromWeiToNumber(reserve0Pool3);
     reserve1Pool3 = fromWeiToNumber(reserve1Pool3);
 
-    console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
+    // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
 
     //pool 4
     const address4 = await vPairFactoryInstance.getPair(
@@ -209,7 +209,7 @@ contract("exchangeReserves", (accounts) => {
     reserve0Pool4 = fromWeiToNumber(reserve0Pool4);
     reserve1Pool4 = fromWeiToNumber(reserve1Pool4);
 
-    console.log("pool4: B/D: " + reserve0Pool4 + "/" + reserve1Pool4);
+    // console.log("pool4: B/D: " + reserve0Pool4 + "/" + reserve1Pool4);
   });
 
   it("Should add C to pool A/B", async () => {
@@ -370,20 +370,6 @@ contract("exchangeReserves", (accounts) => {
 
     let poolBCRR = await poolBC.calculateReserveRatio();
 
-    console.log("C reserve in A/B: " + fromWeiToNumber(cReserveInAB));
-    // console.log("A reserve in B/C: " + fromWeiToNumber(aReserveInBC));
-
-    // console.log(
-    //   "A reserve base value in B/C: " + fromWeiToNumber(tokenAReserveBaseValue)
-    // );
-
-    console.log(
-      "C reserve base value in A/B: " + fromWeiToNumber(tokenCReserveBaseValue)
-    );
-
-    // console.log("B/C reserve ratio: " + fromWeiToNumber(poolBCRR));
-    console.log("A/B reserve ratio: " + fromWeiToNumber(poolABRR));
-
     //get flash swap of amount required amount C from pool BC.
     await vExchangeReserves.exchange(
       poolBCAddress, //jk1
@@ -400,29 +386,11 @@ contract("exchangeReserves", (accounts) => {
       tokenC.address
     );
 
-    console.log(
-      "C reserve base value in A/B after: " +
-        fromWeiToNumber(tokenCReserveBaseValueAfter)
-    );
-
-    // console.log(
-    //   "A reserve base value in B/C after: " + fromWeiToNumber(tokenAReserveBaseValueAfter)
-    // );
     let aReserveInBCAfter = await poolBC.reserves(tokenA.address);
     let cReserveInABAfter = await poolAB.reserves(tokenC.address);
     let poolABRRAfter = await poolAB.calculateReserveRatio();
 
     let poolBCRRAfter = await poolBC.calculateReserveRatio();
-    console.log(
-      "C reserve in A/B after: " + fromWeiToNumber(cReserveInABAfter)
-    );
-
-    // console.log(
-    //   "A reserve in B/C after: " + fromWeiToNumber(aReserveInBCAfter)
-    // );
-
-    // console.log("B/C reserve ratio after: " + fromWeiToNumber(poolBCRRAfter));
-    console.log("A/B reserve ratio after: " + fromWeiToNumber(poolABRRAfter));
 
     assert.equal(aReserveInBCAfter, 0);
 

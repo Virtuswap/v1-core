@@ -330,8 +330,6 @@ contract("vPair", (accounts) => {
 
     let amountOut = await bcPool.reserves(tokenA.address);
 
-    console.log("amount of A in pool B/C " + amountOut);
-
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       abPoolAddress,
       bcPoolAddress,
@@ -360,8 +358,6 @@ contract("vPair", (accounts) => {
     await abPool.swapNativeToReserve(amountOut, bcPoolAddress, accounts[0], []);
 
     let amountAInReserve = await bcPool.reserves(tokenA.address);
-
-    console.log("amount of A in pool B/C " + amountAInReserve);
 
     let reserveRatioAfter = await bcPool.calculateReserveRatio();
 
