@@ -31,9 +31,6 @@ module.exports = async function (deployer, network) {
 
   await deployer.deploy(vRouter, vPairFactoryAddress);
 
-  let vRouterAddress =
-    vRouter.networks[Object.keys(vRouter.networks)[0]].address;
-
   await deployer.link(PoolAddress, exchangeReserves);
-  await deployer.deploy(exchangeReserves, vPairFactoryAddress, vRouterAddress);
+  await deployer.deploy(exchangeReserves, vPairFactoryAddress);
 };
