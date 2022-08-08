@@ -16,6 +16,12 @@ struct VirtualPoolTokens {
     address ik1;
 }
 
+struct ExchangeReserveCallbackParams {
+    address jkPair1;
+    address jkPair2;
+    address ikPair2;
+}
+
 struct SwapCallbackData {
     address payer;
     address tokenIn;
