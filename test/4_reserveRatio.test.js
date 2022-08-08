@@ -3,32 +3,12 @@ const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapLibrary = artifacts.require("vSwapLibrary");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
+const { getEncodedSwapData } = require("./utils");
 
 contract("ReserveRatio", (accounts) => {
   function fromWeiToNumber(number) {
     return (
       parseFloat(web3.utils.fromWei(number.toString(), "ether")).toFixed(6) * 1
-    );
-  }
-
-  function getEncodedSwapData(payer, tokenIn, token0, token1, tokenInMax) {
-    return web3.eth.abi.encodeParameter(
-      {
-        SwapCallbackData: {
-          payer: "address",
-          tokenIn: "address",
-          token0: "address",
-          token1: "address",
-          tokenInMax: "uint256",
-        },
-      },
-      {
-        payer,
-        tokenIn,
-        token0,
-        token1,
-        tokenInMax,
-      }
     );
   }
 
@@ -204,7 +184,7 @@ contract("ReserveRatio", (accounts) => {
     // console.log("pool4: B/D: " + reserve0Pool4 + "/" + reserve1Pool4);
   });
 
-  it("Should increase reserveRatio and reservesBaseValue of C after adding C to pool A/B", async () => {
+  it("Should increase reserveRatio and reservesBaseValue of C after adding C for A to pool A/B", async () => {
     const ikPair = await vPairFactoryInstance.getPair(
       tokenC.address,
       tokenB.address
@@ -266,13 +246,79 @@ contract("ReserveRatio", (accounts) => {
       tokenC.address
     );
 
-    // console.log("amountCInReserve " + amountCInReserve);
-    // console.log("amountCInReserveAfter " + amountCInReserveAfter);
+    let reserveRatioAfter = await pool.calculateReserveRatio();
 
-    // console.log("amountCInReserveBaseValue " + amountCInReserveBaseValue);
-    // console.log(
-    //   "amountCInReserveBaseValueAfter " + amountCInReserveBaseValueAfter
-    // );
+    expect(fromWeiToNumber(reserveRatioBefore)).to.lessThan(
+      fromWeiToNumber(reserveRatioAfter)
+    );
+
+    let tokenCReserveAfter = await pool.reservesBaseValue(tokenC.address);
+    expect(fromWeiToNumber(tokenCReserve)).to.lessThan(
+      fromWeiToNumber(tokenCReserveAfter)
+    );
+  });
+
+  it("Should increase reserveRatio and reservesBaseValue of C after adding C for B to pool A/B", async () => {
+    const ikPair = await vPairFactoryInstance.getPair(
+      tokenC.address,
+      tokenA.address
+    );
+
+    const jkPair = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address
+    );
+
+    const pool = await vPair.at(jkPair);
+
+    let amountOut = web3.utils.toWei("1", "ether");
+
+    let amountIn = await vRouterInstance.getVirtualAmountIn(
+      jkPair,
+      ikPair,
+      amountOut
+    );
+
+    let amountCInBalance = await tokenC.balanceOf(pool.address);
+    let amountCInReserve = await pool.reserves(tokenC.address);
+    let amountCInReserveBaseValue = await pool.reservesBaseValue(
+      tokenC.address
+    );
+
+    let reserveRatioBefore = await pool.calculateReserveRatio();
+    let tokenCReserve = await pool.reservesBaseValue(tokenC.address);
+
+    //Conversion errors of weiToNumber
+    amountIn = web3.utils.toWei(
+      (fromWeiToNumber(amountIn.toString()) * 1.001).toFixed(5),
+      "ether"
+    );
+
+    let data = getEncodedSwapData(
+      accounts[0],
+      tokenC.address,
+      tokenA.address,
+      tokenB.address,
+      amountIn
+    );
+
+    const futureTs = await getFutureBlockTimestamp();
+
+    await vRouterInstance.swapReserveToExactNative(
+      tokenA.address,
+      tokenB.address,
+      ikPair,
+      amountOut,
+      accounts[0],
+      data,
+      futureTs
+    );
+
+    let amountCInBalanceAfter = await tokenC.balanceOf(pool.address);
+    let amountCInReserveAfter = await pool.reserves(tokenC.address);
+    let amountCInReserveBaseValueAfter = await pool.reservesBaseValue(
+      tokenC.address
+    );
 
     let reserveRatioAfter = await pool.calculateReserveRatio();
 
@@ -656,8 +702,6 @@ contract("ReserveRatio", (accounts) => {
     poolDReserves = fromWeiToNumber(poolDReserves);
 
     let totalReserves = poolCReserves + poolDReserves;
-
-    console.log("totalReserves " + totalReserves);
 
     let reserve0 = await pool.reserve0();
     reserve0 = fromWeiToNumber(reserve0);

@@ -8,7 +8,7 @@ const PoolAddress = artifacts.require("PoolAddress");
 
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
 
-contract("Pool address", (accounts) => {
+contract("Base", (accounts) => {
   function fromWeiToNumber(number) {
     return parseFloat(web3.utils.fromWei(number, "ether")).toFixed(6) * 1;
   }
@@ -37,6 +37,10 @@ contract("Pool address", (accounts) => {
 
     tokenB = await ERC20.new("tokenB", "B", issueAmount, accounts[0]);
 
+    tokenC = await ERC20.new("tokenC", "C", issueAmount, accounts[0]);
+
+    tokenD = await ERC20.new("tokenD", "D", issueAmount, accounts[0]);
+
     vPairFactoryInstance = await vPairFactory.deployed();
     vRouterInstance = await vRouter.deployed();
     vSwapLibraryInstance = await vSwapLibrary.deployed();
@@ -45,60 +49,27 @@ contract("Pool address", (accounts) => {
 
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
+    await tokenC.approve(vRouterInstance.address, issueAmount);
+  });
 
-    const futureTs = await getFutureBlockTimestamp();
+  // it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
+  //   let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
+  //   let calculated = await vPairFactoryInstance.getInitCodeHash();
 
-    //create pool A/B with 10,000 A and equivalent B
-    let AInput = 10000 * A_PRICE;
-    let BInput = (B_PRICE / A_PRICE) * AInput;
+  //   console.log("calculated " + calculated);
 
-    await vRouterInstance.addLiquidity(
-      tokenA.address,
-      tokenB.address,
-      web3.utils.toWei(AInput.toString(), "ether"),
-      web3.utils.toWei(BInput.toString(), "ether"),
-      web3.utils.toWei(AInput.toString(), "ether"),
-      web3.utils.toWei(BInput.toString(), "ether"),
-      accounts[0],
-      futureTs
-    );
+  //   assert.equal(INIT_CODE_HASH, calculated);
+  // });
 
-    //whitelist tokens in pools
-    //pool 1
-    const address = await vPairFactoryInstance.getPair(
+  it("Should create pool vFactory", async () => {
+    await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
+
+    let pairAddress = await vPairFactoryInstance.getPair(
       tokenA.address,
       tokenB.address
     );
-    console.log("AB address: " + address);
-    const pool = await vPair.at(address);
 
-    //whitelist token C
-    let reserve0 = await pool.reserve0();
-    let reserve1 = await pool.reserve1();
-
-    reserve0 = fromWeiToNumber(reserve0);
-    reserve1 = fromWeiToNumber(reserve1);
-
-    // console.log("pool1: A/B: " + reserve0 + "/" + reserve1);
-  });
-
-  function buildCreate2Address(creatorAddress, saltHex, byteCode) {
-    return `0x${web3.utils
-      .sha3(
-        `0x${["ff", creatorAddress, saltHex, web3.utils.sha3(byteCode)]
-          .map((x) => x.replace(/0x/, ""))
-          .join("")}`
-      )
-      .slice(-40)}`.toLowerCase();
-  }
-
-  it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
-    let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
-    let calculated = await vPairFactoryInstance.getInitCodeHash();
-
-    console.log("calculated " + calculated);
-
-    assert.equal(INIT_CODE_HASH, calculated);
+    assert(pairAddress > 0);
   });
 
   it("Should compute tokenA / tokenB pool address", async () => {
@@ -113,5 +84,24 @@ contract("Pool address", (accounts) => {
     );
 
     assert.equal(poolAddress, calculated);
+  });
+
+  it("Should create pool vRouter", async () => {
+    const futureTs = await getFutureBlockTimestamp();
+
+    //create pool A/B with 10,000 A and equivalent B
+    let AInput = 10000 * A_PRICE;
+    let BInput = (B_PRICE / A_PRICE) * AInput;
+
+    await vRouterInstance.addLiquidity(
+      tokenB.address,
+      tokenC.address,
+      web3.utils.toWei(AInput.toString(), "ether"),
+      web3.utils.toWei(BInput.toString(), "ether"),
+      web3.utils.toWei(AInput.toString(), "ether"),
+      web3.utils.toWei(BInput.toString(), "ether"),
+      accounts[0],
+      futureTs
+    );
   });
 });

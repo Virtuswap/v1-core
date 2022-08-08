@@ -4,6 +4,7 @@ const vPairFactory = artifacts.require("vPairFactory");
 const vSwapLibrary = artifacts.require("vSwapLibrary");
 const { catchRevert } = require("./exceptions");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
+const { getEncodedSwapData } = require("./utils");
 
 contract("vRouter", (accounts) => {
   function fromWeiToNumber(number) {
@@ -106,7 +107,7 @@ contract("vRouter", (accounts) => {
     reserve0 = fromWeiToNumber(reserve0);
     reserve1 = fromWeiToNumber(reserve1);
 
-    console.log("pool1: A/B: " + reserve0 + "/" + reserve1);
+    // console.log("pool1: A/B: " + reserve0 + "/" + reserve1);
 
     // pool 2
     const address2 = await vPairFactoryInstance.getPair(
@@ -124,7 +125,7 @@ contract("vRouter", (accounts) => {
     reserve0Pool2 = fromWeiToNumber(reserve0Pool2);
     reserve1Pool2 = fromWeiToNumber(reserve1Pool2);
 
-    console.log("pool2: A/C: " + reserve0Pool2 + "/" + reserve1Pool2);
+    // console.log("pool2: A/C: " + reserve0Pool2 + "/" + reserve1Pool2);
 
     // pool 3
     const address3 = await vPairFactoryInstance.getPair(
@@ -142,7 +143,7 @@ contract("vRouter", (accounts) => {
     reserve0Pool3 = fromWeiToNumber(reserve0Pool3);
     reserve1Pool3 = fromWeiToNumber(reserve1Pool3);
 
-    console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
+    // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
   });
 
   it("Should quote A to B", async () => {
@@ -348,27 +349,6 @@ contract("vRouter", (accounts) => {
       "Not equal"
     );
   });
-
-  function getEncodedSwapData(payer, tokenIn, token0, token1, tokenInMax) {
-    return web3.eth.abi.encodeParameter(
-      {
-        SwapCallbackData: {
-          payer: "address",
-          tokenIn: "address",
-          token0: "address",
-          token1: "address",
-          tokenInMax: "uint256",
-        },
-      },
-      {
-        payer,
-        tokenIn,
-        token0,
-        token1,
-        tokenInMax,
-      }
-    );
-  }
 
   it("Should swap C to A on pool A/C", async () => {
     const poolAddress = await vPairFactoryInstance.getPair(
