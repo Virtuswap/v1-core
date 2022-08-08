@@ -4,9 +4,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
 import "../interfaces/IvPair.sol";
 
-import "./constants.sol";
-
 library vSwapLibrary {
+    uint24 internal constant PRICE_FEE_FACTOR = 10**3;
+
     //find common token and assign to ikToken1 and jkToken1
     function findCommonToken(
         address ikToken0,
@@ -61,8 +61,7 @@ library vSwapLibrary {
         uint256 reserveOut,
         uint256 fee
     ) internal pure returns (uint256 amountIn) {
-        uint256 numerator = (reserveIn * amountOut) *
-            Constants.PRICE_FEE_FACTOR;
+        uint256 numerator = (reserveIn * amountOut) * PRICE_FEE_FACTOR;
         uint256 denominator = (reserveOut - amountOut) * fee;
         amountIn = (numerator / denominator) + 1;
     }
@@ -75,8 +74,7 @@ library vSwapLibrary {
     ) internal pure returns (uint256 amountOut) {
         uint256 amountInWithFee = amountIn * fee;
         uint256 numerator = amountInWithFee * reserveOut;
-        uint256 denominator = (reserveIn * Constants.PRICE_FEE_FACTOR) +
-            amountInWithFee;
+        uint256 denominator = (reserveIn * PRICE_FEE_FACTOR) + amountInWithFee;
         amountOut = numerator / denominator;
     }
 

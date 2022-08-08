@@ -10,12 +10,14 @@ import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
 
 import "./libraries/vSwapLibrary.sol";
-import "./libraries/constants.sol";
 
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
-    uint256 internal constant RESERVE_RATIO_WHOLE = (10**3) * 100 * 1e18;
+    uint24 internal constant BASE_FACTOR = 10**3;
+    uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
+    uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
+    uint256 internal constant RESERVE_RATIO_WHOLE = BASE_FACTOR * 100 * 1e18;
 
     address public factory;
 
@@ -221,7 +223,6 @@ contract vPair is IvPair, vSwapERC20 {
         );
     }
 
-    ///### DONT TOUCH // TBDDD
     function swapReserveToNative(
         uint256 amountOut,
         address ikPair,
@@ -316,7 +317,7 @@ contract vPair is IvPair, vSwapERC20 {
             }
         }
 
-        rRatio *= Constants.RESERVE_RATIO_FACTOR;
+        rRatio *= RESERVE_RATIO_FACTOR;
     }
 
     function mint(address to)
@@ -333,10 +334,8 @@ contract vPair is IvPair, vSwapERC20 {
 
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
-            liquidity =
-                Math.sqrt(amount0 * amount1) -
-                Constants.MINIMUM_LIQUIDITY;
-            _mint(address(0), Constants.MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
+            liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
+            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
         } else {
             liquidity = Math.min(
                 (amount0 * _totalSupply) / _reserve0,
