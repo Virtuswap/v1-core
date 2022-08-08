@@ -14,6 +14,8 @@ interface IvPair {
 
     event Sync(uint256 balance0, uint256 balance1);
 
+    event ReserveSync(address asset, uint256 balance);
+
     function fee() external view returns (uint24);
 
     function vFee() external view returns (uint24);
