@@ -52,6 +52,15 @@ contract("Base", (accounts) => {
     await tokenC.approve(vRouterInstance.address, issueAmount);
   });
 
+  it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
+    let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
+    let calculated = await vPairFactoryInstance.getInitCodeHash();
+
+    console.log("calculated " + calculated);
+
+    assert.equal(INIT_CODE_HASH, calculated);
+  });
+
   it("Should create pool vFactory", async () => {
     await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
 
@@ -59,6 +68,22 @@ contract("Base", (accounts) => {
       tokenA.address,
       tokenB.address
     );
+
+    assert(pairAddress > 0);
+  });
+
+  it("Should compute tokenA / tokenB pool address", async () => {
+    let poolAddress = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenB.address
+    );
+    let calculated = await PoolAddressInstance.computeAddress(
+      vPairFactoryInstance.address,
+      tokenA.address,
+      tokenB.address
+    );
+
+    assert.equal(poolAddress, calculated);
   });
 
   it("Should create pool vRouter", async () => {
@@ -68,22 +93,9 @@ contract("Base", (accounts) => {
     let AInput = 10000 * A_PRICE;
     let BInput = (B_PRICE / A_PRICE) * AInput;
 
-    let pairAddress = await vPairFactoryInstance.getPair(
-      tokenA.address,
-      tokenB.address
-    );
-
-    let lpToken = await ERC20.at(pairAddress);
-
-    let balanceOf = await lpToken.balanceOf(accounts[0]);
-
-    let pool = await vPair.at(pairAddress);
-
-    let RR = await pool.calculateReserveRatio()
-
     await vRouterInstance.addLiquidity(
-      tokenA.address,
       tokenB.address,
+      tokenC.address,
       web3.utils.toWei(AInput.toString(), "ether"),
       web3.utils.toWei(BInput.toString(), "ether"),
       web3.utils.toWei(AInput.toString(), "ether"),
