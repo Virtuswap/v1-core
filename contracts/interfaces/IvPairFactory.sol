@@ -19,7 +19,6 @@ interface IvPairFactory {
     function getPair(address tokenA, address tokenB)
         external
         view
-        virtual
         returns (address);
 
     function setExchangeReservesAddress(address _exchangeReserves) external;
