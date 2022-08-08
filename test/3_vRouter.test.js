@@ -4,6 +4,7 @@ const vPairFactory = artifacts.require("vPairFactory");
 const vSwapLibrary = artifacts.require("vSwapLibrary");
 const { catchRevert } = require("./exceptions");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
+const { getEncodedSwapData } = require("./utils");
 
 contract("vRouter", (accounts) => {
   function fromWeiToNumber(number) {
@@ -348,27 +349,6 @@ contract("vRouter", (accounts) => {
       "Not equal"
     );
   });
-
-  function getEncodedSwapData(payer, tokenIn, token0, token1, tokenInMax) {
-    return web3.eth.abi.encodeParameter(
-      {
-        SwapCallbackData: {
-          payer: "address",
-          tokenIn: "address",
-          token0: "address",
-          token1: "address",
-          tokenInMax: "uint256",
-        },
-      },
-      {
-        payer,
-        tokenIn,
-        token0,
-        token1,
-        tokenInMax,
-      }
-    );
-  }
 
   it("Should swap C to A on pool A/C", async () => {
     const poolAddress = await vPairFactoryInstance.getPair(

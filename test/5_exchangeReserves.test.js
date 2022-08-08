@@ -7,6 +7,7 @@ const vSwapLibrary = artifacts.require("vSwapLibrary");
 const exchangeReserves = artifacts.require("exchangeReserves");
 
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
+const { getEncodedSwapData } = require("./utils");
 
 contract("exchangeReserves", (accounts) => {
   function fromWeiToNumber(number) {
@@ -17,27 +18,6 @@ contract("exchangeReserves", (accounts) => {
     const blockNumber = await web3.eth.getBlockNumber();
     const block = await web3.eth.getBlock(blockNumber);
     return block.timestamp + 1000000;
-  }
-
-  function getEncodedSwapData(payer, tokenIn, token0, token1, tokenInMax) {
-    return web3.eth.abi.encodeParameter(
-      {
-        SwapCallbackData: {
-          payer: "address",
-          tokenIn: "address",
-          token0: "address",
-          token1: "address",
-          tokenInMax: "uint256",
-        },
-      },
-      {
-        payer,
-        tokenIn,
-        token0,
-        token1,
-        tokenInMax,
-      }
-    );
   }
 
   const A_PRICE = 1;
@@ -65,13 +45,31 @@ contract("exchangeReserves", (accounts) => {
     vSwapLibraryInstance = await vSwapLibrary.deployed();
     vExchangeReserves = await exchangeReserves.deployed();
 
+    tokenA.transfer(
+      vExchangeReserves.address,
+      web3.utils.toWei("10000", "ether")
+    );
+    tokenB.transfer(
+      vExchangeReserves.address,
+      web3.utils.toWei("10000", "ether")
+    );
+
+    tokenC.transfer(
+      vExchangeReserves.address,
+      web3.utils.toWei("10000", "ether")
+    );
+    tokenD.transfer(
+      vExchangeReserves.address,
+      web3.utils.toWei("10000", "ether")
+    );
+
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
     await tokenC.approve(vRouterInstance.address, issueAmount);
     await tokenD.approve(vRouterInstance.address, issueAmount);
 
     await vPairFactoryInstance.setExchangeReservesAddress(
-      vExchangeReserves.address
+      exchangeReserves.address
     );
 
     const futureTs = await getFutureBlockTimestamp();
@@ -261,9 +259,6 @@ contract("exchangeReserves", (accounts) => {
       futureTs
     );
 
-    let amountCInReserve = await pool.reserves(tokenC.address);
-    console.log("amount of C in pool A/B " + amountCInReserve);
-
     let reserveRatioAfter = await pool.calculateReserveRatio();
 
     expect(fromWeiToNumber(reserveRatioBefore)).to.lessThan(
@@ -289,7 +284,7 @@ contract("exchangeReserves", (accounts) => {
 
     const pool = await vPair.at(jkPair);
 
-    let amountOut = web3.utils.toWei("1", "ether");
+    let amountOut = web3.utils.toWei("10", "ether");
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       jkPair,
@@ -326,9 +321,6 @@ contract("exchangeReserves", (accounts) => {
       futureTs
     );
 
-    let amountAInReserve = await pool.reserves(tokenA.address);
-    console.log("amount of A in pool B/C " + amountAInReserve);
-
     let reserveRatioAfter = await pool.calculateReserveRatio();
 
     expect(fromWeiToNumber(reserveRatioBefore)).to.lessThan(
@@ -341,72 +333,138 @@ contract("exchangeReserves", (accounts) => {
     );
   });
 
-  //   struct ExchangeReserveCallbackParams {
-  //     address jkPair2;
-  //     bytes swapEncoded;
-  // }
-
-  function getEncodedExchangeReserveCallbackParams(jkPair2, swapEncoded) {
+  function getEncodedExchangeReserveCallbackParams(jkPair1, jkPair2, ikPair2) {
     return web3.eth.abi.encodeParameter(
       {
         SwapCallbackData: {
+          jkPair1: "address",
           jkPair2: "address",
-          swapEncoded: "bytes",
+          ikPair2: "address",
         },
       },
       {
+        jkPair1,
         jkPair2,
-        swapEncoded,
+        ikPair2,
       }
     );
   }
 
   it("Should exchange reserves A<>C -> A goes from B/C to A/B, C goes from A/B to B/C", async () => {
     //get amount of A in pool B/C
-    const jkPair = await vPairFactoryInstance.getPair(
-      tokenB.address,
-      tokenC.address
-    );
-
-    const ikPair = await vPairFactoryInstance.getPair(
+    const poolABAddress = await vPairFactoryInstance.getPair(
       tokenB.address,
       tokenA.address
     );
 
-    const pool = await vPair.at(jkPair);
-    const poolIK = await vPair.at(ikPair);
+    const poolBCAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address
+    );
 
-    let amountAInReserve = await pool.reserves(tokenA.address);
+    const poolAB = await vPair.at(poolABAddress);
+    const poolBC = await vPair.at(poolBCAddress);
 
-    console.log("amountAInReserve " + amountAInReserve);
+    let amountAInReserve = await poolBC.reserves(tokenA.address);
 
-    // get amount of C required to buy amount of A in reserve
+    // get amount of C required to buy amount of A in reserve of B/C
     let amountIn = await vRouterInstance.getVirtualAmountIn(
-      ikPair,
-      jkPair,
+      poolABAddress,
+      poolBCAddress,
       amountAInReserve
     );
 
-    console.log("amountIn " + amountIn);
+    let data = getEncodedExchangeReserveCallbackParams(
+      poolBCAddress, //jk1
+      poolABAddress, //jk2
+      poolBCAddress //ik2
+    );
 
-    let encodedABI = pool.contract.methods
-      .swapReserveToNative(amountAInReserve, ikPair, ikPair, [])
-      .encodeABI();
+    await tokenC.transfer(poolBCAddress, web3.utils.toWei("100", "ether"));
 
-    console.log("encodedABI " + encodedABI);
+    let aReserveInBC = await poolBC.reserves(tokenA.address);
+    let cReserveInAB = await poolAB.reserves(tokenC.address);
+    let poolABRR = await poolAB.calculateReserveRatio();
 
-    let data = getEncodedExchangeReserveCallbackParams(ikPair, encodedABI);
+    let tokenAReserveBaseValue = await poolBC.reservesBaseValue(tokenA.address);
+    let tokenCReserveBaseValue = await poolAB.reservesBaseValue(tokenC.address);
+
+    let poolBCRR = await poolBC.calculateReserveRatio();
+
+    console.log("C reserve in A/B: " + fromWeiToNumber(cReserveInAB));
+    // console.log("A reserve in B/C: " + fromWeiToNumber(aReserveInBC));
+
+    // console.log(
+    //   "A reserve base value in B/C: " + fromWeiToNumber(tokenAReserveBaseValue)
+    // );
+
+    console.log(
+      "C reserve base value in A/B: " + fromWeiToNumber(tokenCReserveBaseValue)
+    );
+
+    // console.log("B/C reserve ratio: " + fromWeiToNumber(poolBCRR));
+    console.log("A/B reserve ratio: " + fromWeiToNumber(poolABRR));
 
     //get flash swap of amount required amount C from pool BC.
     await vExchangeReserves.exchange(
-      tokenB.address,
-      tokenC.address,
-      ikPair,
-      amountIn,
+      poolBCAddress, //jk1
+      poolABAddress, // ik1
+      poolABAddress, //jk2
+      amountAInReserve,
       data
     );
-    
-    console.log("amountIn " + amountIn);
-    console.log("amountAInReserve " + amountAInReserve);
+
+    let tokenAReserveBaseValueAfter = await poolBC.reservesBaseValue(
+      tokenA.address
+    );
+    let tokenCReserveBaseValueAfter = await poolAB.reservesBaseValue(
+      tokenC.address
+    );
+
+    console.log(
+      "C reserve base value in A/B after: " +
+        fromWeiToNumber(tokenCReserveBaseValueAfter)
+    );
+
+    // console.log(
+    //   "A reserve base value in B/C after: " + fromWeiToNumber(tokenAReserveBaseValueAfter)
+    // );
+    let aReserveInBCAfter = await poolBC.reserves(tokenA.address);
+    let cReserveInABAfter = await poolAB.reserves(tokenC.address);
+    let poolABRRAfter = await poolAB.calculateReserveRatio();
+
+    let poolBCRRAfter = await poolBC.calculateReserveRatio();
+    console.log(
+      "C reserve in A/B after: " + fromWeiToNumber(cReserveInABAfter)
+    );
+
+    // console.log(
+    //   "A reserve in B/C after: " + fromWeiToNumber(aReserveInBCAfter)
+    // );
+
+    // console.log("B/C reserve ratio after: " + fromWeiToNumber(poolBCRRAfter));
+    console.log("A/B reserve ratio after: " + fromWeiToNumber(poolABRRAfter));
+
+    assert.equal(aReserveInBCAfter, 0);
+
+    expect(fromWeiToNumber(poolABRRAfter)).to.lessThan(
+      fromWeiToNumber(poolABRR)
+    );
+
+    expect(fromWeiToNumber(poolBCRRAfter)).to.lessThan(
+      fromWeiToNumber(poolBCRR)
+    );
+
+    expect(fromWeiToNumber(tokenAReserveBaseValueAfter)).to.lessThan(
+      fromWeiToNumber(tokenAReserveBaseValue)
+    );
+
+    expect(fromWeiToNumber(aReserveInBCAfter)).to.lessThan(
+      fromWeiToNumber(aReserveInBC)
+    );
+
+    expect(fromWeiToNumber(cReserveInABAfter)).to.lessThan(
+      fromWeiToNumber(cReserveInAB)
+    );
   });
 });

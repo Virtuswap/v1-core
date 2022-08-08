@@ -1,6 +1,7 @@
 const { solidity } = require("ethereum-waffle");
 const chai = require("chai");
 const { assert } = require("chai");
+const { getEncodedSwapData } = require("./utils");
 
 const vRouter = artifacts.require("vRouter");
 // const FlashSwapExample = artifacts.require("flashSwapExample");
@@ -308,6 +309,69 @@ contract("vPair", (accounts) => {
     );
     expect(fromWeiToNumber(bBalanceWalletBefore)).to.be.above(
       fromWeiToNumber(bBalanceWalletAfter)
+    );
+  });
+
+  it("Should swap reserve-to-native A to C on pool A/B", async () => {
+    await vPairFactoryInstance.setExchangeReservesAddress(accounts[0]);
+
+    const abPoolAddress = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenB.address
+    );
+
+    const bcPoolAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address
+    );
+
+    const bcPool = await vPair.at(bcPoolAddress);
+    const abPool = await vPair.at(abPoolAddress);
+
+    let amountOut = await bcPool.reserves(tokenA.address);
+
+    console.log("amount of A in pool B/C " + amountOut);
+
+    let amountIn = await vRouterInstance.getVirtualAmountIn(
+      abPoolAddress,
+      bcPoolAddress,
+      amountOut
+    );
+
+    let reserveRatioBefore = await bcPool.calculateReserveRatio();
+    let tokenAReserve = await bcPool.reservesBaseValue(tokenA.address);
+
+    //Conversion errors of weiToNumber
+    amountIn = web3.utils.toWei(
+      (fromWeiToNumber(amountIn.toString()) * 1.001).toFixed(5),
+      "ether"
+    );
+
+    let data = getEncodedSwapData(
+      accounts[0],
+      tokenA.address,
+      tokenB.address,
+      tokenC.address,
+      amountIn
+    );
+
+    await tokenC.transfer(abPool.address, amountIn);
+
+    await abPool.swapNativeToReserve(amountOut, bcPoolAddress, accounts[0], []);
+
+    let amountAInReserve = await bcPool.reserves(tokenA.address);
+
+    console.log("amount of A in pool B/C " + amountAInReserve);
+
+    let reserveRatioAfter = await bcPool.calculateReserveRatio();
+
+    expect(fromWeiToNumber(reserveRatioAfter)).to.lessThan(
+      fromWeiToNumber(reserveRatioBefore)
+    );
+
+    let tokenAReserveAfter = await bcPool.reservesBaseValue(tokenA.address);
+    expect(fromWeiToNumber(tokenAReserveAfter)).to.lessThan(
+      fromWeiToNumber(tokenAReserve)
     );
   });
 

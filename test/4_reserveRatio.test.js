@@ -3,32 +3,13 @@ const vPair = artifacts.require("vPair");
 const vPairFactory = artifacts.require("vPairFactory");
 const vSwapLibrary = artifacts.require("vSwapLibrary");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
+const { getEncodedSwapData } = require("./utils");
+
 
 contract("ReserveRatio", (accounts) => {
   function fromWeiToNumber(number) {
     return (
       parseFloat(web3.utils.fromWei(number.toString(), "ether")).toFixed(6) * 1
-    );
-  }
-
-  function getEncodedSwapData(payer, tokenIn, token0, token1, tokenInMax) {
-    return web3.eth.abi.encodeParameter(
-      {
-        SwapCallbackData: {
-          payer: "address",
-          tokenIn: "address",
-          token0: "address",
-          token1: "address",
-          tokenInMax: "uint256",
-        },
-      },
-      {
-        payer,
-        tokenIn,
-        token0,
-        token1,
-        tokenInMax,
-      }
     );
   }
 
