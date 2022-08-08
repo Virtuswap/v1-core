@@ -14,10 +14,10 @@ import "./libraries/vSwapLibrary.sol";
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
-    uint24 internal constant BASE_FACTOR = 10**3;
+    uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
-    uint256 internal constant RESERVE_RATIO_WHOLE = BASE_FACTOR * 100 * 1e18;
+    uint256 internal constant RESERVE_RATIO_WHOLE = (10**3) * 100 * 1e18;
 
     address public factory;
 
