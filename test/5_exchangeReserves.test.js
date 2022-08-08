@@ -7,7 +7,10 @@ const vSwapLibrary = artifacts.require("vSwapLibrary");
 const exchangeReserves = artifacts.require("exchangeReserves");
 
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
-const { getEncodedSwapData } = require("./utils");
+const {
+  getEncodedSwapData,
+  getEncodedExchangeReserveCallbackParams,
+} = require("./utils");
 
 contract("exchangeReserves", (accounts) => {
   function fromWeiToNumber(number) {
@@ -333,23 +336,6 @@ contract("exchangeReserves", (accounts) => {
     );
   });
 
-  function getEncodedExchangeReserveCallbackParams(jkPair1, jkPair2, ikPair2) {
-    return web3.eth.abi.encodeParameter(
-      {
-        SwapCallbackData: {
-          jkPair1: "address",
-          jkPair2: "address",
-          ikPair2: "address",
-        },
-      },
-      {
-        jkPair1,
-        jkPair2,
-        ikPair2,
-      }
-    );
-  }
-
   it("Should exchange reserves A<>C -> A goes from B/C to A/B, C goes from A/B to B/C", async () => {
     //get amount of A in pool B/C
     const poolABAddress = await vPairFactoryInstance.getPair(
@@ -366,13 +352,6 @@ contract("exchangeReserves", (accounts) => {
     const poolBC = await vPair.at(poolBCAddress);
 
     let amountAInReserve = await poolBC.reserves(tokenA.address);
-
-    // get amount of C required to buy amount of A in reserve of B/C
-    let amountIn = await vRouterInstance.getVirtualAmountIn(
-      poolABAddress,
-      poolBCAddress,
-      amountAInReserve
-    );
 
     let data = getEncodedExchangeReserveCallbackParams(
       poolBCAddress, //jk1
