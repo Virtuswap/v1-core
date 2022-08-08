@@ -312,7 +312,7 @@ contract("vPair", (accounts) => {
     );
   });
 
-  it("Should swap reserve-to-native A to C on pool A/B", async () => {
+  it("Should swap native-to-reserve A to C on pool A/B", async () => {
     await vPairFactoryInstance.setExchangeReservesAddress(accounts[0]);
 
     const abPoolAddress = await vPairFactoryInstance.getPair(
@@ -328,16 +328,16 @@ contract("vPair", (accounts) => {
     const bcPool = await vPair.at(bcPoolAddress);
     const abPool = await vPair.at(abPoolAddress);
 
-    let amountOut = await bcPool.reserves(tokenA.address);
+    let amountOut = await abPool.reserves(tokenC.address);
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
-      abPoolAddress,
       bcPoolAddress,
+      abPoolAddress,
       amountOut
     );
 
-    let reserveRatioBefore = await bcPool.calculateReserveRatio();
-    let tokenAReserve = await bcPool.reservesBaseValue(tokenA.address);
+    let reserveRatioBefore = await abPool.calculateReserveRatio();
+    let tokenAReserve = await abPool.reservesBaseValue(tokenC.address);
 
     //Conversion errors of weiToNumber
     amountIn = web3.utils.toWei(
@@ -345,27 +345,17 @@ contract("vPair", (accounts) => {
       "ether"
     );
 
-    let data = getEncodedSwapData(
-      accounts[0],
-      tokenA.address,
-      tokenB.address,
-      tokenC.address,
-      amountIn
-    );
-
-    await tokenC.transfer(abPool.address, amountIn);
+    await tokenA.transfer(abPool.address, amountIn);
 
     await abPool.swapNativeToReserve(amountOut, bcPoolAddress, accounts[0], []);
 
-    let amountAInReserve = await bcPool.reserves(tokenA.address);
-
-    let reserveRatioAfter = await bcPool.calculateReserveRatio();
+    let reserveRatioAfter = await abPool.calculateReserveRatio();
 
     expect(fromWeiToNumber(reserveRatioAfter)).to.lessThan(
       fromWeiToNumber(reserveRatioBefore)
     );
 
-    let tokenAReserveAfter = await bcPool.reservesBaseValue(tokenA.address);
+    let tokenAReserveAfter = await abPool.reservesBaseValue(tokenC.address);
     expect(fromWeiToNumber(tokenAReserveAfter)).to.lessThan(
       fromWeiToNumber(tokenAReserve)
     );
