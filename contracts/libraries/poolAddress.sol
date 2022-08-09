@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 library PoolAddress {
     
     bytes32 public constant POOL_INIT_CODE_HASH =
-        0x7ef879f5a034852d2a3df6b66371a8505a2e89643cc5475aba1220af018922dc;
+        0xc8810afa7f880b1fbbc6dd530731725f8af2215b4fc2c12c507d3a3324558e66;
 
     function orderAddresses(address tokenA, address tokenB)
         internal

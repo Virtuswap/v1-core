@@ -56,6 +56,9 @@ contract("Base", (accounts) => {
     let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
     let calculated = await vPairFactoryInstance.getInitCodeHash();
 
+    console.log('calculated ' + calculated);
+
+
     assert.equal(INIT_CODE_HASH, calculated);
   });
 
