@@ -52,6 +52,13 @@ contract("Base", (accounts) => {
     await tokenC.approve(vRouterInstance.address, issueAmount);
   });
 
+  it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
+    let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
+    let calculated = await vPairFactoryInstance.getInitCodeHash();
+
+    assert.equal(INIT_CODE_HASH, calculated);
+  });
+
   it("Should create pool vFactory", async () => {
     await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
 
