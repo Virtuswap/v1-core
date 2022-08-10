@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
+import "../interfaces/IvPairFactory.sol";
+
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
-    
-    bytes32 internal constant POOL_INIT_CODE_HASH =
-        0x7ef879f5a034852d2a3df6b66371a8505a2e89643cc5475aba1220af018922dc;
+    //use in PROD
+    // bytes32 public constant POOL_INIT_CODE_HASH =
+    //     0x7ef879f5a034852d2a3df6b66371a8505a2e89643cc5475aba1220af018922dc;
 
     function orderAddresses(address tokenA, address tokenB)
         internal
@@ -24,6 +26,11 @@ library PoolAddress {
         salt = keccak256(abi.encode(token0, token1));
     }
 
+    //FOR TESTS ONLY
+    function POOL_HASH_CODE(address factory) internal pure returns (bytes32) {
+        return IvPairFactory(factory).getInitCodeHash();
+    }
+
     function computeAddress(
         address factory,
         address token0,
@@ -39,7 +46,7 @@ library PoolAddress {
                             bytes1(0xff),
                             factory,
                             _salt,
-                            POOL_INIT_CODE_HASH
+                            POOL_HASH_CODE(factory) //    //FOR TESTS ONLY
                         )
                     )
                 )
@@ -47,4 +54,3 @@ library PoolAddress {
         );
     }
 }
-
