@@ -22,7 +22,4 @@ interface IvPairFactory {
         returns (address);
 
     function setExchangeReservesAddress(address _exchangeReserves) external;
-
-    // FOR TESTS ONLY
-    function getInitCodeHash() external pure returns (bytes32);
 }
