@@ -6,8 +6,8 @@ import "../interfaces/IvPairFactory.sol";
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
     //use in PROD
-    // bytes32 public constant POOL_INIT_CODE_HASH =
-    //     0x7ef879f5a034852d2a3df6b66371a8505a2e89643cc5475aba1220af018922dc;
+    bytes32 public constant POOL_INIT_CODE_HASH =
+        0x274415a0a543b74138c7613ae562922b86e830ed6f5b8a9f0f674d09b80af7c1;
 
     function orderAddresses(address tokenA, address tokenB)
         internal
@@ -26,11 +26,6 @@ library PoolAddress {
         salt = keccak256(abi.encode(token0, token1));
     }
 
-    //FOR TESTS ONLY
-    function POOL_HASH_CODE(address factory) internal pure returns (bytes32) {
-        return IvPairFactory(factory).getInitCodeHash();
-    }
-
     function computeAddress(
         address factory,
         address token0,
@@ -46,7 +41,7 @@ library PoolAddress {
                             bytes1(0xff),
                             factory,
                             _salt,
-                            POOL_HASH_CODE(factory) //    //FOR TESTS ONLY
+                            POOL_INIT_CODE_HASH
                         )
                     )
                 )

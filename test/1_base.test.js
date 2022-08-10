@@ -54,20 +54,6 @@ contract("Base", (accounts) => {
     await tokenC.approve(vRouterInstance.address, issueAmount);
   });
 
-  // it("Should assure PoolAddress POOL_INIT_CODE_HASH is correct", async () => {
-  //   let INIT_CODE_HASH = await PoolAddressInstance.POOL_INIT_CODE_HASH();
-  //   let calculated = await vPairFactoryInstance.getInitCodeHash();
-
-  //   let localCalc = soliditySha3(vPair.bytecode);
-  //   let localCalc2 = utils.keccak256(vPair.bytecode);
-
-  //   console.log("localCalc2: " + localCalc2);
-  //   console.log("localCalc: " + localCalc);
-  //   console.log("calculated: " + calculated);
-
-  //   assert.equal(INIT_CODE_HASH, calculated);
-  // });
-
   it("Should create pool vFactory", async () => {
     await vPairFactoryInstance.createPair(tokenA.address, tokenB.address);
 
