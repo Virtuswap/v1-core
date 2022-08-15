@@ -2,16 +2,17 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
-    "@typechain/hardhat": "^6.1.2", 
     "@openzeppelin/contracts": "^4.7.0",
     "@openzeppelin/test-helpers": "^0.5.15",
-    "@uniswap/lib": "^4.0.1-alpha",
+    "@typechain/hardhat": "^6.1.2",
     "@types/chai": "^4.3.1",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.6.3",
+    "@uniswap/lib": "^4.0.1-alpha",
     "chai": "^4.3.6",
     "hardhat": "^2.10.1",
     "ts-node": "^10.9.1",
+    "typechain": "^8.1.0",
     "typescript": "^4.7.4"
   }
 }
