@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import { extractStringEnvVar } from "./utilities/util";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -11,6 +12,11 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  networks: {
+    quicknodeTestWS: {
+      url: extractStringEnvVar("QUICKNODE_WS")
+    }
+  }
 };
 
 export default config;
