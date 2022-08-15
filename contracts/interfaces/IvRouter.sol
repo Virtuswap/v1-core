@@ -1,22 +1,30 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;  
+pragma solidity ^0.8.0;
 import "../types.sol";
+import "./IvFlashSwapCallback.sol";
 
-interface IvRouter {
+interface IvRouter is IvFlashSwapCallback {
     function changeFactory(address factory) external;
 
     function factory() external view returns (address);
 
     function owner() external view returns (address);
 
-    function swap(
-        address[] calldata pools,
-        uint256[] calldata amountsIn,
-        uint256[] calldata amountsOut,
-        address[] calldata iks,
-        address inputToken,
-        address outputToken,
+    function swapToExactNative(
+        address tokenA,
+        address tokenB,
+        uint256 amountOut,
         address to,
+        bytes calldata data,
+        uint256 deadline
+    ) external;
+
+    function swapReserveToExactNative(
+        address tokenA,
+        address tokenB,
+        address ikPair,
+        uint256 amountOut,
+        address to,
+        bytes calldata data,
         uint256 deadline
     ) external;
 
@@ -34,6 +42,7 @@ interface IvRouter {
         returns (
             uint256 amountA,
             uint256 amountB,
+            address pairAddress,
             uint256 liquidity
         );
 

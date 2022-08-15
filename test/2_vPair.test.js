@@ -1,9 +1,10 @@
 const { solidity } = require("ethereum-waffle");
 const chai = require("chai");
 const { assert } = require("chai");
+const { getEncodedSwapData } = require("./utils");
 
 const vRouter = artifacts.require("vRouter");
-const FlashSwapExample = artifacts.require("flashSwapExample");
+// const FlashSwapExample = artifacts.require("flashSwapExample");
 const vPair = artifacts.require("vPair");
 const ERC20 = artifacts.require("ERC20PresetFixedSupply");
 const vPairFactory = artifacts.require("vPairFactory");
@@ -168,22 +169,17 @@ contract("vPair", (accounts) => {
     //     reserve1Pool3
     // );
 
-    vFlashSwapExample = await FlashSwapExample.new(
-      vPairFactoryInstance.address,
-      vRouterInstance.address,
-      tokenA.address,
-      tokenB.address,
-      tokenC.address
-    );
+    // vFlashSwapExample = await FlashSwapExample.new(
+    //   vPairFactoryInstance.address,
+    //   vRouterInstance.address,
+    //   tokenA.address,
+    //   tokenB.address,
+    //   tokenC.address
+    // );
 
-    await tokenA.approve(vFlashSwapExample.address, issueAmount);
-    await tokenB.approve(vFlashSwapExample.address, issueAmount);
-    await tokenC.approve(vFlashSwapExample.address, issueAmount);
-
-    let allowance = await tokenA.allowance(
-      accounts[0],
-      vFlashSwapExample.address
-    );
+    // await tokenA.approve(vFlashSwapExample.address, issueAmount);
+    // await tokenB.approve(vFlashSwapExample.address, issueAmount);
+    // await tokenC.approve(vFlashSwapExample.address, issueAmount);
   });
 
   // it("Should flashswap buying B from A/B, swaping B (reserve) to A on pool A/C and payback loan to pool A/B", async function () {
@@ -317,54 +313,51 @@ contract("vPair", (accounts) => {
   });
 
   it("Should swap native-to-reserve A to C on pool A/B", async () => {
-    const aBalancePoolBefore = await tokenA.balanceOf(vPairInstance.address);
-    const bBalancePoolBefore = await tokenC.balanceOf(vPairInstance.address);
-    const aBalanceWalletBefore = await tokenA.balanceOf(accounts[0]);
-    const bBalanceWalletBefore = await tokenC.balanceOf(accounts[0]);
+    await vPairFactoryInstance.setExchangeReservesAddress(accounts[0]);
 
-    let aAmountOut = web3.utils.toWei("10", "ether");
-
-    let jkAddress = await vPairFactoryInstance.getPair(
-      tokenB.address,
-      tokenA.address
+    const abPoolAddress = await vPairFactoryInstance.getPair(
+      tokenA.address,
+      tokenB.address
     );
 
-    let ikAddress = await vPairFactoryInstance.getPair(
+    const bcPoolAddress = await vPairFactoryInstance.getPair(
       tokenB.address,
       tokenC.address
     );
 
+    const bcPool = await vPair.at(bcPoolAddress);
+    const abPool = await vPair.at(abPoolAddress);
+
+    let amountOut = await abPool.reserves(tokenC.address);
+
     let amountIn = await vRouterInstance.getVirtualAmountIn(
-      ikAddress,
-      jkAddress,
-      aAmountOut
+      bcPoolAddress,
+      abPoolAddress,
+      amountOut
     );
 
-    await tokenA.transfer(vPairInstance.address, amountIn);
+    let reserveRatioBefore = await abPool.calculateReserveRatio();
+    let tokenAReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    await vPairInstance.swapNativeToReserve(
-      aAmountOut,
-      ikAddress,
-      accounts[0],
-      []
+    //Conversion errors of weiToNumber
+    amountIn = web3.utils.toWei(
+      (fromWeiToNumber(amountIn.toString()) * 1.001).toFixed(5),
+      "ether"
     );
 
-    const aBalancePoolAfter = await tokenA.balanceOf(vPairInstance.address);
-    const bBalancePoolAfter = await tokenC.balanceOf(vPairInstance.address);
-    const aBalanceWalletAfter = await tokenA.balanceOf(accounts[0]);
-    const bBalanceWalletAfter = await tokenC.balanceOf(accounts[0]);
+    await tokenA.transfer(abPool.address, amountIn);
 
-    expect(fromWeiToNumber(aBalancePoolAfter)).to.be.above(
-      fromWeiToNumber(aBalancePoolBefore)
+    await abPool.swapNativeToReserve(amountOut, bcPoolAddress, accounts[0], []);
+
+    let reserveRatioAfter = await abPool.calculateReserveRatio();
+
+    expect(fromWeiToNumber(reserveRatioAfter)).to.lessThan(
+      fromWeiToNumber(reserveRatioBefore)
     );
-    expect(fromWeiToNumber(bBalancePoolAfter)).to.be.lessThan(
-      fromWeiToNumber(bBalancePoolBefore)
-    );
-    expect(fromWeiToNumber(aBalanceWalletAfter)).to.be.lessThan(
-      fromWeiToNumber(aBalanceWalletBefore)
-    );
-    expect(fromWeiToNumber(bBalanceWalletAfter)).to.be.above(
-      fromWeiToNumber(bBalanceWalletBefore)
+
+    let tokenAReserveAfter = await abPool.reservesBaseValue(tokenC.address);
+    expect(fromWeiToNumber(tokenAReserveAfter)).to.lessThan(
+      fromWeiToNumber(tokenAReserve)
     );
   });
 
@@ -509,6 +502,8 @@ contract("vPair", (accounts) => {
 
     expect(factoryAddress).to.be.equal(accounts[1]);
   });
+
+  ////////////////////////////////////////////////////////////////
 
   // });
   // // WIP
