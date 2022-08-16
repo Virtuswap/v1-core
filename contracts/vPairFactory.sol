@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./vPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvSwapPoolDeployer.sol";
-import "./libraries/poolAddress.sol";
+import "./libraries/PoolAddress.sol";
 import "./types.sol";
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
@@ -79,5 +79,9 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         onlyAdmin
     {
         exchangeReserves = _exchangeReserves;
+    }
+
+    function getInitCodeHash() public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(type(vPair).creationCode));
     }
 }

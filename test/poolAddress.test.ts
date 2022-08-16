@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { deployPools } from "../utilities/deployPools";
+import { deployPools } from "../fixtures/deployPools";
 
 describe("Pool address", function () {
 

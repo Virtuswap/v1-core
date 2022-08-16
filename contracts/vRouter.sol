@@ -8,7 +8,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./types.sol";
 import "./vPair.sol";
 import "./base/multicall.sol";
-import "./libraries/poolAddress.sol";
+import "./libraries/PoolAddress.sol";
 import "./libraries/vSwapLibrary.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
@@ -340,5 +340,13 @@ contract vRouter is IvRouter, Multicall {
 
     function changeFactory(address _factory) external override onlyOwner {
         factory = _factory;
+    }
+
+    function calculatePoolAddress(address tokenA, address tokenB)
+        external
+        view
+        returns (address)
+    {
+        return PoolAddress.computeAddress(factory, tokenA, tokenB);
     }
 }
