@@ -13,7 +13,6 @@ import _ from "lodash";
 import utils from "./utils";
 
 describe("vRouter", () => {
-  let accounts: any = [];
   let fixture: any = {};
 
   async function getFutureBlockTimestamp() {
@@ -27,10 +26,7 @@ describe("vRouter", () => {
   it("Should quote A to B", async () => {
     const abPool = fixture.abPool;
     const tokenA = fixture.tokenA;
-    const owner = fixture.owner;
     const tokenB = fixture.tokenB;
-    const tokenC = fixture.tokenC;
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     let input = ethers.utils.parseEther("14");
@@ -68,17 +64,11 @@ describe("vRouter", () => {
   });
 
   it("Should (amountIn(amountOut(x)) = x)", async () => {
-    const abPool = fixture.abPool;
     const tokenA = fixture.tokenA;
-    const owner = fixture.owner;
     const tokenB = fixture.tokenB;
-    const tokenC = fixture.tokenC;
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     let X = ethers.utils.parseEther("395");
-
-    const fee = 997;
 
     const amountIn = await vRouterInstance.getAmountIn(
       tokenA.address,
@@ -101,10 +91,7 @@ describe("vRouter", () => {
     const bcPool = fixture.bcPool;
 
     const tokenA = fixture.tokenA;
-    const owner = fixture.owner;
-    const tokenB = fixture.tokenB;
     const tokenC = fixture.tokenC;
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     const vPool = await vRouterInstance.getVirtualPool(
@@ -121,11 +108,8 @@ describe("vRouter", () => {
   it("Should calculate virtual pool B/C using A/B as oracle", async () => {
     const abPool = fixture.abPool;
     const acPool = fixture.acPool;
-    const tokenA = fixture.tokenA;
-    const owner = fixture.owner;
     const tokenB = fixture.tokenB;
     const tokenC = fixture.tokenC;
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     const vPool = await vRouterInstance.getVirtualPool(
@@ -323,7 +307,6 @@ describe("vRouter", () => {
     const owner = fixture.owner;
     const bcPool = fixture.bcPool;
 
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     const amountOut = ethers.utils.parseEther("100");
@@ -404,7 +387,6 @@ describe("vRouter", () => {
     const owner = fixture.owner;
 
     const bcPool = fixture.bcPool;
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     const _amountOut = ethers.utils.parseEther("10");
@@ -475,7 +457,6 @@ describe("vRouter", () => {
     const tokenC = fixture.tokenC;
     const owner = fixture.owner;
 
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     let pools = [fixture.acPool.address];
@@ -563,7 +544,6 @@ describe("vRouter", () => {
     const abPool = fixture.abPool;
     const owner = fixture.owner;
 
-    const vPairFactoryInstance = fixture.vPairFactoryInstance;
     const vRouterInstance = fixture.vRouterInstance;
 
     let amountADesired = ethers.utils.parseEther("1");
