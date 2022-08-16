@@ -357,8 +357,6 @@ describe("vRouter", () => {
       amountInTokenC
     );
 
-    const cReserve = await abPool.reserves(tokenC.address);
-
     let data = utils.getEncodedSwapData(
       owner.address,
       tokenA.address,
@@ -562,10 +560,6 @@ describe("vRouter", () => {
 
     const futureTs = await getFutureBlockTimestamp();
 
-    let lpBalance = await abPool.balanceOf(owner.address);
-
-    let poolRR = await abPool.calculateReserveRatio();
-
     await vRouterInstance.addLiquidity(
       tokenA.address,
       tokenB.address,
@@ -679,8 +673,6 @@ describe("vRouter", () => {
     let reserve1 = await abPool.reserve1();
 
     await abPool.approve(vRouterInstance.address, lpBalance);
-
-    const poolRRbefore = await abPool.calculateReserveRatio();
 
     const futureTs = await getFutureBlockTimestamp();
     await vRouterInstance.removeLiquidity(
