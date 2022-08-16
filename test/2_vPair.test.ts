@@ -2,7 +2,6 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { deployPools } from "../fixtures/deployPools";
-const ERC20FACTORY = ethers.getContractFactory("IERC20Metadata");
 import {
   IERC20Metadata__factory,
   VPair__factory,
@@ -14,7 +13,7 @@ describe("vPair", () => {
   let fixture: any = {};
 
   before(async function () {
-    fixture = await deployPools();
+    fixture = await loadFixture(deployPools);
   });
 
   it("Should swap native A to B on pool A/B", async () => {
@@ -261,7 +260,10 @@ describe("vPair", () => {
 
   it("Should not set whitelist if not admin", async () => {
     const abPool = fixture.abPool;
-    const abPoolSigner2 = VPair__factory.connect(abPool.address, fixture.accounts[2]);
+    const abPoolSigner2 = VPair__factory.connect(
+      abPool.address,
+      fixture.accounts[2]
+    );
 
     await expect(
       abPoolSigner2.setWhitelist(accounts.slice(1, 5))
