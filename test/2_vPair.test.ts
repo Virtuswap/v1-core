@@ -28,7 +28,6 @@ describe("vPair", () => {
     const bBalancePoolBefore = await tokenA.balanceOf(abPool.address);
     const aBalanceWalletBefore = await tokenB.balanceOf(owner.address);
     const bBalanceWalletBefore = await tokenA.balanceOf(owner.address);
-    console.log("aBalancePoolBefore " + aBalancePoolBefore);
     let aAmountOut = ethers.utils.parseEther("10");
 
     let amountIn = await fixture.vRouterInstance.getAmountIn(
@@ -49,8 +48,6 @@ describe("vPair", () => {
     expect(aBalancePoolBefore).to.be.above(aBalancePoolAfter);
     expect(bBalancePoolBefore).to.be.lessThan(bBalancePoolAfter);
 
-    console.log("aBalanceWalletBefore " + aBalanceWalletBefore);
-    console.log("aBalanceWalletAfter " + aBalanceWalletAfter);
     expect(aBalanceWalletBefore).to.be.lessThan(aBalanceWalletAfter);
     expect(bBalanceWalletBefore).to.be.above(bBalanceWalletAfter);
   });
@@ -136,7 +133,6 @@ describe("vPair", () => {
     expect(bBalanceWalletBefore).to.be.above(bBalanceWalletAfter);
 
     let amountOut = await abPool.reserves(tokenC.address);
-    console.log("amountOut " + amountOut);
   });
 
   it("Should swap native-to-reserve A to C on pool A/B", async () => {
@@ -152,7 +148,6 @@ describe("vPair", () => {
     await vPairFactoryInstance.setExchangeReservesAddress(owner.address);
 
     let amountOut = await abPool.reserves(tokenC.address);
-    console.log("amountOut " + amountOut);
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       bcPool.address,
@@ -163,14 +158,6 @@ describe("vPair", () => {
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenAReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    console.log("amountInBefore " + amountIn);
-
-    //Conversion errors of weiToNumber
-    // amountIn = ethers.utils.parseEther(
-    //   (amountIn.toNumber() * 1.001).toFixed(5)
-    // );
-
-    console.log("amountInAfter " + amountIn);
     await tokenA.transfer(abPool.address, amountIn);
 
     await abPool.swapNativeToReserve(
