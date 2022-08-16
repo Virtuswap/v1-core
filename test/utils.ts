@@ -1,11 +1,16 @@
 import { ethers } from "hardhat";
 const abi = ethers.utils.defaultAbiCoder;
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 export default {
   fromWeiToNumber: function (number: any) {
-    return parseFloat(parseFloat(ethers.utils.formatEther(number.toString())).toFixed(6));
+    return parseFloat(
+      parseFloat(ethers.utils.formatEther(number.toString())).toFixed(6)
+    );
   },
-
+  getFutureBlockTimestamp: async function () {
+    return (await time.latest()) + 1000000;
+  },
   getEncodedSwapData: function (
     payer: any,
     tokenIn: any,

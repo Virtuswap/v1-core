@@ -37,6 +37,7 @@ export async function deployPools() {
   const A_PRICE = 1;
   const B_PRICE = 3;
   const C_PRICE = 6;
+  const D_PRICE = 9;
 
   const erc20ContractFactory = await new ERC20PresetFixedSupply__factory(owner);
   const tokenA = await erc20ContractFactory.deploy(
@@ -58,6 +59,13 @@ export async function deployPools() {
     owner.address
   );
 
+  const tokenD = await erc20ContractFactory.deploy(
+    "tokenD",
+    "D",
+    issueAmount,
+    owner.address
+  );
+
   const vPairFactoryInstance = await new VPairFactory__factory(
     VPairFactory__factory.createInterface(),
     VPairFactory__factory.bytecode,
@@ -73,6 +81,7 @@ export async function deployPools() {
   await tokenA.approve(vRouterInstance.address, issueAmount);
   await tokenB.approve(vRouterInstance.address, issueAmount);
   await tokenC.approve(vRouterInstance.address, issueAmount);
+  await tokenD.approve(vRouterInstance.address, issueAmount);
 
   const futureTs = (await time.latest()) + 1000000;
 
@@ -120,6 +129,21 @@ export async function deployPools() {
     futureTs
   );
 
+  // create pool B/D
+  // create pool B/D with 20,000 B and equivalent C
+  BInput = 20000 * B_PRICE;
+  let DInput = (D_PRICE / B_PRICE) * BInput;
+  await vRouterInstance.addLiquidity(
+    tokenB.address,
+    tokenD.address,
+    ethers.utils.parseEther(BInput.toString()),
+    ethers.utils.parseEther(DInput.toString()),
+    ethers.utils.parseEther(BInput.toString()),
+    ethers.utils.parseEther(DInput.toString()),
+    owner.address,
+    futureTs
+  );
+
   // whitelist tokens in pools
 
   // pool 1
@@ -131,7 +155,7 @@ export async function deployPools() {
   const abPool = VPair__factory.connect(address1, owner);
 
   // whitelist token C
-  abPool.setWhitelist([tokenC.address]);
+  await abPool.setWhitelist([tokenC.address]);
 
   const reserve0Pool1 = await abPool.reserve0();
   const reserve1Pool1 = await abPool.reserve1();
@@ -178,16 +202,39 @@ export async function deployPools() {
   const pool3Reserve1 = ethers.utils.formatEther(reserve1Pool3);
 
   console.log("pool3: B/C: " + pool3Reserve0 + "/" + pool3Reserve1);
+
+  // pool 4
+  const address4 = await vPairFactoryInstance.getPair(
+    tokenD.address,
+    tokenB.address
+  );
+  console.log("AB address: " + address1);
+  const bdPool = VPair__factory.connect(address1, owner);
+
+  // whitelist token C
+  await bdPool.setWhitelist([tokenC.address]);
+
+  const reserve0Pool4 = await bdPool.reserve0();
+  const reserve1Pool4 = await bdPool.reserve1();
+
+  const pool4Reserve0 = ethers.utils.formatEther(reserve0Pool4);
+  const pool4Reserve1 = ethers.utils.formatEther(reserve1Pool4);
+
+  console.log("pool4: B/D: " + pool4Reserve0 + "/" + pool4Reserve1);
+
   return {
     tokenA,
     tokenB,
     tokenC,
+    tokenD,
     A_PRICE,
     B_PRICE,
     C_PRICE,
+    D_PRICE,
     abPool,
     bcPool,
     acPool,
+    bdPool,
     pool1Reserve0,
     pool1Reserve1,
     pool2Reserve0,

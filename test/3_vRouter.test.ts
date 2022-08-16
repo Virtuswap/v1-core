@@ -4,20 +4,12 @@ import { ethers } from "hardhat";
 import { deployPools } from "../fixtures/deployPools";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
-import {
-  IERC20Metadata__factory,
-  VPair__factory,
-  VRouter__factory,
-} from "../typechain-types/index";
+import { VRouter__factory } from "../typechain-types/index";
 import _ from "lodash";
 import utils from "./utils";
 
 describe("vRouter", () => {
   let fixture: any = {};
-
-  async function getFutureBlockTimestamp() {
-    return (await time.latest()) + 1000000;
-  }
 
   before(async function () {
     fixture = await loadFixture(deployPools);
@@ -225,7 +217,7 @@ describe("vRouter", () => {
       tokenA.address,
       amountOut
     );
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
 
     let data = utils.getEncodedSwapData(
       owner.address,
@@ -273,7 +265,7 @@ describe("vRouter", () => {
       tokenC.address,
       amountIn
     );
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
 
     let multiData = [];
 
@@ -327,7 +319,7 @@ describe("vRouter", () => {
       amountIn
     );
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
       tokenA.address,
@@ -365,7 +357,7 @@ describe("vRouter", () => {
       amountIn
     );
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     await vRouterInstance.swapReserveToExactNative(
       tokenB.address,
       tokenC.address,
@@ -409,7 +401,7 @@ describe("vRouter", () => {
       realAmountIn
     );
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     let multiData = [];
 
     let str = await VRouter__factory.getInterface(
@@ -468,7 +460,7 @@ describe("vRouter", () => {
 
     amountsIn = ethers.utils.parseEther("8");
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     let reverted = false;
     try {
       await vRouterInstance.swap(
@@ -512,7 +504,7 @@ describe("vRouter", () => {
     const tokenAMin = reserve0.mul(999).div(1000).div(4);
     const tokenBMin = reserve1.mul(999).div(1000).div(4);
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     await vRouterInstance.removeLiquidity(
       tokenA.address,
       tokenB.address,
@@ -558,7 +550,7 @@ describe("vRouter", () => {
     let totalBalanceBefore0 = reserve0;
     let totalBalanceBefore1 = reserve1;
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.addLiquidity(
       tokenA.address,
@@ -571,7 +563,7 @@ describe("vRouter", () => {
       futureTs
     );
 
-    lpBalance = await abPool.balanceOf(owner.address);
+    let lpBalance = await abPool.balanceOf(owner.address);
 
     reserve0 = await abPool.reserve0();
     reserve1 = await abPool.reserve1();
@@ -598,7 +590,7 @@ describe("vRouter", () => {
     const amountADesired = ethers.utils.parseEther("12");
 
     const amountBDesired = ethers.utils.parseEther("8");
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     expect(
       vRouterInstance.addLiquidity(
         tokenA.address,
@@ -624,7 +616,7 @@ describe("vRouter", () => {
 
     const amountBDesired = ethers.utils.parseEther("4");
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     expect(
       vRouterInstance.addLiquidity(
         tokenA.address,
@@ -674,7 +666,7 @@ describe("vRouter", () => {
 
     await abPool.approve(vRouterInstance.address, lpBalance);
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
     await vRouterInstance.removeLiquidity(
       tokenA.address,
       tokenB.address,
@@ -733,7 +725,7 @@ describe("vRouter", () => {
       amountADesired
     );
 
-    const futureTs = await getFutureBlockTimestamp();
+    const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.addLiquidity(
       tokenA.address,
