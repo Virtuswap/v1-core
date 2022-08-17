@@ -2,12 +2,6 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { deployPools } from "../fixtures/deployPools";
-
-import {
-  IERC20Metadata__factory,
-  VPair__factory,
-  VRouter__factory,
-} from "../typechain-types/index";
 import _ from "lodash";
 import utils from "./utils";
 
