@@ -6,7 +6,7 @@ import {
   VPair__factory,
   VRouter__factory,
   ExchangeReserves__factory,
-} from "../typechain-types/index";
+} from "../../typechain-types/index";
 
 // We define a fixture to reuse the same setup in every test.
 // We use loadFixture to run this setup once, snapshot that state,

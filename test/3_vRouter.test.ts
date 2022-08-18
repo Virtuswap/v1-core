@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { deployPools } from "../fixtures/deployPools";
+import { deployPools } from "./fixtures/deployPools";
 
 import { VRouter__factory } from "../typechain-types/index";
 import _ from "lodash";

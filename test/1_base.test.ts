@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { deployPools } from "../fixtures/deployPools";
+import { deployPools } from "./fixtures/deployPools";
 
 describe("Base actions", function () {
   it("Should deploy fixture", async function () {
