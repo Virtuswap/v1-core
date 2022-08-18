@@ -4,18 +4,23 @@
   "description": "Virtuswap protocol smart contracts",
   "license": "ISC",
   "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.4",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "@openzeppelin/contracts": "^4.7.0",
     "@openzeppelin/test-helpers": "^0.5.15",
-    "@truffle/hdwallet-provider": "^1.7.0",
+    "@typechain/hardhat": "^6.1.2",
+    "@types/chai": "^4.3.1",
+    "@types/lodash": "^4.14.182",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^18.6.3",
     "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-periphery": "^1.4.1",
     "chai": "^4.3.6",
-    "ethereum-waffle": "^3.4.4",
     "ethers": "^5.6.9",
-    "truffle": "^5.5.23",
-    "truffle-contract-size": "^2.0.1",
-    "web3": "^1.6.0",
-    "web3-utils": "^1.7.5"
+    "hardhat": "^2.10.1",
+    "ts-node": "^10.9.1",
+    "typechain": "^8.1.0",
+    "typescript": "^4.7.4"
   }
 }
