@@ -16,12 +16,7 @@ const config: HardhatUserConfig = {
         bytecodeHash: "none",
       },
     },
-  },
-  networks: {
-    // quicknodeTestWS: {
-    //   url: extractStringEnvVar("QUICKNODE_WS")
-    // }
-  },
+  }
 };
 
 export default config;
