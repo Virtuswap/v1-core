@@ -5,6 +5,8 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+  },
+  "include": ["./test", "./scripts"],//only the "scripts" part.
+  "files": ["./hardhat.config.ts"]
 }

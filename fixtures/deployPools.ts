@@ -5,6 +5,7 @@ import {
   VPairFactory__factory,
   VPair__factory,
   VRouter__factory,
+  ExchangeReserves__factory,
 } from "../typechain-types/index";
 
 // We define a fixture to reuse the same setup in every test.
@@ -71,6 +72,12 @@ export async function deployPools() {
     VPairFactory__factory.bytecode,
     owner
   ).deploy();
+
+  const exchageReserveInstance = await new ExchangeReserves__factory(
+    ExchangeReserves__factory.createInterface(),
+    ExchangeReserves__factory.bytecode,
+    owner
+  ).deploy(vPairFactoryInstance.address);
 
   const vRouterInstance = await new VRouter__factory(
     VRouter__factory.createInterface(),
@@ -256,5 +263,6 @@ export async function deployPools() {
       account10,
     ],
     vPairFactoryInstance,
+    exchageReserveInstance
   };
 }

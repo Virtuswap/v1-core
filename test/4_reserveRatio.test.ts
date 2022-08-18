@@ -5,7 +5,7 @@ import { deployPools } from "../fixtures/deployPools";
 import _ from "lodash";
 import utils from "./utils";
 
-describe("vRouter", () => {
+describe("ReserveRatio", () => {
   let fixture: any = {};
 
   before(async function () {

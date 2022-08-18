@@ -4,6 +4,7 @@
   "description": "Virtuswap protocol smart contracts",
   "license": "ISC",
   "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.4",
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "@openzeppelin/contracts": "^4.7.0",
     "@openzeppelin/test-helpers": "^0.5.15",
