@@ -84,7 +84,7 @@ contract vRouter is IvRouter, Multicall {
         address to,
         bytes calldata data,
         uint256 deadline
-    ) external ensure(deadline) {
+    ) external override ensure(deadline) {
         getPair(tokenA, tokenB).swapNative(amountOut, tokenB, to, data);
     }
 
@@ -96,7 +96,7 @@ contract vRouter is IvRouter, Multicall {
         address to,
         bytes calldata data,
         uint256 deadline
-    ) external ensure(deadline) {
+    ) external override ensure(deadline) {
         getPair(tokenA, tokenB).swapReserveToNative(
             amountOut,
             ikPair,

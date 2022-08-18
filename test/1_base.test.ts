@@ -19,8 +19,9 @@ describe("Base actions", function () {
   it("Validate INIT_HASH_CODE", async function () {
     const fixture = await loadFixture(deployPools);
     let hashCode = await fixture.vPairFactoryInstance.getInitCodeHash();
+    console.log('hashCode ' + hashCode);
     expect(hashCode).to.equal(
-      "0xe938ca8d38879668d9ae583acd07e1dad77a26c33dd58d3c46605c36a33180cf"
+      "0x1f8c148e641faac84702eb7684c610130b95e9e09846f7e6ead44696b3fe1215"
     );
   });
   it("Calculate A/B pair address", async function () {

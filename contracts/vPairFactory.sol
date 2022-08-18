@@ -76,6 +76,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
     function setExchangeReservesAddress(address _exchangeReserves)
         external
+        override
         onlyAdmin
     {
         exchangeReserves = _exchangeReserves;
