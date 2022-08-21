@@ -18,9 +18,9 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    quicknodeTestWS: {
-      //url: extractStringEnvVar("QUICKNODE_WS")
-    },
+    // quicknodeTestWS: {
+    //   url: extractStringEnvVar("QUICKNODE_WS")
+    // },
     hardhat: {
 
     },
