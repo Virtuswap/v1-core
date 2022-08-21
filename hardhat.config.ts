@@ -16,6 +16,17 @@ const config: HardhatUserConfig = {
         bytecodeHash: "none",
       },
     },
+  },
+  networks: {
+    quicknodeTestWS: {
+      //url: extractStringEnvVar("QUICKNODE_WS")
+    },
+    hardhat: {
+
+    },
+    local: {
+      url: "http://127.0.0.1:8545"
+    }
   }
 };
 

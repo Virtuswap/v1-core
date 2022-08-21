@@ -21,12 +21,18 @@ npx hardhat compile
 npx hardhat test
 ```
 
-# Deploy locally #
+# Deploy #
+## Deploy locally ##
+First kick off the local network to stay running in one terminal:
 ```
-npx hardhat run scripts/deploy.ts
+npx hardhat node
+```
+then deploy some contracts, and run transactions in a different terminal:
+```
+npx hardhat run scripts/deploy.ts --network local
 ```
 
-# Deploy to testnet (untested) #
+## Deploy to testnet (untested) ##
 ```
 npx hardhat run scripts/deploy.ts --network quicknodeTestWS
 ```
