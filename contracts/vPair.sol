@@ -10,11 +10,16 @@ import "./interfaces/IvSwapPoolDeployer.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
 
-import "./libraries/PoolAddress.sol";
 import "./libraries/vSwapLibrary.sol";
+
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {
+    uint24 internal constant BASE_FACTOR = 1000;
+    uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
+    uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
+    uint256 internal constant RESERVE_RATIO_WHOLE = (10**3) * 100 * 1e18;
+
     address public factory;
 
     address public immutable override token0;
@@ -26,11 +31,6 @@ contract vPair is IvPair, vSwapERC20 {
     uint256 public override reserve0;
     uint256 public override reserve1;
 
-    uint256 private constant MINIMUM_LIQUIDITY = 10**3;
-    uint256 private constant RESERVE_RATIO_FACTOR = 10**3;
-    uint256 private constant RESERVE_RATIO_WHOLE =
-        RESERVE_RATIO_FACTOR * 100 * 1e18;
-
     uint256 public max_reserve_ratio;
 
     address[] public whitelist;
@@ -38,7 +38,7 @@ contract vPair is IvPair, vSwapERC20 {
     uint24 public override max_whitelist_count;
 
     mapping(address => uint256) public override reservesBaseValue;
-    mapping(address => uint256) public reserves;
+    mapping(address => uint256) public override reserves;
 
     uint256 private unlocked = 1;
     modifier lock() {
@@ -57,6 +57,11 @@ contract vPair is IvPair, vSwapERC20 {
         _;
     }
 
+    modifier onlyForExchangeReserves() {
+        require(msg.sender == IvPairFactory(factory).exchangeReserves(), "OER");
+        _;
+    }
+
     constructor() {
         (
             factory,
@@ -66,7 +71,7 @@ contract vPair is IvPair, vSwapERC20 {
             vFee,
             max_whitelist_count,
             max_reserve_ratio
-        ) = IvSwapPoolDeployer(msg.sender).parameters();
+        ) = IvSwapPoolDeployer(msg.sender).poolCreationParameters();
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
@@ -99,7 +104,7 @@ contract vPair is IvPair, vSwapERC20 {
         address tokenOut,
         address to,
         bytes memory data
-    ) external override lock {
+    ) external override lock returns (uint256 _amountIn) {
         require(to > address(0), "IT"); // INVALID TO
 
         SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
@@ -113,7 +118,7 @@ contract vPair is IvPair, vSwapERC20 {
             reserve1
         );
 
-        uint256 _expectedAmountIn = vSwapLibrary.getAmountIn(
+        uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
             _reserve0,
             _reserve1,
@@ -121,18 +126,15 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0) {
-            IvFlashSwapCallback(to).vFlashSwapCallback(
-                msg.sender,
-                amountOut,
-                _expectedAmountIn,
+            IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
+                requiredAmountIn,
                 data
             );
         }
 
-        uint256 _amountIn = IERC20(_tokenIn).balanceOf(address(this)) -
-            _reserve0;
+        _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - _reserve0;
 
-        require(_amountIn > 0 && _amountIn >= _expectedAmountIn, "IIA");
+        require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
 
         bool _isTokenIn0 = _tokenIn == token0;
 
@@ -147,7 +149,13 @@ contract vPair is IvPair, vSwapERC20 {
         address ikPair,
         address to,
         bytes calldata data
-    ) external override lock {
+    )
+        external
+        override
+        onlyForExchangeReserves
+        lock
+        returns (uint256 _amountIn)
+    {
         VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
             ikPair,
             address(this)
@@ -164,39 +172,39 @@ contract vPair is IvPair, vSwapERC20 {
         require(vPool.token0 == token0 || vPool.token0 == token1, "NNT");
 
         SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
+        uint256 requiredAmountIn = 0;
 
-        uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
+        requiredAmountIn = vSwapLibrary.quote(
             amountOut,
-            vPool.reserve0,
             vPool.reserve1,
-            vFee
+            vPool.reserve0
         );
 
         if (data.length > 0)
-            IvFlashSwapCallback(to).vFlashSwapCallback(
-                msg.sender,
-                amountOut,
+            IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
                 requiredAmountIn,
                 data
             );
 
-        uint256 amountIn = IERC20(vPool.token0).balanceOf(address(this)) -
+        _amountIn =
+            IERC20(vPool.token0).balanceOf(address(this)) -
             (vPool.token0 == token0 ? reserve0 : reserve1);
 
-        require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
+        require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
 
         // //update reserve balance in the equivalent of token0 value
 
         uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
+        if (_reserveBaseValue > 0) {
+            // //re-calculate price of reserve asset in token0 for the whole pool blance
+            _reserveBaseValue = vSwapLibrary.quote(
+                _reserveBaseValue,
+                vPool.reserve1,
+                vPool.reserve0
+            );
+        }
 
-        //re-calculate price of reserve asset in token0 for the whole pool blance
-        _reserveBaseValue = vSwapLibrary.quote(
-            _reserveBaseValue,
-            vPool.reserve0,
-            vPool.reserve1
-        );
-
-        if (vPool.token0 == token1) {
+        if (_reserveBaseValue > 0 && vPool.token1 == token1) {
             //if tokenOut is not token0 we should quote it to token0 value
             _reserveBaseValue = vSwapLibrary.quote(
                 _reserveBaseValue,
@@ -208,12 +216,14 @@ contract vPair is IvPair, vSwapERC20 {
         reservesBaseValue[vPool.token1] = _reserveBaseValue;
 
         //update reserve balance
-        reserves[vPool.token1] = reserves[vPool.token1] - amountOut;
+        reserves[vPool.token1] -= amountOut;
 
         _update(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this))
         );
+
+        emit ReserveSync(vPool.token1, reserves[vPool.token1]);
     }
 
     function swapReserveToNative(
@@ -221,7 +231,7 @@ contract vPair is IvPair, vSwapERC20 {
         address ikPair,
         address to,
         bytes calldata data
-    ) external override lock {
+    ) external override lock returns (uint256 amountIn) {
         VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPoolBase(
             token0,
             token1,
@@ -251,14 +261,13 @@ contract vPair is IvPair, vSwapERC20 {
         );
 
         if (data.length > 0)
-            IvFlashSwapCallback(to).vFlashSwapCallback(
-                msg.sender,
-                amountOut,
+            IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
                 requiredAmountIn,
                 data
             );
 
-        uint256 amountIn = IERC20(vPool.token0).balanceOf(address(this)) -
+        amountIn =
+            IERC20(vPool.token0).balanceOf(address(this)) -
             reserves[vPool.token0];
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
@@ -286,7 +295,7 @@ contract vPair is IvPair, vSwapERC20 {
         reservesBaseValue[vPool.token0] = _reserveBaseValue;
 
         //update reserve balance
-        reserves[vPool.token0] = reserves[vPool.token0] + amountIn;
+        reserves[vPool.token0] += amountIn;
 
         require(this.calculateReserveRatio() < max_reserve_ratio, "TBPT"); // reserve amount goes beyond pool threshold
 
@@ -294,6 +303,8 @@ contract vPair is IvPair, vSwapERC20 {
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this))
         );
+
+        emit ReserveSync(vPool.token0, reserves[vPool.token0]);
     }
 
     function calculateReserveRatio()
