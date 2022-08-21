@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { deployPools } from "../fixtures/deployPools";
+import { deployPools } from "../test/fixtures/deployPools";
 
 async function main() {
     const {
