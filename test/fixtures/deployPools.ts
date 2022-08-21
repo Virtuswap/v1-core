@@ -21,19 +21,8 @@ export async function deployPools() {
   );
 
   // Contracts are deployed using the first signer/account by default
-  const [
-    owner,
-    account1,
-    account2,
-    account3,
-    account4,
-    account5,
-    account6,
-    account7,
-    account8,
-    account9,
-    account10,
-  ] = await ethers.getSigners();
+  const accounts = await ethers.getSigners();
+  const owner = accounts[0];
 
   const A_PRICE = 1;
   const B_PRICE = 3;
@@ -73,7 +62,7 @@ export async function deployPools() {
     owner
   ).deploy();
 
-  const exchageReserveInstance = await new ExchangeReserves__factory(
+  const exchangeReserveInstance = await new ExchangeReserves__factory(
     ExchangeReserves__factory.createInterface(),
     ExchangeReserves__factory.bytecode,
     owner
@@ -250,19 +239,8 @@ export async function deployPools() {
     pool3Reserve1,
     vRouterInstance,
     owner,
-    accounts: [
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      account6,
-      account7,
-      account8,
-      account9,
-      account10,
-    ],
+    accounts,
     vPairFactoryInstance,
-    exchageReserveInstance
+    exchangeReserveInstance
   };
 }
