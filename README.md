@@ -1,7 +1,6 @@
 # README #
 
-Virtuswap V1 smart contracts  
-implmentation based on the [Virtuswap Whitepaper]( https://virtuswap.io/wp-content/uploads/2021/11/WP-Virtuswap-Oct-18-2021.pdf).  
+Solidity (EVM) implmentation of the [Virtuswap Whitepaper]( https://virtuswap.io/wp-content/uploads/2021/11/WP-Virtuswap-Oct-18-2021.pdf).  
 More in-depth documentation is available at [docs.virtuswap.io](https://docs.virtuswap.io).  
 
 
