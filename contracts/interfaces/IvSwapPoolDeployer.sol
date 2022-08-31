@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.2;
 
 
 /// @title An interface for a contract that is capable of deploying Uniswap V3 Pools
@@ -13,7 +13,7 @@ interface IvSwapPoolDeployer {
     /// Returns token1 The second token of the pool by address sort order
     /// Returns fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// Returns tickSpacing The minimum number of ticks between initialized ticks
-    function poolCreationParameters()
+    function poolCreationDefaults()
         external
         view
         returns (

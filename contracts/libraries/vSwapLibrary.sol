@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.2;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../types.sol";
@@ -120,7 +119,9 @@ library vSwapLibrary {
 
         require(vPoolTokens.ik1 == vPoolTokens.jk1, "IOP");
 
-        (uint256 ikReserve0, uint256 ikReserve1) = IvPair(ikPair).getReserves();
+        (uint256 ikReserve0, uint256 ikReserve1, ) = IvPair(ikPair)
+            .getLastReserves();
+
         (uint256 _reserve0, uint256 _reserve1) = (jkReserve0, jkReserve1); //gas saving
 
         vPool = calculateVPool(

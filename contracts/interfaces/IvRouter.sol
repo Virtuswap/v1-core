@@ -1,32 +1,36 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.2;
 import "../types.sol";
 import "./IvFlashSwapCallback.sol";
 
 interface IvRouter is IvFlashSwapCallback {
-    function changeFactory(address factory) external;
+    event FactoryChanged(address newFactoryAddress);
+
+    function changeFactory(address _factory) external;
 
     function factory() external view returns (address);
 
     function owner() external view returns (address);
 
+    function WETH9() external view returns (address);
+
     function swapToExactNative(
         address tokenA,
         address tokenB,
         uint256 amountOut,
+        uint256 maxAmountIn,
         address to,
-        bytes calldata data,
         uint256 deadline
-    ) external;
+    ) external payable;
 
     function swapReserveToExactNative(
         address tokenA,
         address tokenB,
         address ikPair,
         uint256 amountOut,
+        uint256 maxAmountIn,
         address to,
-        bytes calldata data,
         uint256 deadline
-    ) external;
+    ) external payable;
 
     function addLiquidity(
         address tokenA,
@@ -69,10 +73,10 @@ interface IvRouter is IvFlashSwapCallback {
     ) external view returns (uint256 amountIn);
 
     function quote(
-        address tokenA,
-        address tokenB,
-        uint256 amount
-    ) external view returns (uint256 quote);
+        address inputToken,
+        address outputToken,
+        uint256 amountIn
+    ) external view returns (uint256 amountOut);
 
     function getVirtualAmountIn(
         address jkPair,

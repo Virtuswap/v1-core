@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.2;
+
+import "../types.sol";
 
 interface IvPair {
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
@@ -11,11 +12,36 @@ interface IvPair {
         address indexed to
     );
 
+    event Swap(
+        address indexed sender,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        address indexed to
+    );
+
+    event SwapReserve(
+        address indexed sender,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        address ikPool,
+        address indexed to
+    );
+
     event WhitelistChanged(address[] tokens);
 
     event Sync(uint256 balance0, uint256 balance1);
 
-    event ReserveSync(address asset, uint256 balance);
+    event FactoryChanged(address newFactory);
+
+    event FeeChanged(uint24 fee, uint24 vFee);
+
+    event ReserveThresholdChanged(uint256 newThreshold);
+
+    event WhitelistCountChanged(uint256 newCount);
 
     function fee() external view returns (uint24);
 
@@ -69,6 +95,15 @@ interface IvPair {
     function max_whitelist_count() external view returns (uint24);
 
     function getReserves() external view returns (uint256, uint256);
+
+    function getLastReserves()
+        external
+        view
+        returns (
+            uint256 _reserve0,
+            uint256 _reserve1,
+            uint256 _blockNumber
+        );
 
     function getTokens() external view returns (address, address);
 
