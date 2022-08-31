@@ -68,12 +68,17 @@ contract vRouter is IvRouter, Multicall {
             (SwapCallbackData)
         );
 
-        if (decodedData.jkPool > address(0))
+        if (decodedData.jkPool > address(0)) {
+            //validate JK pool
+            (address jkToken0, address jkToken1) = IvPair(decodedData.jkPool)
+                .getTokens();
+
             require(
-                msg.sender == decodedData.jkPool,
+                msg.sender ==
+                    PoolAddress.computeAddress(factory, jkToken0, jkToken1),
                 "VSWAP:INVALID_CALLBACK_VPOOL"
             );
-        else
+        } else
             require(
                 msg.sender ==
                     PoolAddress.computeAddress(factory, tokenIn, tokenOut),
