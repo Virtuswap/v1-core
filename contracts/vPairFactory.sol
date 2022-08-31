@@ -3,7 +3,7 @@ pragma solidity 0.8.2;
 import "./vPair.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvSwapPoolDeployer.sol";
-import "./libraries/poolAddress.sol";
+import "./libraries/PoolAddress.sol";
 import "./types.sol";
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
