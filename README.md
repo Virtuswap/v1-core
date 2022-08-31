@@ -1,6 +1,6 @@
 # README #
 
-Virtuswap smart contracts  
+Virtuswap V1 smart contracts  
 In-depth documentation is available at [docs.virtuswap.io](https://docs.virtuswap.io).
 
 
