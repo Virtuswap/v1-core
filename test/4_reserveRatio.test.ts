@@ -32,14 +32,6 @@ describe("ReserveRatio", () => {
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenCReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenB.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -47,8 +39,8 @@ describe("ReserveRatio", () => {
       tokenB.address,
       bcPool.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
 
@@ -82,14 +74,6 @@ describe("ReserveRatio", () => {
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenCReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenB.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -97,8 +81,8 @@ describe("ReserveRatio", () => {
       tokenB.address,
       acPool.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
 
@@ -140,14 +124,6 @@ describe("ReserveRatio", () => {
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenCReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenB.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -155,8 +131,8 @@ describe("ReserveRatio", () => {
       tokenB.address,
       ikPair,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
 
@@ -198,14 +174,6 @@ describe("ReserveRatio", () => {
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenCReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenB.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -213,8 +181,8 @@ describe("ReserveRatio", () => {
       tokenB.address,
       ikPair,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
 
@@ -437,48 +405,48 @@ describe("ReserveRatio", () => {
   //   );
   // });
 
-//   it("Assert pool A/B calculateReserveRatio is correct ", async () => {
-//     const abPool = fixture.abPool;
-//     const bcPool = fixture.bcPool;
-//     const tokenA = fixture.tokenA;
-//     const tokenB = fixture.tokenB;
-//     const tokenC = fixture.tokenC;
-//     const tokenD = fixture.tokenD;
+  //   it("Assert pool A/B calculateReserveRatio is correct ", async () => {
+  //     const abPool = fixture.abPool;
+  //     const bcPool = fixture.bcPool;
+  //     const tokenA = fixture.tokenA;
+  //     const tokenB = fixture.tokenB;
+  //     const tokenC = fixture.tokenC;
+  //     const tokenD = fixture.tokenD;
 
-//     const owner = fixture.owner;
-//     const vRouterInstance = fixture.vRouterInstance;
-//     const vPairFactoryInstance = fixture.vPairFactoryInstance;
+  //     const owner = fixture.owner;
+  //     const vRouterInstance = fixture.vRouterInstance;
+  //     const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-//     const jkPair = await vPairFactoryInstance.getPair(
-//       tokenB.address,
-//       tokenA.address
-//     );
+  //     const jkPair = await vPairFactoryInstance.getPair(
+  //       tokenB.address,
+  //       tokenA.address
+  //     );
 
-//     let poolReserveRatio = await abPool.calculateReserveRatio();
+  //     let poolReserveRatio = await abPool.calculateReserveRatio();
 
-//     let poolCReserves = await abPool.reservesBaseValue(tokenC.address);
-//     let poolDReserves = await abPool.reservesBaseValue(tokenD.address);
+  //     let poolCReserves = await abPool.reservesBaseValue(tokenC.address);
+  //     let poolDReserves = await abPool.reservesBaseValue(tokenD.address);
 
-//     poolCReserves = poolCReserves;
-//     poolDReserves = poolDReserves;
+  //     poolCReserves = poolCReserves;
+  //     poolDReserves = poolDReserves;
 
-//     let totalReserves = poolCReserves.add(poolDReserves);
-//     console.log('totalReserves ' + totalReserves);
+  //     let totalReserves = poolCReserves.add(poolDReserves);
+  //     console.log('totalReserves ' + totalReserves);
 
-//     let reserve0 = await abPool.reserve0();
-//     reserve0 = reserve0;
-//     let poolLiquidity = reserve0.mul(2);
-//     console.log('poolLiquidity ' + poolLiquidity);
+  //     let reserve0 = await abPool.reserve0();
+  //     reserve0 = reserve0;
+  //     let poolLiquidity = reserve0.mul(2);
+  //     console.log('poolLiquidity ' + poolLiquidity);
 
-//     let reserveRatioPCT = totalReserves.div(poolLiquidity);
-//     console.log('reserveRatioPCT ' + reserveRatioPCT);
+  //     let reserveRatioPCT = totalReserves.div(poolLiquidity);
+  //     console.log('reserveRatioPCT ' + reserveRatioPCT);
 
-//     poolReserveRatio = poolReserveRatio;
+  //     poolReserveRatio = poolReserveRatio;
 
-//     let maxReserveRatio = await abPool.max_reserve_ratio();
+  //     let maxReserveRatio = await abPool.max_reserve_ratio();
 
-//     expect(parseInt(poolReserveRatio)).to.equal(reserveRatioPCT * 1000);
-//   });
+  //     expect(parseInt(poolReserveRatio)).to.equal(reserveRatioPCT * 1000);
+  //   });
 
   it("Should revert swap that goes beyond reserve ratio", async () => {
     const abPool = fixture.abPool;
