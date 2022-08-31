@@ -1,6 +1,6 @@
 # README #
 
-Solidity implmentation of the [Virtuswap Whitepaper]( https://virtuswap.io/wp-content/uploads/2021/11/WP-Virtuswap-Oct-18-2021.pdf) for EVM-compatible blockchains.  
+Implementation of the [Virtuswap Whitepaper]( https://virtuswap.io/wp-content/uploads/2021/11/WP-Virtuswap-Oct-18-2021.pdf) in Solidity for EVM-compatible blockchains.  
 More in-depth documentation is available at [docs.virtuswap.io](https://docs.virtuswap.io).  
 
 
