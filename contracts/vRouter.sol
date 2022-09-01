@@ -5,7 +5,6 @@ pragma solidity 0.8.2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import "./types.sol";
 import "./vPair.sol";
