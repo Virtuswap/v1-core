@@ -3,7 +3,6 @@ pragma solidity 0.8.2;
 
 import "./types.sol";
 import "./interfaces/IvPair.sol";
-import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
 
 contract vExchangeReserves is IvFlashSwapCallback {
