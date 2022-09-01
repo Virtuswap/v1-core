@@ -43,7 +43,7 @@ interface IvPair {
 
     event ReserveThresholdChanged(uint256 newThreshold);
 
-    event WhitelistCountChanged(uint256 newCount);
+    event WhitelistCountChanged(uint24 newCount);
 
     function fee() external view returns (uint24);
 
