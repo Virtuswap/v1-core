@@ -10,9 +10,7 @@ import "./interfaces/IvPair.sol";
 import "./interfaces/IvSwapPoolDeployer.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
-
 import "./libraries/vSwapLibrary.sol";
-
 import "./vSwapERC20.sol";
 
 contract vPair is IvPair, vSwapERC20 {

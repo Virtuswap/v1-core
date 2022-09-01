@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.2;
 
-import "../interfaces/IvPairFactory.sol";
-
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
     bytes32 internal constant POOL_INIT_CODE_HASH =
