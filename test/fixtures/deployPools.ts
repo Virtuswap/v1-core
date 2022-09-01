@@ -5,7 +5,7 @@ import {
   VPairFactory__factory,
   VPair__factory,
   VRouter__factory,
-  ExchangeReserves__factory,
+  VExchangeReserves__factory,
   WETH9__factory,
 } from "../../typechain-types/index";
 
@@ -80,9 +80,9 @@ export async function deployPools() {
     owner
   ).deploy();
 
-  const exchageReserveInstance = await new ExchangeReserves__factory(
-    ExchangeReserves__factory.createInterface(),
-    ExchangeReserves__factory.bytecode,
+  const exchageReserveInstance = await new VExchangeReserves__factory(
+    VExchangeReserves__factory.createInterface(),
+    VExchangeReserves__factory.bytecode,
     owner
   ).deploy(vPairFactoryInstance.address);
 
