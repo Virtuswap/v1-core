@@ -27,18 +27,18 @@ contract vPair is IvPair, vSwapERC20 {
     uint24 public override fee;
     uint24 public override vFee;
 
-    uint256 public override reserve0;
-    uint256 public override reserve1;
+    uint256 public override pairBalance0;
+    uint256 public override pairBalance1;
 
-    uint256 private _lastBlockUpdated;
-    uint256 private _lastReserve0;
-    uint256 private _lastReserve1;
+    uint256 private lastBlockUpdated;
+    uint256 private lastPairBalance0;
+    uint256 private lastPairBalance1;
 
     uint256 public max_reserve_ratio;
 
     address[] public whitelist;
-    mapping(address => bool) public whitelistAllowance;
-    uint24 public override max_whitelist_count;
+    mapping(address => bool) public allowanceList;
+    uint24 public override max_allowed_assets_count;
 
     mapping(address => uint256) public override reservesBaseValue;
     mapping(address => uint256) public override reserves;
@@ -77,36 +77,37 @@ contract vPair is IvPair, vSwapERC20 {
         ) = IvSwapPoolDeployer(msg.sender).poolCreationDefaults();
     }
 
-    function _update(uint256 balance0, uint256 balance1) internal {
-        (reserve0, reserve1) = (balance0, balance1);
+    function _update(uint256 _balance0, uint256 _balance1) internal {
         if (block.number > _lastBlockUpdated) {
-            (_lastReserve0, _lastReserve1) = (reserve0, reserve1);
+            (_lastBalance0, _lastBalance1) = (_balance0, _balance1);
             _lastBlockUpdated = block.number;
         }
+
+        (balance0, balance1) = (balance0, balance1);
 
         emit Sync(balance0, balance1);
     }
 
-    function getLastReserves()
+    function getLastBalances()
         external
         view
         override
         returns (
-            uint256 _reserve0,
-            uint256 _reserve1,
-            uint256 _blockNumber
+            uint256 _lastBalance0,
+            uint256 _lastBalance1,
+            uint256 _lastBlockUpdated
         )
     {
-        return (_lastReserve0, _lastReserve1, _lastBlockUpdated);
+        return (lastBalance0, lastBalance1, lastBlockUpdated);
     }
 
-    function getReserves()
+    function getBalances()
         external
         view
         override
-        returns (uint256 _reserve0, uint256 _reserve1)
+        returns (uint256 _balance0, uint256 _balance1)
     {
-        return (reserve0, reserve1);
+        return (balance0, balance1);
     }
 
     function getTokens()
@@ -157,7 +158,7 @@ contract vPair is IvPair, vSwapERC20 {
             );
         }
 
-        _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - _reserve0;
+        _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - balance0;
 
         require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
 
@@ -166,8 +167,8 @@ contract vPair is IvPair, vSwapERC20 {
             bool _isTokenIn0 = _tokenIn == token0;
 
             _update(
-                _isTokenIn0 ? _reserve0 + _amountIn : _reserve1 - amountOut,
-                _isTokenIn0 ? _reserve1 - amountOut : _reserve0 + _amountIn
+                _isTokenIn0 ? balance0 + _amountIn : balance1 - amountOut,
+                _isTokenIn0 ? balance1 - amountOut : balance0 + _amountIn
             );
         }
 
@@ -251,8 +252,8 @@ contract vPair is IvPair, vSwapERC20 {
             //if tokenOut is not token0 we should quote it to token0 value
             _reserveBaseValue = vSwapLibrary.quote(
                 _reserveBaseValue,
-                reserve1,
-                reserve0
+                balance1,
+                balance0
             );
         }
 
@@ -289,8 +290,8 @@ contract vPair is IvPair, vSwapERC20 {
         VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPoolBase(
             token0,
             token1,
-            reserve0,
-            reserve1,
+            balance0,
+            balance1,
             vFee,
             ikPair
         );
@@ -343,8 +344,8 @@ contract vPair is IvPair, vSwapERC20 {
             //if tokenOut is not token0 we should quote it to token0 value
             _reserveBaseValue = vSwapLibrary.quote(
                 _reserveBaseValue,
-                reserve1,
-                reserve0
+                balance1,
+                balance0
             );
         }
 
@@ -377,11 +378,11 @@ contract vPair is IvPair, vSwapERC20 {
         override
         returns (uint256 rRatio)
     {
-        uint256 _reserve0 = reserve0;
+        uint256 _balance0 = balance0;
         for (uint256 i = 0; i < whitelist.length; ++i) {
             uint256 _rReserve = reservesBaseValue[whitelist[i]];
             if (_rReserve > 0) {
-                rRatio += (vSwapLibrary.percent(_rReserve, _reserve0 * 2) *
+                rRatio += (vSwapLibrary.percent(_rReserve, _balance0 * 2) *
                     100);
             }
         }
@@ -395,11 +396,11 @@ contract vPair is IvPair, vSwapERC20 {
         lock
         returns (uint256 liquidity)
     {
-        (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
-        uint256 balance0 = IERC20(token0).balanceOf(address(this));
-        uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 amount0 = balance0 - _reserve0;
-        uint256 amount1 = balance1 - _reserve1;
+        (uint256 _reserve0, uint256 _reserve1) = (balance0, balance1);
+        uint256 currBalance0 = IERC20(token0).balanceOf(address(this));
+        uint256 currBalance1 = IERC20(token1).balanceOf(address(this));
+        uint256 amount0 = currBalance0 - _reserve0;
+        uint256 amount1 = currBalance1 - _reserve1;
 
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
@@ -423,7 +424,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         _mint(to, liquidity);
 
-        _update(balance0, balance1);
+        _update(currBalance0, currBbalance1);
         emit Mint(msg.sender, amount0, amount1);
     }
 
@@ -435,8 +436,8 @@ contract vPair is IvPair, vSwapERC20 {
     {
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
-        uint256 balance0 = IERC20(_token0).balanceOf(address(this));
-        uint256 balance1 = IERC20(_token1).balanceOf(address(this));
+        uint256 _balance0 = IERC20(_token0).balanceOf(address(this));
+        uint256 _balance1 = IERC20(_token1).balanceOf(address(this));
         uint256 liquidity = balanceOf(address(this));
 
         uint256 _totalSupply = totalSupply();
