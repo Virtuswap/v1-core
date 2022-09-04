@@ -351,7 +351,7 @@ contract vRouter is IvRouter, Multicall {
 
         (uint256 balance0, uint256 balance1) = pair.getBalances();
 
-        (balance0, balance1) = vSwapLibrary.sortReserves(
+        (balance0, balance1) = vSwapLibrary.sortBalances(
             inputToken,
             pair.token0(),
             balance0,
@@ -370,7 +370,7 @@ contract vRouter is IvRouter, Multicall {
       
         (uint256 balance0, uint256 balance1) = pair.getBalances();
 
-        (balance0, balance1) = vSwapLibrary.sortReserves(
+        (balance0, balance1) = vSwapLibrary.sortBalances(
             tokenA,
             pair.token0(),
             balance0,
@@ -393,7 +393,7 @@ contract vRouter is IvRouter, Multicall {
         IvPair pair = getPair(tokenA, tokenB);
         (uint256 balance0, uint256 balance1) = IvPair(pair).getBalances();
 
-        (balance0, balance1) = vSwapLibrary.sortReserves(
+        (balance0, balance1) = vSwapLibrary.sortBalances(
             tokenA,
             pair.token0(),
             balance0,

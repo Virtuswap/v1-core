@@ -102,8 +102,8 @@ interface IvPair {
         external
         view
         returns (
-            uint256 _reserve0,
-            uint256 _reserve1,
+            uint256 _lastBalance0,
+            uint256 _lastBalance1,
             uint256 _blockNumber
         );
 

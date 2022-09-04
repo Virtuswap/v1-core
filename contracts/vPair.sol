@@ -133,7 +133,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         address _tokenIn = tokenOut == token0 ? token1 : token0;
 
-        (uint256 _balance0, uint256 _balance1) = vSwapLibrary.sortReserves(
+        (uint256 _balance0, uint256 _balance1) = vSwapLibrary.sortBalances(
             _tokenIn,
             token0,
             pairBalance0,
@@ -396,11 +396,14 @@ contract vPair is IvPair, vSwapERC20 {
         lock
         returns (uint256 liquidity)
     {
-        (uint256 _reserve0, uint256 _reserve1) = (pairBalance0, pairBalance1);
-        uint256 balance0 = IERC20(token0).balanceOf(address(this));
-        uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 amount0 = balance0 - _reserve0;
-        uint256 amount1 = balance1 - _reserve1;
+        (uint256 _pairBalance0, uint256 _pairBalance1) = (
+            pairBalance0,
+            pairBalance1
+        );
+        uint256 currentBalance0 = IERC20(token0).balanceOf(address(this));
+        uint256 currentBalance1 = IERC20(token1).balanceOf(address(this));
+        uint256 amount0 = currentBalance0 - _pairBalance0;
+        uint256 amount1 = currentBalance1 - _pairBalance1;
 
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
@@ -408,8 +411,8 @@ contract vPair is IvPair, vSwapERC20 {
             _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
         } else {
             liquidity = Math.min(
-                (amount0 * _totalSupply) / _reserve0,
-                (amount1 * _totalSupply) / _reserve1
+                (amount0 * _totalSupply) / _pairBalance0,
+                (amount1 * _totalSupply) / _pairBalance1
             );
         }
 
@@ -424,7 +427,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         _mint(to, liquidity);
 
-        _update(balance0, balance1);
+        _update(currentBalance0, currentBalance1);
         emit Mint(msg.sender, amount0, amount1);
     }
 
