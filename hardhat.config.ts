@@ -18,14 +18,11 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    // quicknodeTestWS: {
-    //   url: extractStringEnvVar("QUICKNODE_WS")
-    // },
-    hardhat: {
-
+    matic_testnet: {
+      url: process.env.MATIC_TESTNET_WS || ""
     },
-    local: {
-      url: "http://127.0.0.1:8545"
+    matic: {
+      url: process.env.MATIC_WS || ""
     }
   }
 };

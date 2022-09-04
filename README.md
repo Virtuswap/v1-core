@@ -29,12 +29,13 @@ npx hardhat node
 ```
 then deploy some contracts, and run transactions in a different terminal:
 ```
-npx hardhat run scripts/deploy.ts --network local
+npx hardhat run scripts/deploy.ts --network localhost
 ```
 
-## Deploy to testnet (untested) ##
+## Deploy faucet tokens to testnet (untested) ##
+Export MATIC_TESTNET_WS in your ~/.bash_profile or equivalent to the value in the RPC WSS Provider field.
 ```
-npx hardhat run scripts/deploy.ts --network quicknodeTestWS
+npx hardhat run scripts/faucetTokens.ts --network matic_testnet
 ```
 
 # Sample Hardhat Project
