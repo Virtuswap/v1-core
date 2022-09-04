@@ -33,7 +33,7 @@ interface IvPair {
         address indexed to
     );
 
-    event WhitelistChanged(address[] tokens);
+    event AllowListChanged(address[] tokens);
 
     event Sync(uint256 balance0, uint256 balance1);
 
@@ -43,7 +43,7 @@ interface IvPair {
 
     event ReserveThresholdChanged(uint256 newThreshold);
 
-    event WhitelistCountChanged(uint24 newCount);
+    event AllowListCountChanged(uint24 _maxAllowListCount);
 
     function fee() external view returns (uint24);
 
@@ -78,9 +78,9 @@ interface IvPair {
         external
         returns (uint256 amount0, uint256 amount1);
 
-    function setWhitelist(address[] memory _whitelist) external;
+    function setAllowList(address[] memory _allowList) external;
 
-    function setMaxWhitelistCount(uint24 maxWhitelist) external;
+    function setMaxAllowListCount(uint24 _maxAllowListCount) external;
 
     function calculateReserveRatio() external view returns (uint256 rRatio);
 
@@ -90,15 +90,15 @@ interface IvPair {
 
     function token1() external view returns (address);
 
-    function reserve0() external view returns (uint256);
+    function pairBalance0() external view returns (uint256);
 
-    function reserve1() external view returns (uint256);
+    function pairBalance1() external view returns (uint256);
 
-    function max_whitelist_count() external view returns (uint24);
+    function maxAllowListCount() external view returns (uint24);
 
-    function getReserves() external view returns (uint256, uint256);
+    function getBalances() external view returns (uint256, uint256);
 
-    function getLastReserves()
+    function getLastBalances()
         external
         view
         returns (

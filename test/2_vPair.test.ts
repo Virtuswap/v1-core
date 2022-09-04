@@ -149,10 +149,13 @@ describe("vPair", () => {
     let amountOut = await abPool.reserves(tokenC.address);
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
-      bcPool.address,
       abPool.address,
+      bcPool.address,
       amountOut
     );
+
+    console.log('amountOut ' + amountOut);
+    console.log('amountIn ' + amountIn);
 
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenAReserve = await abPool.reservesBaseValue(tokenC.address);
@@ -177,11 +180,11 @@ describe("vPair", () => {
   it("Should set max whitelist count", async () => {
     const abPool = fixture.abPool;
 
-    const maxWhitelist = await abPool.max_whitelist_count();
+    const maxWhitelist = await abPool.maxAllowListCount();
 
-    await abPool.setMaxWhitelistCount(maxWhitelist - 1);
+    await abPool.setMaxAllowListCount(maxWhitelist - 1);
 
-    const maxWhitelistAfter = await abPool.max_whitelist_count();
+    const maxWhitelistAfter = await abPool.maxAllowListCount();
 
     expect(maxWhitelist - 1).to.equal(maxWhitelistAfter);
   });
@@ -190,12 +193,12 @@ describe("vPair", () => {
     const abPool = fixture.abPool;
     const owner = fixture.owner;
 
-    await abPool.setWhitelist(accounts.slice(1, 4), {
+    await abPool.setAllowList(accounts.slice(1, 4), {
       from: owner.address,
     });
-    const response1 = await abPool.whitelistAllowance(accounts[1]);
-    const response2 = await abPool.whitelistAllowance(accounts[2]);
-    const response3 = await abPool.whitelistAllowance(accounts[3]);
+    const response1 = await abPool.allowListMap(accounts[1]);
+    const response2 = await abPool.allowListMap(accounts[2]);
+    const response3 = await abPool.allowListMap(accounts[3]);
 
     expect(response1).to.be.true;
     expect(response2).to.be.true;
@@ -206,16 +209,16 @@ describe("vPair", () => {
     const abPool = fixture.abPool;
     const owner = fixture.owner;
 
-    await abPool.setWhitelist(accounts.slice(1, 5));
+    await abPool.setAllowList(accounts.slice(1, 5));
 
-    let response1 = await abPool.whitelistAllowance(accounts[1]);
-    let response2 = await abPool.whitelistAllowance(accounts[2]);
-    let response3 = await abPool.whitelistAllowance(accounts[3]);
-    let response4 = await abPool.whitelistAllowance(accounts[4]);
-    let response5 = await abPool.whitelistAllowance(accounts[5]);
-    let response6 = await abPool.whitelistAllowance(accounts[6]);
-    let response7 = await abPool.whitelistAllowance(accounts[7]);
-    let response8 = await abPool.whitelistAllowance(accounts[8]);
+    let response1 = await abPool.allowListMap(accounts[1]);
+    let response2 = await abPool.allowListMap(accounts[2]);
+    let response3 = await abPool.allowListMap(accounts[3]);
+    let response4 = await abPool.allowListMap(accounts[4]);
+    let response5 = await abPool.allowListMap(accounts[5]);
+    let response6 = await abPool.allowListMap(accounts[6]);
+    let response7 = await abPool.allowListMap(accounts[7]);
+    let response8 = await abPool.allowListMap(accounts[8]);
 
     expect(response1).to.be.true;
     expect(response2).to.be.true;
@@ -226,18 +229,18 @@ describe("vPair", () => {
     expect(response7).to.be.false;
     expect(response8).to.be.false;
 
-    await abPool.setWhitelist(accounts.slice(5, 9), {
+    await abPool.setAllowList(accounts.slice(5, 9), {
       from: owner.address,
     });
 
-    response1 = await abPool.whitelistAllowance(accounts[1]);
-    response2 = await abPool.whitelistAllowance(accounts[2]);
-    response3 = await abPool.whitelistAllowance(accounts[3]);
-    response4 = await abPool.whitelistAllowance(accounts[4]);
-    response5 = await abPool.whitelistAllowance(accounts[5]);
-    response6 = await abPool.whitelistAllowance(accounts[6]);
-    response7 = await abPool.whitelistAllowance(accounts[7]);
-    response8 = await abPool.whitelistAllowance(accounts[8]);
+    response1 = await abPool.allowListMap(accounts[1]);
+    response2 = await abPool.allowListMap(accounts[2]);
+    response3 = await abPool.allowListMap(accounts[3]);
+    response4 = await abPool.allowListMap(accounts[4]);
+    response5 = await abPool.allowListMap(accounts[5]);
+    response6 = await abPool.allowListMap(accounts[6]);
+    response7 = await abPool.allowListMap(accounts[7]);
+    response8 = await abPool.allowListMap(accounts[8]);
 
     expect(response1).to.be.false;
     expect(response2).to.be.false;
@@ -250,15 +253,16 @@ describe("vPair", () => {
     expect(response8).to.be.true;
   });
 
-  it("Should not set whitelist if list is longer then max_whitelist", async () => {
+  it("Should not set allowList if list is longer then maxAllowList", async () => {
     const abPool = fixture.abPool;
 
-    await expect(abPool.setWhitelist(accounts.slice(1, 9))).to.revertedWith(
+    await abPool.setMaxAllowListCount(1);
+    await expect(abPool.setAllowList(accounts.slice(1, 9))).to.revertedWith(
       "MW"
     );
   });
 
-  it("Should not set whitelist if not admin", async () => {
+  it("Should not set allowlist if not admin", async () => {
     const abPool = fixture.abPool;
     const abPoolSigner2 = VPair__factory.connect(
       abPool.address,
@@ -266,7 +270,7 @@ describe("vPair", () => {
     );
 
     await expect(
-      abPoolSigner2.setWhitelist(accounts.slice(1, 5))
+      abPoolSigner2.setAllowList(accounts.slice(1, 5))
     ).to.revertedWith("OA");
   });
 
@@ -303,14 +307,14 @@ describe("vPair", () => {
     await abPool.burn(owner.address);
 
     const lpBalanceAfter = await abPool.balanceOf(owner.address);
-    const reservesAfter = await abPool.getReserves();
+    const reservesAfter = await abPool.getBalances();
 
     expect(lpBalanceAfter).to.equal(0);
 
-    let reservesAfter0 = reservesAfter._reserve0;
-    let reservesAfter1 = reservesAfter._reserve1;
+    let reservesAfter0 = reservesAfter._balance0;
+    let reservesAfter1 = reservesAfter._balance1;
 
-    expect(reservesAfter0).to.equal(577); // 578 = MINIUMUM LOCKED LIQUIDITY
+    expect(reservesAfter0).to.equal(598); // 598 = MINIUMUM LOCKED LIQUIDITY
     expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
   });
 

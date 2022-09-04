@@ -521,10 +521,10 @@ describe("ReserveRatio", () => {
 
     await abPool.approve(vRouterInstance.address, balanceOut);
 
-    let reserves = await abPool.getReserves();
+    let reserves = await abPool.getBalances();
 
-    let amountADesired = reserves._reserve0.mul(290).div(1000);
-    let amountBDesired = reserves._reserve1.mul(290).div(1000);
+    let amountADesired = reserves._balance0.mul(290).div(1000);
+    let amountBDesired = reserves._balance1.mul(290).div(1000);
 
     let amountCInBalance = await tokenC.balanceOf(abPool.address);
     let amountCInReserve = await abPool.reserves(tokenC.address);

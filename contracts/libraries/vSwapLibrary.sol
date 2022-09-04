@@ -48,11 +48,11 @@ library vSwapLibrary {
         uint256 jkTokenABalance,
         uint256 jkTokenBBalance
     ) internal pure returns (VirtualPoolModel memory vPool) {
-        vPool.reserve0 =
+        vPool.balance0 =
             (ikTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
             Math.max(ikTokenBBalance, 1);
 
-        vPool.reserve1 =
+        vPool.balance1 =
             (jkTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
             Math.max(jkTokenBBalance, 1);
     }
@@ -122,7 +122,7 @@ library vSwapLibrary {
         require(vPoolTokens.ik1 == vPoolTokens.jk1, "IOP");
 
         (uint256 ikReserve0, uint256 ikReserve1, ) = IvPair(ikPair)
-            .getLastReserves();
+            .getLastBalances();
 
         (uint256 _reserve0, uint256 _reserve1) = (jkReserve0, jkReserve1); //gas saving
 
@@ -146,14 +146,15 @@ library vSwapLibrary {
         returns (VirtualPoolModel memory vPool)
     {
         (address jk0, address jk1) = IvPair(jkPair).getTokens();
-        (uint256 _reserve0, uint256 _reserve1) = IvPair(jkPair).getReserves();
+        (uint256 _balance0, uint256 _balance1,) = IvPair(jkPair)
+            .getLastBalances();
         uint24 vFee = IvPair(jkPair).vFee();
 
         vPool = getVirtualPoolBase(
             jk0,
             jk1,
-            _reserve0,
-            _reserve1,
+            _balance0,
+            _balance1,
             vFee,
             ikPair
         );
