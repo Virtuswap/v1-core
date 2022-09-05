@@ -218,7 +218,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         requiredAmountIn = vSwapLibrary.quote(
             amountOut,
-            vPool.balance1
+            vPool.balance1,
             vPool.balance0
         );
 
