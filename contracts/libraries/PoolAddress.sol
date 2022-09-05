@@ -5,7 +5,7 @@ pragma solidity 0.8.2;
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
     bytes32 internal constant POOL_INIT_CODE_HASH =
-        0x0d31267ed4fc07374ed08882a42cc963a0c5109100e0478ab916bc117cc1f015;
+        0xb5ae61db0258f697bcebcd717c1a5ec1ba39ff145116d4b8b64c86f056beb1fa;
 
     function orderAddresses(address tokenA, address tokenB)
         internal

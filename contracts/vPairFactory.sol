@@ -57,8 +57,8 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             token1: token1,
             fee: 997,
             vFee: 997,
-            max_whitelist_count: 8,
-            max_reserve_ratio: 2000 * 1e18
+            maxAllowListCount: 8,
+            maxReserveRatio: 2000 * 1e18
         });
 
         bytes32 _salt = PoolAddress.getSalt(token0, token1);
@@ -87,5 +87,9 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         exchangeReserves = _exchangeReserves;
 
         emit ExchangeReserveAddressChanged(_exchangeReserves);
+    }
+
+    function getInitCodeHash() external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(type(vPair).creationCode));
     }
 }

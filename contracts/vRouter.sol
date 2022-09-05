@@ -195,7 +195,7 @@ contract vRouter is IvRouter, Multicall {
             pairAddress = IvPairFactory(factory).createPair(tokenA, tokenB);
 
         (uint256 reserve0, uint256 reserve1) = IvPair(pairAddress)
-            .getReserves();
+            .getBalances();
 
         if (reserve0 == 0 && reserve1 == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
@@ -312,8 +312,8 @@ contract vRouter is IvRouter, Multicall {
 
         amountIn = vSwapLibrary.getAmountIn(
             amountOut,
-            vPool.reserve0,
-            vPool.reserve1,
+            vPool.balance0,
+            vPool.balance1,
             vPool.fee
         );
     }
@@ -327,8 +327,8 @@ contract vRouter is IvRouter, Multicall {
 
         amountOut = vSwapLibrary.getAmountOut(
             amountIn,
-            vPool.reserve0,
-            vPool.reserve1,
+            vPool.balance0,
+            vPool.balance1,
             vPool.fee
         );
     }
@@ -349,16 +349,16 @@ contract vRouter is IvRouter, Multicall {
     ) external view override returns (uint256 amountOut) {
         IvPair pair = getPair(inputToken, outputToken);
 
-        (uint256 reserve0, uint256 reserve1) = pair.getReserves();
+        (uint256 balance0, uint256 balance1) = pair.getBalances();
 
-        (reserve0, reserve1) = vSwapLibrary.sortReserves(
+        (balance0, balance1) = vSwapLibrary.sortBalances(
             inputToken,
             pair.token0(),
-            reserve0,
-            reserve1
+            balance0,
+            balance1
         );
 
-        amountOut = vSwapLibrary.quote(amountIn, reserve0, reserve1);
+        amountOut = vSwapLibrary.quote(amountIn, balance0, balance1);
     }
 
     function getAmountOut(
@@ -367,19 +367,20 @@ contract vRouter is IvRouter, Multicall {
         uint256 amountIn
     ) external view virtual override returns (uint256 amountOut) {
         IvPair pair = getPair(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1) = pair.getReserves();
+      
+        (uint256 balance0, uint256 balance1) = pair.getBalances();
 
-        (reserve0, reserve1) = vSwapLibrary.sortReserves(
+        (balance0, balance1) = vSwapLibrary.sortBalances(
             tokenA,
             pair.token0(),
-            reserve0,
-            reserve1
+            balance0,
+            balance1
         );
 
         amountOut = vSwapLibrary.getAmountOut(
             amountIn,
-            reserve0,
-            reserve1,
+            balance0,
+            balance1,
             pair.fee()
         );
     }
@@ -390,19 +391,19 @@ contract vRouter is IvRouter, Multicall {
         uint256 amountOut
     ) external view virtual override returns (uint256 amountIn) {
         IvPair pair = getPair(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1) = IvPair(pair).getReserves();
+        (uint256 balance0, uint256 balance1) = IvPair(pair).getBalances();
 
-        (reserve0, reserve1) = vSwapLibrary.sortReserves(
+        (balance0, balance1) = vSwapLibrary.sortBalances(
             tokenA,
             pair.token0(),
-            reserve0,
-            reserve1
+            balance0,
+            balance1
         );
 
         amountIn = vSwapLibrary.getAmountIn(
             amountOut,
-            reserve0,
-            reserve1,
+            balance0,
+            balance1,
             pair.fee()
         );
     }

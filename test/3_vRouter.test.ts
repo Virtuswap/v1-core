@@ -30,17 +30,17 @@ describe("vRouter", () => {
 
     const token0 = await abPool.token0();
 
-    const reserves = await abPool.getReserves();
+    const reserves = await abPool.getBalances();
 
     let tokenAReserve = 0;
     let tokenBReserve = 0;
 
     if (token0 == tokenA.address) {
-      tokenAReserve = reserves._reserve0;
-      tokenBReserve = reserves._reserve1;
+      tokenAReserve = reserves._balance0;
+      tokenBReserve = reserves._balance1;
     } else {
-      tokenAReserve = reserves._reserve1;
-      tokenBReserve = reserves._reserve0;
+      tokenAReserve = reserves._balance1;
+      tokenBReserve = reserves._balance0;
     }
 
     tokenAReserve = parseFloat(ethers.utils.formatEther(tokenAReserve));
@@ -444,8 +444,8 @@ describe("vRouter", () => {
 
     let lpBalanceBefore = await abPool.balanceOf(owner.address);
 
-    let reserve0 = await abPool.reserve0();
-    let reserve1 = await abPool.reserve1();
+    let reserve0 = await abPool.pairBalance0();
+    let reserve1 = await abPool.pairBalance1();
     reserve0 = reserve0;
     reserve1 = reserve1;
 
@@ -472,8 +472,8 @@ describe("vRouter", () => {
     let tokenABalanceAfter = await tokenA.balanceOf(owner.address);
     let tokenBBalanceAfter = await tokenB.balanceOf(owner.address);
 
-    let reserve0After = await abPool.reserve0();
-    let reserve1After = await abPool.reserve1();
+    let reserve0After = await abPool.pairBalance0();
+    let reserve1After = await abPool.pairBalance1();
 
     reserve0After = reserve0After;
     reserve1After = reserve1After;
@@ -498,8 +498,8 @@ describe("vRouter", () => {
       amountADesired
     );
 
-    let reserve0 = await abPool.reserve0();
-    let reserve1 = await abPool.reserve1();
+    let reserve0 = await abPool.pairBalance0();
+    let reserve1 = await abPool.pairBalance1();
 
     let totalBalanceBefore0 = reserve0;
     let totalBalanceBefore1 = reserve1;
@@ -519,8 +519,8 @@ describe("vRouter", () => {
 
     let lpBalance = await abPool.balanceOf(owner.address);
 
-    reserve0 = await abPool.reserve0();
-    reserve1 = await abPool.reserve1();
+    reserve0 = await abPool.pairBalance0();
+    reserve1 = await abPool.pairBalance1();
 
     let totalBalanceAfter0 = reserve0;
     let totalBalanceAfter1 = reserve1;
@@ -601,7 +601,7 @@ describe("vRouter", () => {
 
     let token0 = await abPool.token0();
     let token1 = await abPool.token1();
-    let amountADesired = await abPool.reserve0();
+    let amountADesired = await abPool.pairBalance0();
 
     let amountBDesired = await vRouterInstance.quote(
       token0,
@@ -615,8 +615,8 @@ describe("vRouter", () => {
     const cResrveRatio = await abPool.reservesBaseValue(tokenC.address);
     const userTokenCBalance = await tokenC.balanceOf(owner.address);
 
-    let reserve0 = await abPool.reserve0();
-    let reserve1 = await abPool.reserve1();
+    let reserve0 = await abPool.pairBalance0();
+    let reserve1 = await abPool.pairBalance1();
 
     await abPool.approve(vRouterInstance.address, lpBalance);
 
@@ -642,8 +642,8 @@ describe("vRouter", () => {
     tokenABalanceAfter = tokenABalanceAfter;
     tokenBBalanceAfter = tokenBBalanceAfter;
 
-    let reserve0After = await abPool.reserve0();
-    let reserve1After = await abPool.reserve1();
+    let reserve0After = await abPool.pairBalance0();
+    let reserve1After = await abPool.pairBalance1();
 
     const userTokenCBalanceAfter = await tokenC.balanceOf(owner.address);
 
@@ -668,8 +668,8 @@ describe("vRouter", () => {
 
     const vRouterInstance = fixture.vRouterInstance;
 
-    let reserve0 = await abPool.reserve0();
-    let reserve1 = await abPool.reserve1();
+    let reserve0 = await abPool.pairBalance0();
+    let reserve1 = await abPool.pairBalance1();
 
     const amountADesired = ethers.utils.parseEther("100");
 
@@ -692,8 +692,8 @@ describe("vRouter", () => {
       futureTs
     );
 
-    let reserve0After = await abPool.reserve0();
-    let reserve1After = await abPool.reserve1();
+    let reserve0After = await abPool.pairBalance0();
+    let reserve1After = await abPool.pairBalance1();
 
     let reserve0Eth, reserve1Eth, reserve0AfterEth, reserve1AfterEth;
 
