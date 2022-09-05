@@ -133,19 +133,19 @@ contract vPair is IvPair, vSwapERC20 {
 
         address _tokenIn = tokenOut == token0 ? token1 : token0;
 
-        (uint256 _balance0, uint256 _balance1) = vSwapLibrary.sortBalances(
+        (uint256 _balanceIn, uint256 _balanceOut) = vSwapLibrary.sortBalances(
             _tokenIn,
             token0,
             pairBalance0,
             pairBalance1
         );
 
-        require(amountOut <= _lastPairBalance1, "AOE");
+        require(amountOut <= _balanceOut, "AOE");
 
         uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
-            _balance0,
-            _balance1,
+            _balanceIn,
+            _balanceOut,
             fee
         );
 
@@ -158,7 +158,7 @@ contract vPair is IvPair, vSwapERC20 {
             );
         }
 
-        _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - _balance0;
+        _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - _balanceIn;
 
         require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
 
@@ -167,8 +167,8 @@ contract vPair is IvPair, vSwapERC20 {
             bool _isTokenIn0 = _tokenIn == token0;
 
             _update(
-                _isTokenIn0 ? _balance0 + _amountIn : _balance1 - amountOut,
-                _isTokenIn0 ? _balance1 - amountOut : _balance0 + _amountIn
+                _isTokenIn0 ? _balanceIn + _amountIn : _balanceOut - amountOut,
+                _isTokenIn0 ? _balanceOut - amountOut : _balanceIn + _amountIn
             );
         }
 
@@ -218,8 +218,8 @@ contract vPair is IvPair, vSwapERC20 {
 
         requiredAmountIn = vSwapLibrary.quote(
             amountOut,
-            vPool.balance0,
             vPool.balance1
+            vPool.balance0
         );
 
         if (data.length > 0)
@@ -344,8 +344,8 @@ contract vPair is IvPair, vSwapERC20 {
             //if tokenOut is not token0 we should quote it to token0 value
             _reserveBaseValue = vSwapLibrary.quote(
                 _reserveBaseValue,
-                pairBalance0,
-                pairBalance1
+                pairBalance1,
+                pairBalance0
             );
         }
 
