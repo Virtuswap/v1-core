@@ -10,10 +10,8 @@ async function main() {
         "100000000000000000000000000000000000"
     );
 
-    // Contracts are deployed using the first signer/account by default
-    const accounts = await ethers.getSigners();
-    const owner = accounts[0];
-
+    const wsUrl = "http://127.0.0.1:8545";
+    const pk = process.env.MATIC_LOCALHOST_PK || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Known Account #0
     const faucetTokens = {
         "WMATIC": "Wrapped Matic - VirtuSwap Test",
         "USDC": "USD Coin - VirtuSwap Test",
@@ -31,6 +29,10 @@ async function main() {
         "PGEN": "Polygen - VirtuSwap Test",
         "RADIO": "Radio Token - VirtuSwap Test"
     };
+
+    const customProvider = new ethers.providers.WebSocketProvider(wsUrl);
+    const wallet = new ethers.Wallet(pk);
+    const owner = wallet.connect(customProvider);
 
     const erc20ContractFactory = await new ERC20PresetFixedSupply__factory(owner);
     for (const [symbol, name] of Object.entries(faucetTokens)) {
