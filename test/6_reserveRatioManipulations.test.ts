@@ -1,11 +1,13 @@
+//####
+// ## Based on https://docs.google.com/spreadsheets/d/1OW2c76WO-FvI4dp-5HB0LGUbDfv_YzVw/edit?usp=sharing&ouid=100308376099877825660&rtpof=true&sd=true
+//####
+
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
 import { ethers } from "hardhat";
 import { reserveRatioManipulation } from "./fixtures/reserveRatioManipulation";
 import _ from "lodash";
 import utils from "./utils";
 
-// ## Based on https://docs.google.com/spreadsheets/d/1OW2c76WO-FvI4dp-5HB0LGUbDfv_YzVw/edit?usp=sharing&ouid=100308376099877825660&rtpof=true&sd=true
 describe("ExchangeReserves", () => {
   let fixture: any = {};
 
@@ -67,8 +69,11 @@ describe("ExchangeReserves", () => {
     console.log(
       "reserveRatio before " + utils.fromWeiToNumber(rrBefore) / 1000 + "%"
     );
-    
-    await fixture.acPool.setAllowList([fixture.tokenB.address, fixture.tokenD.address]);
+
+    await fixture.acPool.setAllowList([
+      fixture.tokenB.address,
+      fixture.tokenD.address,
+    ]);
 
     await fixture.vRouterInstance.swapReserveExactOutput(
       fixture.tokenC.address,
