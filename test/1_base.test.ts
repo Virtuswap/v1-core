@@ -6,8 +6,6 @@ describe("Base actions", function () {
   it("Should deploy fixture", async function () {
     const fixture = await loadFixture(deployPools);
 
-    console.log(await fixture.vPairFactoryInstance.getInitCodeHash());
-
     // const initHash = await fixture.vPairFactoryInstance.getInitCodeHash();
     // console.log("initHash " + initHash);
 
