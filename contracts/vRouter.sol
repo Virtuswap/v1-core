@@ -26,7 +26,7 @@ contract vRouter is IvRouter, Multicall {
         _;
     }
 
-    modifier ensure(uint256 deadline) {
+    modifier notAfter(uint256 deadline) {
         require(deadline >= block.timestamp, "VSWAP:EXPIRED");
         _;
     }
@@ -117,14 +117,16 @@ contract vRouter is IvRouter, Multicall {
         payable(to).transfer(amount);
     }
 
-    function swapToExactNative(
+  
+
+    function swapExactNativeOutput(
         address tokenIn,
         address tokenOut,
         uint256 amountOut,
         uint256 maxAmountIn,
         address to,
         uint256 deadline
-    ) external payable override ensure(deadline) {
+    ) external payable override notAfter(deadline) {
         getPair(tokenIn, tokenOut).swapNative(
             amountOut,
             tokenOut,
@@ -152,7 +154,7 @@ contract vRouter is IvRouter, Multicall {
         uint256 maxAmountIn,
         address to,
         uint256 deadline
-    ) external payable override ensure(deadline) {
+    ) external payable override notAfter(deadline) {
         address jkAddress = getPairAddress(tokenOut, commonToken);
 
         IvPair(jkAddress).swapReserveToNative(
@@ -241,7 +243,7 @@ contract vRouter is IvRouter, Multicall {
     )
         external
         override
-        ensure(deadline)
+        notAfter(deadline)
         returns (
             uint256 amountA,
             uint256 amountB,
@@ -285,7 +287,7 @@ contract vRouter is IvRouter, Multicall {
     )
         external
         override
-        ensure(deadline)
+        notAfter(deadline)
         returns (uint256 amountA, uint256 amountB)
     {
         address pairAddress = getPairAddress(tokenA, tokenB);
@@ -367,7 +369,7 @@ contract vRouter is IvRouter, Multicall {
         uint256 amountIn
     ) external view virtual override returns (uint256 amountOut) {
         IvPair pair = getPair(tokenA, tokenB);
-      
+
         (uint256 balance0, uint256 balance1) = pair.getBalances();
 
         (balance0, balance1) = vSwapLibrary.sortBalances(
