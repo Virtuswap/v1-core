@@ -88,8 +88,4 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
         emit ExchangeReserveAddressChanged(_exchangeReserves);
     }
-
-    function getInitCodeHash() external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(type(vPair).creationCode));
-    }
 }
