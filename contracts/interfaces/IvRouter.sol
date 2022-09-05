@@ -5,13 +5,11 @@ import "../types.sol";
 import "./IvFlashSwapCallback.sol";
 
 interface IvRouter is IvFlashSwapCallback {
-    event FactoryChanged(address newFactoryAddress);
+    event RouterFactoryChanged(address newFactoryAddress);
 
     function changeFactory(address _factory) external;
 
     function factory() external view returns (address);
-
-    function owner() external view returns (address);
 
     function WETH9() external view returns (address);
 

@@ -18,11 +18,10 @@ import "./interfaces/external/IWETH9.sol";
 
 contract vRouter is IvRouter, Multicall {
     address public override factory;
-    address public immutable override owner;
     address public immutable override WETH9;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "VSWAP:ONLY_OWNER");
+    modifier _onlyFactoryAdmin() {
+        require(msg.sender == IvPairFactory(factory).admin(), "VSWAP:ONLY_ADMIN");
         _;
     }
 
@@ -32,7 +31,6 @@ contract vRouter is IvRouter, Multicall {
     }
 
     constructor(address _factory, address _WETH9) {
-        owner = msg.sender;
         WETH9 = _WETH9;
         factory = _factory;
     }
@@ -474,13 +472,17 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
-    function changeFactory(address _factory) external override onlyOwner {
+    function changeFactory(address _factory)
+        external
+        override
+        _onlyFactoryAdmin
+    {
         require(
             _factory > address(0) && _factory != factory,
             "VSWAP:INVALID_FACTORY"
         );
         factory = _factory;
 
-        emit FactoryChanged(_factory);
+        emit RouterFactoryChanged(_factory);
     }
 }
