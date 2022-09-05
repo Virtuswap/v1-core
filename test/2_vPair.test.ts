@@ -274,8 +274,8 @@ describe("vPair", () => {
   it("Should set fee", async () => {
     const abPool = fixture.abPool;
 
-    const feeChange = 1000;
-    const vFeeChange = 2000;
+    const feeChange = 999;
+    const vFeeChange = 300;
     await abPool.setFee(feeChange, vFeeChange);
 
     const fee = await abPool.fee();
