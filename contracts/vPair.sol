@@ -521,7 +521,7 @@ contract vPair is IvPair, vSwapERC20 {
         override
         onlyFactoryAdmin
     {
-        require(_fee > 0 && _vFee > 0, "IFC");
+        require(_fee > 0 && _vFee > 0 && _fee < 1000 && _vFee < 1000, "IFC");
         fee = _fee;
         vFee = _vFee;
 
