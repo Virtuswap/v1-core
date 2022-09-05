@@ -8,7 +8,7 @@ import { reserveRatioManipulation } from "./fixtures/reserveRatioManipulation";
 import _ from "lodash";
 import utils from "./utils";
 
-describe("ExchangeReserves", () => {
+describe("ExchangeReserves manipulation scenarios", () => {
   let fixture: any = {};
 
   before(async () => {
