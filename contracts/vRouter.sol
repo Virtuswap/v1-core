@@ -117,8 +117,6 @@ contract vRouter is IvRouter, Multicall {
         payable(to).transfer(amount);
     }
 
-  
-
     function swapExactNativeOutput(
         address tokenIn,
         address tokenOut,
@@ -364,16 +362,16 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function getAmountOut(
-        address tokenA,
-        address tokenB,
+        address tokenIn,
+        address tokenOut,
         uint256 amountIn
     ) external view virtual override returns (uint256 amountOut) {
-        IvPair pair = getPair(tokenA, tokenB);
+        IvPair pair = getPair(tokenIn, tokenOut);
 
         (uint256 balance0, uint256 balance1) = pair.getBalances();
 
         (balance0, balance1) = vSwapLibrary.sortBalances(
-            tokenA,
+            tokenIn,
             pair.token0(),
             balance0,
             balance1
@@ -388,15 +386,15 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function getAmountIn(
-        address tokenA,
-        address tokenB,
+        address tokenIn,
+        address tokenOut,
         uint256 amountOut
     ) external view virtual override returns (uint256 amountIn) {
-        IvPair pair = getPair(tokenA, tokenB);
+        IvPair pair = getPair(tokenIn, tokenOut);
         (uint256 balance0, uint256 balance1) = IvPair(pair).getBalances();
 
         (balance0, balance1) = vSwapLibrary.sortBalances(
-            tokenA,
+            tokenIn,
             pair.token0(),
             balance0,
             balance1
