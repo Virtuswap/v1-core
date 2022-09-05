@@ -154,9 +154,6 @@ describe("vPair", () => {
       amountOut
     );
 
-    console.log('amountOut ' + amountOut);
-    console.log('amountIn ' + amountIn);
-
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenAReserve = await abPool.reservesBaseValue(tokenC.address);
 
