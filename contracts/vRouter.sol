@@ -117,7 +117,7 @@ contract vRouter is IvRouter, Multicall {
         payable(to).transfer(amount);
     }
 
-    function swapExactNativeOutput(
+    function swapExactOutput(
         address tokenIn,
         address tokenOut,
         uint256 amountOut,
@@ -144,7 +144,37 @@ contract vRouter is IvRouter, Multicall {
         }
     }
 
-    function swapReserveToExactNative(
+    function swapExactInput(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external payable override notAfter(deadline) {
+        uint256 amountOut = getAmountOut(tokenIn, tokenOut, amountIn);
+        require(amountOut >= minAmountOut, "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT");
+
+        getPair(tokenIn, tokenOut).swapNative(
+            amountOut,
+            tokenOut,
+            tokenOut == WETH9 ? address(this) : to,
+            abi.encode(
+                SwapCallbackData({
+                    caller: msg.sender,
+                    tokenInMax: amountIn,
+                    ETHValue: address(this).balance,
+                    jkPool: address(0)
+                })
+            )
+        );
+
+        if (tokenOut == WETH9) {
+            unwrapTransferETH(to, amountOut);
+        }
+    }
+
+    function swapReserveExactOutput(
         address tokenOut,
         address commonToken,
         address ikPair,
@@ -163,6 +193,42 @@ contract vRouter is IvRouter, Multicall {
                 SwapCallbackData({
                     caller: msg.sender,
                     tokenInMax: maxAmountIn,
+                    ETHValue: address(this).balance,
+                    jkPool: jkAddress
+                })
+            )
+        );
+
+        if (tokenOut == WETH9) {
+            unwrapTransferETH(to, amountOut);
+        }
+    }
+
+    function swapReserveExactInput(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external payable override notAfter(deadline) {
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
+
+        require(
+            amountOut >= minAmountOut,
+            "VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT"
+        );
+
+        IvPair(jkAddress).swapReserveToNative(
+            amountOut,
+            ikPair,
+            tokenOut == WETH9 ? address(this) : to,
+            abi.encode(
+                SwapCallbackData({
+                    caller: msg.sender,
+                    tokenInMax: amountIn,
                     ETHValue: address(this).balance,
                     jkPool: jkAddress
                 })
@@ -322,7 +388,7 @@ contract vRouter is IvRouter, Multicall {
         address jkPair,
         address ikPair,
         uint256 amountIn
-    ) external view override returns (uint256 amountOut) {
+    ) public view override returns (uint256 amountOut) {
         VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
 
         amountOut = vSwapLibrary.getAmountOut(
@@ -365,7 +431,7 @@ contract vRouter is IvRouter, Multicall {
         address tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) external view virtual override returns (uint256 amountOut) {
+    ) public view virtual override returns (uint256 amountOut) {
         IvPair pair = getPair(tokenIn, tokenOut);
 
         (uint256 balance0, uint256 balance1) = pair.getBalances();

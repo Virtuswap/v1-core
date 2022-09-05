@@ -218,7 +218,7 @@ describe("vRouter", () => {
     );
     const futureTs = await utils.getFutureBlockTimestamp();
 
-    await vRouterInstance.swapToExactNative(
+    await vRouterInstance.swapExactOutput(
       tokenC.address,
       tokenA.address,
       amountOut,
@@ -257,7 +257,7 @@ describe("vRouter", () => {
 
     let str = await VRouter__factory.getInterface(
       VRouter__factory.abi
-    ).encodeFunctionData("swapToExactNative", [
+    ).encodeFunctionData("swapExactOutput", [
       tokenA.address,
       tokenC.address,
       amountOut,
@@ -299,7 +299,7 @@ describe("vRouter", () => {
 
     const futureTs = await utils.getFutureBlockTimestamp();
 
-    await vRouterInstance.swapReserveToExactNative(
+    await vRouterInstance.swapReserveExactOutput(
       tokenA.address,
       tokenB.address,
       bcPool.address,
@@ -328,7 +328,7 @@ describe("vRouter", () => {
     );
 
     const futureTs = await utils.getFutureBlockTimestamp();
-    await vRouterInstance.swapReserveToExactNative(
+    await vRouterInstance.swapReserveExactOutput(
       tokenB.address,
       tokenC.address,
       abPool.address,
@@ -368,7 +368,7 @@ describe("vRouter", () => {
 
     let str = await VRouter__factory.getInterface(
       VRouter__factory.abi
-    ).encodeFunctionData("swapToExactNative", [
+    ).encodeFunctionData("swapExactOutput", [
       tokenC.address,
       tokenA.address,
       _amountOut,
@@ -381,7 +381,7 @@ describe("vRouter", () => {
 
     str = await VRouter__factory.getInterface(
       VRouter__factory.abi
-    ).encodeFunctionData("swapReserveToExactNative", [
+    ).encodeFunctionData("swapReserveExactOutput", [
       tokenA.address,
       tokenB.address,
       bcPool.address,
