@@ -11,19 +11,6 @@ export default {
   getFutureBlockTimestamp: async function () {
     return (await time.latest()) + 1000000;
   },
-  getEncodedSwapData: function (
-    payer: any,
-    tokenIn: any,
-    token0: any,
-    token1: any,
-    tokenInMax: any
-  ) {
-    return abi.encode(
-      ["address", "address", "address", "address", "uint256"],
-      [payer, tokenIn, token0, token1, tokenInMax]
-    );
-  },
-
   getEncodedExchangeReserveCallbackParams: function (
     jkPair1: any,
     jkPair2: any,
