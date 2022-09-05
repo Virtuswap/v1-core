@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity 0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,24 +14,31 @@ import "./libraries/vSwapLibrary.sol";
 import "./interfaces/IvRouter.sol";
 import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvPair.sol";
+import "./interfaces/external/IWETH9.sol";
 
 contract vRouter is IvRouter, Multicall {
     address public override factory;
     address public immutable override owner;
+    address public immutable override WETH9;
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "VSWAP:ONLY_OWNER");
         _;
     }
 
     modifier ensure(uint256 deadline) {
-        require(deadline >= block.timestamp, "VSWAP: EXPIRED");
+        require(deadline >= block.timestamp, "VSWAP:EXPIRED");
         _;
     }
 
-    constructor(address _factory) {
+    constructor(address _factory, address _WETH9) {
         owner = msg.sender;
+        WETH9 = _WETH9;
         factory = _factory;
+    }
+
+    receive() external payable {
+        require(msg.sender == WETH9, "Not WETH9");
     }
 
     function getPairAddress(address tokenA, address tokenB)
@@ -50,59 +58,120 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function vFlashSwapCallback(
+        address tokenIn,
+        address tokenOut,
         uint256 requiredBackAmount,
-        bytes memory callbackData
+        bytes calldata data
     ) external override {
-        SwapCallbackData memory data = abi.decode(
-            callbackData,
+        SwapCallbackData memory decodedData = abi.decode(
+            data,
             (SwapCallbackData)
         );
-        require(
-            msg.sender ==
-                PoolAddress.computeAddress(factory, data.token0, data.token1),
-            "VSWAP:INVALID_CALLBACK_POOL"
-        );
+
+        if (decodedData.jkPool > address(0)) {
+            //validate JK pool
+            (address jkToken0, address jkToken1) = IvPair(decodedData.jkPool)
+                .getTokens();
+
+            require(
+                msg.sender ==
+                    PoolAddress.computeAddress(factory, jkToken0, jkToken1),
+                "VSWAP:INVALID_CALLBACK_VPOOL"
+            );
+        } else
+            require(
+                msg.sender ==
+                    PoolAddress.computeAddress(factory, tokenIn, tokenOut),
+                "VSWAP:INVALID_CALLBACK_POOL"
+            );
 
         //validate amount to pay back dont exceeds
         require(
-            requiredBackAmount <= data.tokenInMax,
-            "VSWAP:REQUIRED_AMOUNT_EXECEDS"
+            requiredBackAmount <= decodedData.tokenInMax,
+            "VSWAP:REQUIRED_AMOUNT_EXCEEDS"
         );
+        // handle payment
+        if (tokenIn == WETH9 && decodedData.ETHValue > 0) {
+            require(
+                decodedData.ETHValue >= requiredBackAmount,
+                "VSWAP:INSUFFICIENT_ETH_INPUT_AMOUNT"
+            );
+            // pay back with WETH9
+            IWETH9(WETH9).deposit{value: requiredBackAmount}();
+            IWETH9(WETH9).transfer(msg.sender, requiredBackAmount);
 
-        SafeERC20.safeTransferFrom(
-            IERC20(data.tokenIn),
-            data.payer,
-            msg.sender,
-            requiredBackAmount
-        );
+            //send any ETH leftovers to caller
+            payable(decodedData.caller).transfer(address(this).balance);
+        } else {
+            SafeERC20.safeTransferFrom(
+                IERC20(tokenIn),
+                decodedData.caller,
+                msg.sender,
+                requiredBackAmount
+            );
+        }
+    }
+
+    function unwrapTransferETH(address to, uint256 amount) internal {
+        IWETH9(WETH9).withdraw(amount);
+        payable(to).transfer(amount);
     }
 
     function swapToExactNative(
-        address tokenA,
-        address tokenB,
+        address tokenIn,
+        address tokenOut,
         uint256 amountOut,
+        uint256 maxAmountIn,
         address to,
-        bytes calldata data,
         uint256 deadline
-    ) external override ensure(deadline) {
-        getPair(tokenA, tokenB).swapNative(amountOut, tokenB, to, data);
+    ) external payable override ensure(deadline) {
+        getPair(tokenIn, tokenOut).swapNative(
+            amountOut,
+            tokenOut,
+            tokenOut == WETH9 ? address(this) : to,
+            abi.encode(
+                SwapCallbackData({
+                    caller: msg.sender,
+                    tokenInMax: maxAmountIn,
+                    ETHValue: address(this).balance,
+                    jkPool: address(0)
+                })
+            )
+        );
+
+        if (tokenOut == WETH9) {
+            unwrapTransferETH(to, amountOut);
+        }
     }
 
     function swapReserveToExactNative(
-        address tokenA,
-        address tokenB,
+        address tokenOut,
+        address commonToken,
         address ikPair,
         uint256 amountOut,
+        uint256 maxAmountIn,
         address to,
-        bytes calldata data,
         uint256 deadline
-    ) external override ensure(deadline) {
-        getPair(tokenA, tokenB).swapReserveToNative(
+    ) external payable override ensure(deadline) {
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+
+        IvPair(jkAddress).swapReserveToNative(
             amountOut,
             ikPair,
-            to,
-            data
+            tokenOut == WETH9 ? address(this) : to,
+            abi.encode(
+                SwapCallbackData({
+                    caller: msg.sender,
+                    tokenInMax: maxAmountIn,
+                    ETHValue: address(this).balance,
+                    jkPool: jkAddress
+                })
+            )
         );
+
+        if (tokenOut == WETH9) {
+            unwrapTransferETH(to, amountOut);
+        }
     }
 
     function _addLiquidity(
@@ -239,7 +308,7 @@ contract vRouter is IvRouter, Multicall {
         address ikPair,
         uint256 amountOut
     ) external view override returns (uint256 amountIn) {
-        VirtualPoolModel memory vPool = this.getVirtualPool(jkPair, ikPair);
+        VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
 
         amountIn = vSwapLibrary.getAmountIn(
             amountOut,
@@ -254,7 +323,7 @@ contract vRouter is IvRouter, Multicall {
         address ikPair,
         uint256 amountIn
     ) external view override returns (uint256 amountOut) {
-        VirtualPoolModel memory vPool = this.getVirtualPool(jkPair, ikPair);
+        VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
 
         amountOut = vSwapLibrary.getAmountOut(
             amountIn,
@@ -265,7 +334,7 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function getVirtualPool(address jkPair, address ikPair)
-        external
+        public
         view
         override
         returns (VirtualPoolModel memory vPool)
@@ -274,22 +343,22 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function quote(
-        address tokenA,
-        address tokenB,
-        uint256 amount
-    ) external view override returns (uint256 quoteR) {
-        IvPair pair = getPair(tokenA, tokenB);
+        address inputToken,
+        address outputToken,
+        uint256 amountIn
+    ) external view override returns (uint256 amountOut) {
+        IvPair pair = getPair(inputToken, outputToken);
 
         (uint256 reserve0, uint256 reserve1) = pair.getReserves();
 
         (reserve0, reserve1) = vSwapLibrary.sortReserves(
-            tokenA,
+            inputToken,
             pair.token0(),
             reserve0,
             reserve1
         );
 
-        quoteR = vSwapLibrary.quote(amount, reserve0, reserve1);
+        amountOut = vSwapLibrary.quote(amountIn, reserve0, reserve1);
     }
 
     function getAmountOut(
@@ -339,14 +408,12 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function changeFactory(address _factory) external override onlyOwner {
+        require(
+            _factory > address(0) && _factory != factory,
+            "VSWAP:INVALID_FACTORY"
+        );
         factory = _factory;
-    }
 
-    function calculatePoolAddress(address tokenA, address tokenB)
-        external
-        view
-        returns (address)
-    {
-        return PoolAddress.computeAddress(factory, tokenA, tokenB);
+        emit FactoryChanged(_factory);
     }
 }

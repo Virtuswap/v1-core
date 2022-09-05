@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.7.0) (token/ERC20/ERC20.sol)
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -42,8 +42,8 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
 
     uint256 private _totalSupply;
 
-    string private _name = "Virtuswap-LP";
-    string private _symbol = "VSWAPLP";
+    string private constant _name = "Virtuswap-LP";
+    string private constant _symbol = "VSWAPLP";
 
     /**
      * @dev Returns the name of the token.
@@ -140,7 +140,7 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      */
     function approve(address spender, uint256 amount)
-        public
+        external
         virtual
         override
         returns (bool)
@@ -190,7 +190,7 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue)
-        public
+        external
         virtual
         returns (bool)
     {
@@ -214,7 +214,7 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
+        external
         virtual
         returns (bool)
     {
@@ -249,7 +249,7 @@ contract vSwapERC20 is Context, IERC20, IERC20Metadata {
         address from,
         address to,
         uint256 amount
-    ) public virtual {
+    ) internal virtual {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 

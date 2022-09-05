@@ -37,14 +37,6 @@ describe("ExchangeReserves", () => {
     let reserveRatioBefore = await abPool.calculateReserveRatio();
     let tokenCReserve = await abPool.reservesBaseValue(tokenC.address);
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenB.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -52,8 +44,8 @@ describe("ExchangeReserves", () => {
       tokenB.address,
       bcPool.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
 
@@ -84,15 +76,6 @@ describe("ExchangeReserves", () => {
 
     let reserveRatioBefore = await bcPool.calculateReserveRatio();
     let tokenAReserve = await bcPool.reservesBaseValue(tokenA.address);
-
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenA.address,
-      tokenB.address,
-      tokenC.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -100,8 +83,8 @@ describe("ExchangeReserves", () => {
       tokenC.address,
       abPool.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
 

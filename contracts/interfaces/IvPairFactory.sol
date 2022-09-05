@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity 0.8.2;
 
 interface IvPairFactory {
     event PairCreated(
@@ -8,6 +9,8 @@ interface IvPairFactory {
         address token0,
         address token1
     );
+
+    event ExchangeReserveAddressChanged(address newExchangeReserve);
 
     function createPair(address tokenA, address tokenB)
         external

@@ -218,19 +218,12 @@ describe("vRouter", () => {
     );
     const futureTs = await utils.getFutureBlockTimestamp();
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenC.address,
-      amountIn
-    );
     await vRouterInstance.swapToExactNative(
       tokenC.address,
       tokenA.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
     const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
@@ -257,13 +250,7 @@ describe("vRouter", () => {
       tokenC.address,
       amountIn
     );
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenA.address,
-      tokenA.address,
-      tokenC.address,
-      amountIn
-    );
+
     const futureTs = await utils.getFutureBlockTimestamp();
 
     let multiData = [];
@@ -274,8 +261,8 @@ describe("vRouter", () => {
       tokenA.address,
       tokenC.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs,
     ]);
 
@@ -310,14 +297,6 @@ describe("vRouter", () => {
 
     amountInTokenC = amountIn;
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenB.address,
-      tokenA.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
 
     await vRouterInstance.swapReserveToExactNative(
@@ -325,8 +304,8 @@ describe("vRouter", () => {
       tokenB.address,
       bcPool.address,
       amountOut,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
   });
@@ -348,22 +327,14 @@ describe("vRouter", () => {
       amountInTokenC
     );
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenA.address,
-      tokenB.address,
-      tokenC.address,
-      amountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
     await vRouterInstance.swapReserveToExactNative(
       tokenB.address,
       tokenC.address,
       abPool.address,
       amountInTokenC,
+      amountIn,
       owner.address,
-      data,
       futureTs
     );
   });
@@ -392,14 +363,6 @@ describe("vRouter", () => {
       _amountOut
     );
 
-    let data = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenC.address,
-      realAmountIn
-    );
-
     const futureTs = await utils.getFutureBlockTimestamp();
     let multiData = [];
 
@@ -409,20 +372,12 @@ describe("vRouter", () => {
       tokenC.address,
       tokenA.address,
       _amountOut,
+      realAmountIn,
       owner.address,
-      data,
       futureTs,
     ]);
 
     multiData.push(str);
-
-    let data2 = utils.getEncodedSwapData(
-      owner.address,
-      tokenC.address,
-      tokenA.address,
-      tokenB.address,
-      virtualIn
-    );
 
     str = await VRouter__factory.getInterface(
       VRouter__factory.abi
@@ -431,8 +386,8 @@ describe("vRouter", () => {
       tokenB.address,
       bcPool.address,
       _amountOut,
+      virtualIn,
       owner.address,
-      data2,
       futureTs,
     ]);
 

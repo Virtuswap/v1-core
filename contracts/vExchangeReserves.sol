@@ -1,22 +1,23 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.2;
 
 import "./types.sol";
 import "./interfaces/IvPair.sol";
-import "./interfaces/IvPairFactory.sol";
 import "./interfaces/IvFlashSwapCallback.sol";
 
-contract exchangeReserves is IvFlashSwapCallback {
-    address factory;
+contract vExchangeReserves is IvFlashSwapCallback {
+    address immutable factory;
 
     constructor(address _factory) {
         factory = _factory;
     }
 
-    function vFlashSwapCallback(uint256 requiredBackAmount, bytes memory data)
-        external
-        override
-    {
+    function vFlashSwapCallback(
+        address tokenIn,
+        address tokenOut,
+        uint256 requiredBackAmount,
+        bytes calldata data
+    ) external override {
         ExchangeReserveCallbackParams memory decodedData = abi.decode(
             data,
             (ExchangeReserveCallbackParams)

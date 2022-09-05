@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity 0.8.2;
 
 import "./vPair.sol";
 import "./interfaces/IvPairFactory.sol";
@@ -14,7 +15,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     address public immutable override admin;
     address public override exchangeReserves;
 
-    PairCreationParams public override poolCreationParameters;
+    PoolCreationDefaults public override poolCreationDefaults;
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "OA");
@@ -50,7 +51,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
         require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
 
-        poolCreationParameters = PairCreationParams({
+        poolCreationDefaults = PoolCreationDefaults({
             factory: address(this),
             token0: token0,
             token1: token1,
@@ -63,7 +64,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         bytes32 _salt = PoolAddress.getSalt(token0, token1);
         pair = address(new vPair{salt: _salt}());
 
-        delete poolCreationParameters;
+        delete poolCreationDefaults;
 
         pairs[token0][token1] = pair;
         pairs[token1][token0] = pair;
@@ -79,10 +80,12 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         override
         onlyAdmin
     {
+        require(
+            _exchangeReserves > address(0),
+            "VSWAP:INVALID_EXCHANGE_RESERVE_ADDRESS"
+        );
         exchangeReserves = _exchangeReserves;
-    }
 
-    function getInitCodeHash() public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(type(vPair).creationCode));
+        emit ExchangeReserveAddressChanged(_exchangeReserves);
     }
 }

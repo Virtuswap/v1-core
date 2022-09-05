@@ -5,7 +5,8 @@ import {
   VPairFactory__factory,
   VPair__factory,
   VRouter__factory,
-  ExchangeReserves__factory,
+  VExchangeReserves__factory,
+  WETH9__factory,
 } from "../../typechain-types/index";
 
 // We define a fixture to reuse the same setup in every test.
@@ -56,15 +57,21 @@ export async function deployPools() {
     owner.address
   );
 
+  const WETH9Instance = await new WETH9__factory(
+    WETH9__factory.createInterface(),
+    WETH9__factory.bytecode,
+    owner
+  ).deploy();
+
   const vPairFactoryInstance = await new VPairFactory__factory(
     VPairFactory__factory.createInterface(),
     VPairFactory__factory.bytecode,
     owner
   ).deploy();
 
-  const exchangeReserveInstance = await new ExchangeReserves__factory(
-    ExchangeReserves__factory.createInterface(),
-    ExchangeReserves__factory.bytecode,
+  const exchangeReserveInstance = await new VExchangeReserves__factory(
+    VExchangeReserves__factory.createInterface(),
+    VExchangeReserves__factory.bytecode,
     owner
   ).deploy(vPairFactoryInstance.address);
 
@@ -72,7 +79,7 @@ export async function deployPools() {
     VRouter__factory.createInterface(),
     VRouter__factory.bytecode,
     owner
-  ).deploy(vPairFactoryInstance.address);
+  ).deploy(vPairFactoryInstance.address, WETH9Instance.address);
 
   await tokenA.approve(vRouterInstance.address, issueAmount);
   await tokenB.approve(vRouterInstance.address, issueAmount);
