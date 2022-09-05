@@ -10,20 +10,24 @@ interface IvPairFactory {
         address token1
     );
 
+    event FactoryAdminChanged(address newAdmin);
+
     event ExchangeReserveAddressChanged(address newExchangeReserve);
 
     function createPair(address tokenA, address tokenB)
         external
         returns (address);
 
-    function admin() external view returns (address);
-
-    function exchangeReserves() external view returns (address);
-
     function getPair(address tokenA, address tokenB)
         external
         view
         returns (address);
+
+    function admin() external view returns (address);
+
+    function changeAdmin(address newAdmin) external;
+
+    function exchangeReserves() external view returns (address);
 
     function setExchangeReservesAddress(address _exchangeReserves) external;
 }

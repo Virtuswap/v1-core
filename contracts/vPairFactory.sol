@@ -12,7 +12,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
     address[] public allPairs;
 
-    address public immutable override admin;
+    address public override admin;
     address public override exchangeReserves;
 
     PoolCreationDefaults public override poolCreationDefaults;
@@ -87,5 +87,16 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         exchangeReserves = _exchangeReserves;
 
         emit ExchangeReserveAddressChanged(_exchangeReserves);
+    }
+
+    function changeAdmin(address newAdmin) external override onlyAdmin {
+        require(
+            newAdmin > address(0) && newAdmin != admin,
+            "VSWAP:INVALID_NEW_ADMIN_ADDRESS"
+        );
+
+        admin = newAdmin;
+
+        emit FactoryAdminChanged(newAdmin);
     }
 }
