@@ -66,7 +66,6 @@ contract vPair is IvPair, vSwapERC20 {
         _;
     }
 
-    /// @dev Get the pool's balance of token0
     /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
     function fetchBalance(address token) internal view returns (uint256) {
         (bool success, bytes memory data) = token.staticcall(
