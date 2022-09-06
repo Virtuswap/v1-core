@@ -12,7 +12,7 @@ describe("ExchangeReserves", () => {
     fixture = await loadFixture(deployPools);
 
     await fixture.vPairFactoryInstance.setExchangeReservesAddress(
-      fixture.exchangeReserveInstance.address
+      fixture.exchageReserveInstance.address
     );
   });
 
@@ -122,7 +122,7 @@ describe("ExchangeReserves", () => {
     let poolBCRR = await bcPool.calculateReserveRatio();
 
     //get flash swap of amount required amount C from pool BC.
-    await fixture.exchangeReserveInstance.exchange(
+    await fixture.exchageReserveInstance.exchange(
       bcPool.address, //jk1
       abPool.address, // ik1
       abPool.address, //jk2

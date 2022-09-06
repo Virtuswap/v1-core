@@ -24,14 +24,6 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  networks: {
-    matic_testnet: {
-      url: process.env.MATIC_TESTNET_WS || ""
-    },
-    matic: {
-      url: process.env.MATIC_WS || ""
-    }
-  }
 };
 
 export default config;
