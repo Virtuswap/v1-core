@@ -5,6 +5,7 @@ pragma solidity 0.8.2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol";
 
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvSwapPoolDeployer.sol";
@@ -63,6 +64,18 @@ contract vPair is IvPair, vSwapERC20 {
     modifier onlyForExchangeReserves() {
         require(msg.sender == IvPairFactory(factory).exchangeReserves(), "OER");
         _;
+    }
+
+    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
+    function fetchBalance(address token) internal view returns (uint256) {
+        (bool success, bytes memory data) = token.staticcall(
+            abi.encodeWithSelector(
+                IERC20Minimal.balanceOf.selector,
+                address(this)
+            )
+        );
+        require(success && data.length >= 32);
+        return abi.decode(data, (uint256));
     }
 
     constructor() {
@@ -158,7 +171,7 @@ contract vPair is IvPair, vSwapERC20 {
             );
         }
 
-        _amountIn = IERC20(_tokenIn).balanceOf(address(this)) - _balanceIn;
+        _amountIn = fetchBalance(_tokenIn) - _balanceIn;
 
         require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
 
@@ -231,7 +244,7 @@ contract vPair is IvPair, vSwapERC20 {
             );
 
         _amountIn =
-            IERC20(vPool.token0).balanceOf(address(this)) -
+            fetchBalance(vPool.token0) -
             (vPool.token0 == token0 ? pairBalance0 : pairBalance1);
 
         require(_amountIn > 0 && _amountIn >= requiredAmountIn, "IIA");
@@ -262,10 +275,7 @@ contract vPair is IvPair, vSwapERC20 {
         //update reserve balance
         reserves[vPool.token1] -= amountOut;
 
-        _update(
-            IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
-        );
+        _update(fetchBalance(token0), fetchBalance(token1));
 
         emit SwapReserve(
             msg.sender,
@@ -324,9 +334,7 @@ contract vPair is IvPair, vSwapERC20 {
                 data
             );
 
-        amountIn =
-            IERC20(vPool.token0).balanceOf(address(this)) -
-            reserves[vPool.token0];
+        amountIn = fetchBalance(vPool.token0) - reserves[vPool.token0];
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, "IIA");
 
@@ -356,10 +364,7 @@ contract vPair is IvPair, vSwapERC20 {
 
         require(calculateReserveRatio() < maxReserveRatio, "TBPT"); // reserve amount goes beyond pool threshold
 
-        _update(
-            IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
-        );
+        _update(fetchBalance(token0), fetchBalance(token1));
 
         emit SwapReserve(
             msg.sender,
@@ -400,8 +405,8 @@ contract vPair is IvPair, vSwapERC20 {
             pairBalance0,
             pairBalance1
         );
-        uint256 currentBalance0 = IERC20(token0).balanceOf(address(this));
-        uint256 currentBalance1 = IERC20(token1).balanceOf(address(this));
+        uint256 currentBalance0 = fetchBalance(token0);
+        uint256 currentBalance1 = fetchBalance(token1);
         uint256 amount0 = currentBalance0 - _pairBalance0;
         uint256 amount1 = currentBalance1 - _pairBalance1;
 
@@ -439,9 +444,9 @@ contract vPair is IvPair, vSwapERC20 {
     {
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
-        uint256 balance0 = IERC20(_token0).balanceOf(address(this));
-        uint256 balance1 = IERC20(_token1).balanceOf(address(this));
-        uint256 liquidity = balanceOf(address(this));
+        uint256 balance0 = fetchBalance(_token0);
+        uint256 balance1 = fetchBalance(_token1);
+        uint256 liquidity = fetchBalance(address(this));
 
         uint256 _totalSupply = totalSupply();
         amount0 = (balance0 * liquidity) / _totalSupply;
@@ -477,8 +482,8 @@ contract vPair is IvPair, vSwapERC20 {
             }
         }
 
-        balance0 = IERC20(_token0).balanceOf(address(this));
-        balance1 = IERC20(_token1).balanceOf(address(this));
+        balance0 = fetchBalance(_token0);
+        balance1 = fetchBalance(_token1);
 
         _update(balance0, balance1);
         emit Burn(msg.sender, amount0, amount1, to);
@@ -516,7 +521,7 @@ contract vPair is IvPair, vSwapERC20 {
         override
         onlyFactoryAdmin
     {
-        require(_fee > 0 && _vFee > 0, "IFC");
+        require(_fee > 0 && _vFee > 0 && _fee < 1000 && _vFee < 1000, "IFC");
         fee = _fee;
         vFee = _vFee;
 

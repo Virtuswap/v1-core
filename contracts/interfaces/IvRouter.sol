@@ -5,31 +5,48 @@ import "../types.sol";
 import "./IvFlashSwapCallback.sol";
 
 interface IvRouter is IvFlashSwapCallback {
-    event FactoryChanged(address newFactoryAddress);
+    event RouterFactoryChanged(address newFactoryAddress);
 
     function changeFactory(address _factory) external;
 
     function factory() external view returns (address);
 
-    function owner() external view returns (address);
-
     function WETH9() external view returns (address);
 
-    function swapToExactNative(
-        address tokenA,
-        address tokenB,
+    function swapExactOutput(
+        address tokenIn,
+        address tokenOut,
         uint256 amountOut,
         uint256 maxAmountIn,
         address to,
         uint256 deadline
     ) external payable;
 
-    function swapReserveToExactNative(
-        address tokenA,
-        address tokenB,
+    function swapExactInput(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external payable;
+
+    function swapReserveExactOutput(
+        address tokenOut,
+        address commonToken,
         address ikPair,
         uint256 amountOut,
         uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external payable;
+
+    function swapReserveExactInput(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
         address to,
         uint256 deadline
     ) external payable;
