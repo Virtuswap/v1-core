@@ -68,29 +68,24 @@ export async function deployPools() {
     owner.address
   );
 
-  const WETH9Instance = await new WETH9__factory(
-    WETH9__factory.createInterface(),
-    WETH9__factory.bytecode,
-    owner
-  ).deploy();
+  const WETH9ContractFactory = await ethers.getContractFactory("WETH9");
+  const WETH9Instance = await WETH9ContractFactory.deploy();
 
-  const vPairFactoryInstance = await new VPairFactory__factory(
-    VPairFactory__factory.createInterface(),
-    VPairFactory__factory.bytecode,
-    owner
-  ).deploy();
+  const vPairContractFactory = await ethers.getContractFactory("vPairFactory");
+  const vPairFactoryInstance = await vPairContractFactory.deploy();
 
-  const exchageReserveInstance = await new VExchangeReserves__factory(
-    VExchangeReserves__factory.createInterface(),
-    VExchangeReserves__factory.bytecode,
-    owner
-  ).deploy(vPairFactoryInstance.address);
+  const vRouterContractFactory = await ethers.getContractFactory("vRouter");
+  const vRouterInstance = await vRouterContractFactory.deploy(
+    vPairFactoryInstance.address,
+    WETH9Instance.address
+  );
 
-  const vRouterInstance = await new VRouter__factory(
-    VRouter__factory.createInterface(),
-    VRouter__factory.bytecode,
-    owner
-  ).deploy(vPairFactoryInstance.address, WETH9Instance.address);
+  const vExchangeReserveContractFactory = await ethers.getContractFactory(
+    "vExchangeReserves"
+  );
+  const exchageReserveInstance = await vExchangeReserveContractFactory.deploy(
+    vPairFactoryInstance.address
+  );
 
   await tokenA.approve(vRouterInstance.address, issueAmount);
   await tokenB.approve(vRouterInstance.address, issueAmount);
