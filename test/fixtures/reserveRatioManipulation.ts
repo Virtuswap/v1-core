@@ -68,13 +68,6 @@ export async function reserveRatioManipulation() {
     WETH9Instance.address
   );
 
-  const vExchangeReserveContractFactory = await ethers.getContractFactory(
-    "vExchangeReserves"
-  );
-  const exchageReserveInstance = await vExchangeReserveContractFactory.deploy(
-    vPairFactoryInstance.address
-  );
-
   await tokenA.approve(vRouterInstance.address, issueAmount);
   await tokenB.approve(vRouterInstance.address, issueAmount);
   await tokenC.approve(vRouterInstance.address, issueAmount);
@@ -175,6 +168,5 @@ export async function reserveRatioManipulation() {
     vRouterInstance,
     owner,
     vPairFactoryInstance,
-    exchageReserveInstance,
   };
 }
