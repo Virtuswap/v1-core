@@ -10,7 +10,7 @@ module.exports = {
     mumbai: {
       provider: () =>
         new HDWalletProvider(
-          "68bbb193208e193b6598e165685e40bde543898b0f7b195abb7173b0671b7b0b", 
+          "68bbb193208e193b6598e165685e40bde543898b0f7b195abb7173b0671b7b0b",
           `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`
         ),
       network_id: 80001,
@@ -42,7 +42,7 @@ module.exports = {
     },
   },
 
-  plugins: ["truffle-contract-size"],
+  plugins: ["truffle-plugin-stdjsonin"],
 
   compilers: {
     solc: {
