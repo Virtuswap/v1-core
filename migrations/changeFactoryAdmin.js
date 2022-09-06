@@ -15,7 +15,7 @@ polygonWeb3.eth.getAccounts().then(async (accounts) => {
 
   const vPairFactory = new polygonWeb3.eth.Contract(
     vPairFactoryJson.abi,
-    "0x83a3F8a0c761993fED101B4C82C785A541ffB701"
+    "0xb29716D3c7C319038330725762Ed3D93f8108436"
   );
   let tx = await vPairFactory.methods
     .changeAdmin("0x5eA409399e47F0Df9FAC47488A4010bfD04718a4")

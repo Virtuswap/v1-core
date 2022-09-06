@@ -22,7 +22,7 @@ web3.eth.getAccounts().then(async (accounts) => {
 
   const vRouterInstance = new web3.eth.Contract(
     vRouterJson.abi,
-    "0xe6d9a7a70Df56FE2FeeCCb6Ec33C543cb79c7B91"
+    "0x05CA911A837a0f80C20Bfab9db209e19dCa133FF"
   );
 
   const USDTInstance = new web3.eth.Contract(
@@ -37,14 +37,14 @@ web3.eth.getAccounts().then(async (accounts) => {
 
   await USDCInstance.methods
     .approve(
-      "0xe6d9a7a70Df56FE2FeeCCb6Ec33C543cb79c7B91",
+      "0x05CA911A837a0f80C20Bfab9db209e19dCa133FF",
       web3.utils.toWei("999999999999999999999999999999", "ether")
     )
     .send(sendArgs);
 
   await USDTInstance.methods
     .approve(
-      "0xe6d9a7a70Df56FE2FeeCCb6Ec33C543cb79c7B91",
+      "0x05CA911A837a0f80C20Bfab9db209e19dCa133FF",
       web3.utils.toWei("999999999999999999999999999999", "ether")
     )
     .send(sendArgs);
@@ -55,10 +55,10 @@ web3.eth.getAccounts().then(async (accounts) => {
     .addLiquidity(
       "0xe8E192264540F056A64498386e4835Aa5670D49c",
       "0x82EDb0100BbBE6Eb17444b8cB20990D08e9FfE91",
-      web3.utils.toWei("500000", "ether"),
-      web3.utils.toWei("500000", "ether"),
-      web3.utils.toWei("500000", "ether"),
-      web3.utils.toWei("500000", "ether"),
+      web3.utils.toWei("100000", "ether"),
+      web3.utils.toWei("100000", "ether"),
+      web3.utils.toWei("100000", "ether"),
+      web3.utils.toWei("100000", "ether"),
       accounts[0],
       futureTs
     )
