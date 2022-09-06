@@ -22,19 +22,7 @@ export async function reserveRatioManipulation() {
   );
 
   // Contracts are deployed using the first signer/account by default
-  const [
-    owner,
-    account1,
-    account2,
-    account3,
-    account4,
-    account5,
-    account6,
-    account7,
-    account8,
-    account9,
-    account10,
-  ] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
 
   const A_PRICE = 1;
   const B_PRICE = 3;
@@ -186,18 +174,6 @@ export async function reserveRatioManipulation() {
     acPool,
     vRouterInstance,
     owner,
-    accounts: [
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      account6,
-      account7,
-      account8,
-      account9,
-      account10,
-    ],
     vPairFactoryInstance,
     exchageReserveInstance,
   };
