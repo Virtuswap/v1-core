@@ -10,7 +10,7 @@ module.exports = {
     mumbai: {
       provider: () =>
         new HDWalletProvider(
-          "68bbb193208e193b6598e165685e40bde543898b0f7b195abb7173b0671b7b0b",
+          "4cd4d069ecb10b4a5ff6e194976b6cdbd04e307d670e6bf4f455556497b4a63b",
           `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`
         ),
       network_id: 80001,
