@@ -6,8 +6,8 @@ describe("Base actions", function () {
   it("Should deploy fixture", async function () {
     const fixture = await loadFixture(deployPools);
 
-    // const initHash = await fixture.vPairFactoryInstance.getInitCodeHash();
-    // console.log("initHash " + initHash);
+    const initHash = await fixture.vPairFactoryInstance.getInitCodeHash();
+    console.log("initHash " + initHash);
 
     expect(fixture.tokenA.address.length > 0);
     expect(fixture.tokenB.address.length > 0);
