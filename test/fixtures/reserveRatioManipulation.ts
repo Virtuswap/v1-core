@@ -22,19 +22,7 @@ export async function reserveRatioManipulation() {
   );
 
   // Contracts are deployed using the first signer/account by default
-  const [
-    owner,
-    account1,
-    account2,
-    account3,
-    account4,
-    account5,
-    account6,
-    account7,
-    account8,
-    account9,
-    account10,
-  ] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
 
   const A_PRICE = 1;
   const B_PRICE = 3;
@@ -68,29 +56,17 @@ export async function reserveRatioManipulation() {
     owner.address
   );
 
-  const WETH9Instance = await new WETH9__factory(
-    WETH9__factory.createInterface(),
-    WETH9__factory.bytecode,
-    owner
-  ).deploy();
+  const WETH9ContractFactory = await ethers.getContractFactory("WETH9");
+  const WETH9Instance = await WETH9ContractFactory.deploy();
 
-  const vPairFactoryInstance = await new VPairFactory__factory(
-    VPairFactory__factory.createInterface(),
-    VPairFactory__factory.bytecode,
-    owner
-  ).deploy();
+  const vPairContractFactory = await ethers.getContractFactory("vPairFactory");
+  const vPairFactoryInstance = await vPairContractFactory.deploy();
 
-  const exchageReserveInstance = await new VExchangeReserves__factory(
-    VExchangeReserves__factory.createInterface(),
-    VExchangeReserves__factory.bytecode,
-    owner
-  ).deploy(vPairFactoryInstance.address);
-
-  const vRouterInstance = await new VRouter__factory(
-    VRouter__factory.createInterface(),
-    VRouter__factory.bytecode,
-    owner
-  ).deploy(vPairFactoryInstance.address, WETH9Instance.address);
+  const vRouterContractFactory = await ethers.getContractFactory("vRouter");
+  const vRouterInstance = await vRouterContractFactory.deploy(
+    vPairFactoryInstance.address,
+    WETH9Instance.address
+  );
 
   await tokenA.approve(vRouterInstance.address, issueAmount);
   await tokenB.approve(vRouterInstance.address, issueAmount);
@@ -191,19 +167,6 @@ export async function reserveRatioManipulation() {
     acPool,
     vRouterInstance,
     owner,
-    accounts: [
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      account6,
-      account7,
-      account8,
-      account9,
-      account10,
-    ],
     vPairFactoryInstance,
-    exchageReserveInstance,
   };
 }

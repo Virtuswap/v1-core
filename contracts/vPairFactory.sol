@@ -70,7 +70,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         pairs[token1][token0] = pair;
         allPairs.push(pair);
 
-        emit PairCreated(pair, address(this), token0, token1);
+        emit PairCreated(pair, address(this), token0, token1, 997, 997, 2000);
 
         return pair;
     }

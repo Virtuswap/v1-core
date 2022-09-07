@@ -7,7 +7,10 @@ interface IvPairFactory {
         address poolAddress,
         address factory,
         address token0,
-        address token1
+        address token1,
+        uint24 fee,
+        uint24 vFee,
+        uint256 maxReserveRatio
     );
 
     event FactoryAdminChanged(address newAdmin);
