@@ -4,7 +4,7 @@ const vPairFactoryJson = require("../build/contracts/vPairFactory.json");
 const TestnetERC20Json = require("../build/contracts/TestnetERC20.json");
 
 var polygonProvider = new HDWalletProvider(
-  "4cd4d069ecb10b4a5ff6e194976b6cdbd04e307d670e6bf4f455556497b4a63b",
+  "2fcdf6468c4a3eb0504953064d670b685ccbd99a3a9f845070bcdc1d4fe831d4",
   `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`
 );
 
@@ -96,22 +96,28 @@ polygonWeb3.eth.getAccounts().then(async (accounts) => {
 
   const vPairFactory = new polygonWeb3.eth.Contract(
     vPairFactoryJson.abi,
-    "0xb29716D3c7C319038330725762Ed3D93f8108436"
+    "0x64F43876f8473154b8b6b44C940FCc4093515f34"
   );
 
-  for (let i = 0; i < tokens.length; i++) {
-    try {
-      const tokenInstance = new polygonWeb3.eth.Contract(
-        TestnetERC20Json.abi,
-        tokens[i].address
-      );
-      let changeTx = await tokenInstance.methods
-        .changeAdmin(adminAddress)
-        .send(sendArgs);
-    } catch {}
-    // console.log(changeTx);
-  }
-  let tx = await vPairFactory.methods.changeAdmin(adminAddress).send(sendArgs);
+  // for (let i = 0; i < tokens.length; i++) {
+  //   try {
+  //     const tokenInstance = new polygonWeb3.eth.Contract(
+  //       TestnetERC20Json.abi,
+  //       tokens[i].address
+  //     );
+  //     let changeTx = await tokenInstance.methods
+  //       .changeAdmin(adminAddress)
+  //       .send(sendArgs);
+  //   } catch {}
+  //   console.log(changeTx);
+  // }
+  try {
+    let tx = await vPairFactory.methods
+      .changeAdmin(adminAddress)
+      .send(sendArgs);
 
-  console.log(tx);
+    console.log(tx);
+  } catch (ex) {
+    console.log(ex);
+  }
 });
