@@ -4,7 +4,7 @@ const vRouterJson = require("../build/contracts/vRouter.json");
 const TestnetERC20Json = require("../build/contracts/TestnetERC20.json");
 
 var polygonProvider = new HDWalletProvider(
-  "4cd4d069ecb10b4a5ff6e194976b6cdbd04e307d670e6bf4f455556497b4a63b",
+  "2fcdf6468c4a3eb0504953064d670b685ccbd99a3a9f845070bcdc1d4fe831d4",
   `https://morning-twilight-cherry.matic-testnet.quiknode.pro/6ba9d2c5b8a046814b28f974c3643c679914f7ff/`
 );
 
@@ -19,127 +19,50 @@ async function getFutureBlockTimestamp() {
 let pools = [
   {
     //MATIC/CRV
-    tokenA: "0x55ACcc9147D6E57de6eaa214034B86843ea1461D",
-    tokenB: "0x14b911FD053c8E9d5d222845Cd87A8ba54f0eF51",
-    balance0: "1000000000000000000000000",
-    balance1: "797300000000000000000000",
+    tokenA: "0x5451A9e85a498A0De15C4eE8A5f78b93CB720Dae",
+    tokenB: "0x5f0aB2fB11898E0A26E2047Bc28d7479D9469a5F",
+    balance0: "1000000",
+    balance1: "797300",
   },
   {
     //MATIC/USDC
-    tokenA: "0x55ACcc9147D6E57de6eaa214034B86843ea1461D",
-    tokenB: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    balance0: "1000000000000000000000000",
-    balance1: "828200000000000000000000",
+    tokenA: "0x5451A9e85a498A0De15C4eE8A5f78b93CB720Dae",
+    tokenB: "0x028977DB66AbEdF1C1F3dEF461cc55e02322D29a",
+    balance0: "1000000",
+    balance1: "828200",
   },
   {
     //MATIC/WETH
-    tokenA: "0x55ACcc9147D6E57de6eaa214034B86843ea1461D",
-    tokenB: "0x112f88f4272DDd74946bF5ee046f1C8C3b5F15E7",
-    balance0: "1000000000000000000000000",
-    balance1: "514140000000000000000",
-  },
-  {
-    //MATIC/LINK
-    tokenA: "0x55ACcc9147D6E57de6eaa214034B86843ea1461D",
-    tokenB: "0x85A6A6c87fe052AD57C634CaE89BfA29f4cfAC13",
-    balance0: "1000000000000000000000000",
-    balance1: "123800000000000000000000",
-  },
-  {
-    //MATIC/USDT
-    tokenA: "0x55ACcc9147D6E57de6eaa214034B86843ea1461D",
-    tokenB: "0xCbaB50C22D08298c17235ECE60830A60AA63850A",
-    balance0: "1000000000000000000000000",
-    balance1: "828200000000000000000000",
+    tokenA: "0x5451A9e85a498A0De15C4eE8A5f78b93CB720Dae",
+    tokenB: "0x4E4968c01924c5B7d5F71E2648011DA92dd6503E",
+    balance0: "1000000",
+    balance1: "514.14",
   },
   {
     //USDC/ETH
-    tokenA: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    tokenB: "0x112f88f4272DDd74946bF5ee046f1C8C3b5F15E7",
-    balance0: "1000000000000000000000000",
-    balance1: "632911300000000000000",
-  },
-  {
-    //USDC/WBTC
-    tokenA: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    tokenB: "0x51C6A9440d9DCcDc815bf2a307D416Efad16668b",
-    balance0: "1000000000000000000000000",
-    balance1: "52820000000000000000",
+    tokenA: "0x028977DB66AbEdF1C1F3dEF461cc55e02322D29a",
+    tokenB: "0x4E4968c01924c5B7d5F71E2648011DA92dd6503E",
+    balance0: "1000000",
+    balance1: "632.9113",
   },
   {
     //USDC/CRV
-    tokenA: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    tokenB: "0x14b911FD053c8E9d5d222845Cd87A8ba54f0eF51",
-    balance0: "1000000000000000000000000",
-    balance1: "967300000000000000000000",
-  },
-  {
-    //USDC/USDT
-    tokenA: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    tokenB: "0xCbaB50C22D08298c17235ECE60830A60AA63850A",
-    balance0: "1000000000000000000000000",
-    balance1: "1000000000000000000000000",
-  },
-  {
-    //USDC/DAI
-    tokenA: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    tokenB: "0x72ddA542EDC69bA5996AB4710a86F6E6d5dd5417",
-    balance0: "1000000000000000000000000",
-    balance1: "1000000000000000000000000",
-  },
-  {
-    //WETH/DAI
-    tokenA: "0xEc7aF77e0b3D37688Db0f75ee72BCbFbcC5B5B8E",
-    tokenB: "0x72ddA542EDC69bA5996AB4710a86F6E6d5dd5417",
-    balance0: "632911300000000000000",
-    balance1: "1000000000000000000000000",
+    tokenA: "0x028977DB66AbEdF1C1F3dEF461cc55e02322D29a",
+    tokenB: "0x5f0aB2fB11898E0A26E2047Bc28d7479D9469a5F",
+    balance0: "1000000",
+    balance1: "967300",
   },
   {
     //WETH/CRV
-    tokenA: "0x112f88f4272DDd74946bF5ee046f1C8C3b5F15E7",
-    tokenB: "0x14b911FD053c8E9d5d222845Cd87A8ba54f0eF51",
-    balance0: "653594770000000000000",
-    balance1: "1000000000000000000000000",
-  },
-  {
-    //WETH/USDT
-    tokenA: "0x112f88f4272DDd74946bF5ee046f1C8C3b5F15E7",
-    tokenB: "0xCbaB50C22D08298c17235ECE60830A60AA63850A",
-    balance0: "632911300000000000000",
-    balance1: "1000000000000000000000000",
-  },
-  {
-    //WETH/WBTC
-    tokenA: "0x112f88f4272DDd74946bF5ee046f1C8C3b5F15E7",
-    tokenB: "0x51C6A9440d9DCcDc815bf2a307D416Efad16668b",
-    balance0: "1000000000000000000000000",
-    balance1: "83367",
-  },
-  {
-    //DAI/USDT
-    tokenA: "0x72ddA542EDC69bA5996AB4710a86F6E6d5dd5417",
-    tokenB: "0xCbaB50C22D08298c17235ECE60830A60AA63850A",
-    balance0: "1000000000000000000000000",
-    balance1: "1000000000000000000000000",
-  },
-  {
-    //LINK/WETH
-    tokenA: "0x85A6A6c87fe052AD57C634CaE89BfA29f4cfAC13",
-    tokenB: "0x112f88f4272DDd74946bF5ee046f1C8C3b5F15E7",
-    balance0: "1000000000000000000000000",
-    balance1: "4239000000000000000000",
-  },
-  {
-    //LINK/USDC
-    tokenA: "0x85A6A6c87fe052AD57C634CaE89BfA29f4cfAC13",
-    tokenB: "0x6D36eeA552D73e5249B3Ee99DdC52379a14C62Ef",
-    balance0: "149191",
-    balance1: "1000000000000000000000000",
+    tokenA: "0x4E4968c01924c5B7d5F71E2648011DA92dd6503E",
+    tokenB: "0x5f0aB2fB11898E0A26E2047Bc28d7479D9469a5F",
+    balance0: "653.59477",
+    balance1: "1000000",
   },
 ];
 
 polygonWeb3.eth.getAccounts().then(async (accounts) => {
-  let router = "0x42F648c57C3afef57D094319fc1C5518fc89a46c";
+  let router = "0xee8353d520b8AA0fCE89da2175DC6FC778d3072E";
   let sendArgs = { from: accounts[0], gasPrice: 35000000000 };
 
   const vRouterInstance = new polygonWeb3.eth.Contract(vRouterJson.abi, router);
@@ -176,10 +99,10 @@ polygonWeb3.eth.getAccounts().then(async (accounts) => {
         .addLiquidity(
           pool.tokenA,
           pool.tokenB,
-          pool.balance0,
-          pool.balance1,
-          pool.balance0,
-          pool.balance1,
+          polygonWeb3.utils.toWei(pool.balance0, "ether"),
+          polygonWeb3.utils.toWei(pool.balance1, "ether"),
+          polygonWeb3.utils.toWei(pool.balance0, "ether"),
+          polygonWeb3.utils.toWei(pool.balance1, "ether"),
           adminAddress,
           futureTs
         )
