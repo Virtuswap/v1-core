@@ -1,10 +1,12 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity 0.8.2;
 
 interface IvFlashSwapCallback {
     function vFlashSwapCallback(
-        address sender,
-        uint256 amountOut,
+        address tokenIn,
+        address tokenOut,
         uint256 requiredBackAmount,
-        bytes memory data
+        bytes calldata data
     ) external;
 }

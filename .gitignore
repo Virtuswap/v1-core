@@ -6,6 +6,9 @@
 # Node artifact files
 node_modules/
 dist/
+artifacts/
+cache/
+typechain-types/
 
 # Compiled Java class files
 *.class
@@ -52,3 +55,13 @@ Thumbs.db
 /build
 bin/contracts/VirtuPool-solc-output.json
 /bin
+
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+#Hardhat files
+cache
+artifacts
