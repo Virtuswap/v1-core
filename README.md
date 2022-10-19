@@ -5,10 +5,6 @@ More in-depth documentation is available at [docs.virtuswap.io](https://docs.vir
 
 
 #  Local development #
-Hardhat requires `node@>=16.0`
-
-
-#  Installation #
 
 ```
 git clone git@github.com:Virtuswap/v1-core.git
