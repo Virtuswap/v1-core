@@ -21,7 +21,10 @@ contract vRouter is IvRouter, Multicall {
     address public immutable override WETH9;
 
     modifier _onlyFactoryAdmin() {
-        require(msg.sender == IvPairFactory(factory).admin(), "VSWAP:ONLY_ADMIN");
+        require(
+            msg.sender == IvPairFactory(factory).admin(),
+            "VSWAP:ONLY_ADMIN"
+        );
         _;
     }
 
@@ -40,7 +43,7 @@ contract vRouter is IvRouter, Multicall {
     }
 
     function getPairAddress(address tokenA, address tokenB)
-        internal
+        public
         view
         returns (address)
     {

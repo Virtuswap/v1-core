@@ -100,7 +100,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         emit FactoryAdminChanged(newAdmin);
     }
 
-    function getInitCodeHash() public pure returns (bytes32) {
+    function getInitCodeHash() external pure returns (bytes32) {
         return keccak256(abi.encodePacked(type(vPair).creationCode));
     }
 }
