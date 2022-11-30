@@ -324,4 +324,90 @@ describe("vPair", () => {
 
     expect(factoryAddress).to.be.equal(accounts[1]);
   });
+
+  it("Should mint", async () => {
+    const abPool = fixture.abPool;
+    const owner = fixture.owner;
+
+    let AInput = 10000 * fixture.A_PRICE;
+    let BInput = (fixture.B_PRICE / fixture.A_PRICE) * AInput;
+
+    const lpBalance = await abPool.balanceOf(owner.address);
+
+    await fixture.tokenA.transfer(abPool.address, AInput);
+    await fixture.tokenB.transfer(abPool.address, BInput);
+    await abPool.mint(owner.address);
+
+    const lpBalanceAfter = await abPool.balanceOf(owner.address);
+
+    expect(lpBalanceAfter).to.be.above(lpBalance);
+  });
+
+  it("Should not swap reserves if ik0 is not whitelisted", async () => {
+    const bcPool = fixture.bcPool;
+    const tokenA = fixture.tokenA;
+    const owner = fixture.owner;
+    const tokenB = fixture.tokenB;
+    const tokenC = fixture.tokenC;
+    const tokenD = fixture.tokenD;
+    const vPairFactoryInstance = fixture.vPairFactoryInstance;
+    const vRouterInstance = fixture.vRouterInstance;
+
+    await bcPool.setAllowList([tokenD.address]);
+    // tokenA is not in the allow list anymore
+
+    let cAmountOut = "10";
+
+    let jkAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address
+    );
+
+    let ikAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address
+    );
+
+    let amountIn = await vRouterInstance.getVirtualAmountIn(
+      jkAddress,
+      ikAddress,
+      cAmountOut
+    );
+
+    await tokenA.transfer(bcPool.address, amountIn);
+
+    await expect(
+      bcPool.swapReserveToNative(cAmountOut, ikAddress, owner.address, [])
+    ).to.revertedWith("TNW");
+  });
+
+  it("Should not swap native if address is 0", async () => {
+    const abPool = fixture.abPool;
+    const tokenB = fixture.tokenB;
+
+    let aAmountOut = ethers.utils.parseEther("10");
+
+    await expect(
+      abPool.swapNative(
+        aAmountOut,
+        tokenB.address,
+        ethers.constants.AddressZero,
+        []
+      )
+    ).to.revertedWith("IT");
+  });
+
+  it("Should not swap native if amount exceeds balance", async () => {
+    const abPool = fixture.abPool;
+    const tokenA = fixture.tokenA;
+    const owner = fixture.owner;
+    const tokenB = fixture.tokenB;
+
+    const aBalancePool = await tokenA.balanceOf(abPool.address);
+    let aAmountOut = aBalancePool + ethers.BigNumber.from(1);
+
+    await expect(
+      abPool.swapNative(aAmountOut, tokenB.address, owner.address, [])
+    ).to.be.reverted;
+  });
 });
