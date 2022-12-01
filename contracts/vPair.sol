@@ -18,7 +18,6 @@ contract vPair is IvPair, vSwapERC20 {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
-    uint256 internal constant RESERVE_RATIO_WHOLE = (10**3) * 100 * 1e18;
 
     address public factory;
 
@@ -385,16 +384,14 @@ contract vPair is IvPair, vSwapERC20 {
         override
         returns (uint256 rRatio)
     {
-        uint256 _balance0 = pairBalance0;
+        uint256 totalReserves = 0;
         for (uint256 i = 0; i < allowList.length; ++i) {
-            uint256 _rReserve = reservesBaseValue[allowList[i]];
-            if (_rReserve > 0) {
-                rRatio += (vSwapLibrary.percent(_rReserve, _balance0 * 2) *
-                    100);
-            }
+            totalReserves += reservesBaseValue[allowList[i]];
         }
 
-        rRatio *= RESERVE_RATIO_FACTOR;
+        rRatio = pairBalance0 > 0 ?
+            totalReserves * RESERVE_RATIO_FACTOR / (2 * pairBalance0) :
+            0;
     }
 
     function mint(address to)
@@ -426,9 +423,7 @@ contract vPair is IvPair, vSwapERC20 {
         //substract reserve ratio PCT from minted liquidity tokens amount
         uint256 reserveRatio = calculateReserveRatio();
 
-        liquidity =
-            liquidity -
-            ((liquidity * reserveRatio) / (RESERVE_RATIO_WHOLE + reserveRatio));
+        liquidity = (liquidity * RESERVE_RATIO_FACTOR) / (RESERVE_RATIO_FACTOR + reserveRatio);
 
         require(liquidity > 0, 'ILM');
 

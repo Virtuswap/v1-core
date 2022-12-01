@@ -21,7 +21,7 @@ describe("ReserveRatio", () => {
     const owner = fixture.owner;
     const vRouterInstance = fixture.vRouterInstance;
 
-    let amountOut = ethers.utils.parseEther("1");
+    let amountOut = ethers.utils.parseEther("100");
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       abPool.address,
@@ -63,7 +63,7 @@ describe("ReserveRatio", () => {
     const vRouterInstance = fixture.vRouterInstance;
     const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-    let amountOut = ethers.utils.parseEther("1");
+    let amountOut = ethers.utils.parseEther("100");
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       acPool.address,
@@ -113,7 +113,7 @@ describe("ReserveRatio", () => {
       tokenA.address
     );
 
-    let amountOut = ethers.utils.parseEther("1");
+    let amountOut = ethers.utils.parseEther("100");
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       jkPair,

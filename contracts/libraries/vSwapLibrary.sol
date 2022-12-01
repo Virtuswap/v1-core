@@ -30,18 +30,6 @@ library vSwapLibrary {
             : (ikToken0, ikToken1, jkToken0, jkToken1); //default
     }
 
-    function percent(uint256 numerator, uint256 denominator)
-        internal
-        pure
-        returns (uint256 quotient)
-    {
-        // caution, check safe-to-multiply here
-        uint256 _numerator = numerator * 10**(18 + 1);
-        // with rounding of last digit
-        uint256 _quotient = ((_numerator / denominator) + 5) / 10;
-        return (_quotient);
-    }
-
     function calculateVPool(
         uint256 ikTokenABalance,
         uint256 ikTokenBBalance,

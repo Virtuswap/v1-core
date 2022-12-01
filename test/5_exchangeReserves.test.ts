@@ -26,7 +26,7 @@ describe("ExchangeReserves", () => {
     const owner = fixture.owner;
     const vRouterInstance = fixture.vRouterInstance;
 
-    let amountOut = ethers.utils.parseEther("10");
+    let amountOut = ethers.utils.parseEther("100");
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       abPool.address,
@@ -66,7 +66,7 @@ describe("ExchangeReserves", () => {
     const owner = fixture.owner;
     const vRouterInstance = fixture.vRouterInstance;
 
-    let amountOut = ethers.utils.parseEther("10");
+    let amountOut = ethers.utils.parseEther("500");
 
     let amountIn = await vRouterInstance.getVirtualAmountIn(
       bcPool.address,
@@ -110,7 +110,7 @@ describe("ExchangeReserves", () => {
       bcPool.address //ik2
     );
 
-    await tokenC.transfer(bcPool.address, ethers.utils.parseEther("100"));
+    await tokenC.transfer(bcPool.address, ethers.utils.parseEther("10"));
 
     let aReserveInBC = await bcPool.reserves(tokenA.address);
     let cReserveInAB = await abPool.reserves(tokenC.address);

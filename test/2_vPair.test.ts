@@ -99,7 +99,7 @@ describe('vPair', () => {
         const aBalanceWalletBefore = await tokenA.balanceOf(owner.address);
         const bBalanceWalletBefore = await tokenC.balanceOf(owner.address);
 
-        let aAmountOut = ethers.utils.parseEther('10');
+        let aAmountOut = ethers.utils.parseEther('100');
 
         let jkAddress = await vPairFactoryInstance.getPair(
             tokenB.address,
@@ -360,8 +360,8 @@ describe('vPair', () => {
         let reservesAfter0 = reservesAfter._balance0;
         let reservesAfter1 = reservesAfter._balance1;
 
-        expect(reservesAfter0).to.equal(587); // 587 = MINIUMUM LOCKED LIQUIDITY
-        expect(reservesAfter1).to.equal(1737); // 1737 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter0).to.equal(682); // 682 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter1).to.equal(1776); // 1776 = MINIUMUM LOCKED LIQUIDITY
     });
 
     it('Should set factory', async () => {

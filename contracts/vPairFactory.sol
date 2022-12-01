@@ -58,7 +58,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             fee: 997,
             vFee: 997,
             maxAllowListCount: 8,
-            maxReserveRatio: 2000 * 1e18
+            maxReserveRatio: 2000
         });
 
         bytes32 _salt = PoolAddress.getSalt(token0, token1);
