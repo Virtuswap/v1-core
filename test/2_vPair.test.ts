@@ -8,7 +8,7 @@ import {
 } from '../typechain-types/index';
 import _ from 'lodash';
 
-describe('vPair', () => {
+describe('vPair1', () => {
     let accounts: any = [];
     let fixture: any = {};
 
@@ -354,6 +354,39 @@ describe('vPair', () => {
         expect(lpBalanceAfter).to.be.above(lpBalance);
     });
 
+    it('Should not swap reserves if calculate reserve ratio is more than max allowed', async () => {
+        const bcPool = fixture.bcPool;
+        const tokenA = fixture.tokenA;
+        const owner = fixture.owner;
+        const tokenB = fixture.tokenB;
+        const tokenC = fixture.tokenC;
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        const vRouterInstance = fixture.vRouterInstance;
+
+        let aAmountOut = ethers.utils.parseEther('10000');
+
+        let jkAddress = await vPairFactoryInstance.getPair(
+            tokenB.address,
+            tokenC.address
+        );
+
+        let ikAddress = await vPairFactoryInstance.getPair(
+            tokenB.address,
+            tokenA.address
+        );
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            jkAddress,
+            ikAddress,
+            aAmountOut
+        );
+        await tokenA.transfer(bcPool.address, amountIn);
+
+        await expect(
+            bcPool.swapReserveToNative(aAmountOut, ikAddress, owner.address, [])
+        ).to.revertedWith('TBPT');
+    });
+
     it('Should not swap reserves if ik0 is not whitelisted', async () => {
         const bcPool = fixture.bcPool;
         const tokenA = fixture.tokenA;
@@ -380,17 +413,7 @@ describe('vPair', () => {
             tokenA.address
         );
 
-        console.log('cAmountOut: ' + cAmountOut);
-
-        console.log('jkAddress: ' + jkAddress);
-        console.log('ikAddress: ' + ikAddress);
-
         let vPool = await vRouterInstance.getVirtualPool(jkAddress, ikAddress);
-
-        console.log('balance0: ' + vPool.balance0.toString());
-        console.log('balance1: ' + vPool.balance1.toString());
-
-        console.log(JSON.stringify(vPool));
 
         let amountIn = await vRouterInstance.getVirtualAmountIn(
             jkAddress,
@@ -398,7 +421,6 @@ describe('vPair', () => {
             cAmountOut
         );
 
-        console.log('amountin: ' + amountIn);
         await tokenA.transfer(bcPool.address, amountIn);
 
         await expect(
@@ -434,5 +456,144 @@ describe('vPair', () => {
         await expect(
             abPool.swapNative(aAmountOut, tokenB.address, owner.address, [])
         ).to.be.reverted;
+    });
+});
+
+describe('vPair2', () => {
+    let accounts: any = [];
+    let fixture: any = {};
+
+    before(async function () {
+        fixture = await loadFixture(deployPools);
+    });
+
+    it('Swap native to reserve -> should deduct reserve ratio correctly', async () => {
+        const abPool = fixture.abPool;
+        const bcPool = fixture.bcPool;
+        const tokenA = fixture.tokenA;
+        const owner = fixture.owner;
+        const tokenB = fixture.tokenB;
+        const tokenC = fixture.tokenC;
+        const tokenD = fixture.tokenD;
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        const vRouterInstance = fixture.vRouterInstance;
+
+        await vPairFactoryInstance.setExchangeReservesAddress(owner.address);
+
+        let aAmountOut = ethers.utils.parseEther('100');
+
+        let jkAddress = await vPairFactoryInstance.getPair(
+            tokenB.address,
+            tokenA.address
+        );
+
+        let ikAddress = await vPairFactoryInstance.getPair(
+            tokenB.address,
+            tokenC.address
+        );
+
+        let cAmountIn = await vRouterInstance.getVirtualAmountIn(
+            jkAddress,
+            ikAddress,
+            aAmountOut
+        );
+
+        await tokenC.transfer(abPool.address, cAmountIn);
+
+        await abPool.swapReserveToNative(
+            aAmountOut,
+            ikAddress,
+            owner.address,
+            []
+        );
+
+        let cAmountOut = cAmountIn.div(2);
+        let aAmountIn = await vRouterInstance.getVirtualAmountIn(
+            jkAddress,
+            ikAddress,
+            cAmountOut
+        );
+
+        await tokenA.transfer(abPool.address, aAmountIn);
+
+        const PRECISION = '1000';
+
+        let aABBalance = await tokenA.balanceOf(abPool.address);
+        let bABBalance = await tokenB.balanceOf(abPool.address);
+        let bBCBalance = await tokenB.balanceOf(bcPool.address);
+        let cBCBalance = await tokenC.balanceOf(bcPool.address);
+        let virtualCBalance = cBCBalance
+            .mul(bABBalance.gt(bBCBalance) ? bBCBalance : bABBalance)
+            .div(bBCBalance);
+        let virtualABalance = aABBalance
+            .mul(bABBalance.gt(bBCBalance) ? bBCBalance : bABBalance)
+            .div(bABBalance);
+        let reserveBaseValue = cAmountOut
+            .mul(virtualABalance)
+            .div(virtualCBalance);
+        let expectedReserveRatio = reserveBaseValue
+            .mul(ethers.BigNumber.from(PRECISION))
+            .div(ethers.BigNumber.from(2).mul(aABBalance));
+
+        await abPool.swapNativeToReserve(
+            cAmountOut,
+            ikAddress,
+            owner.address,
+            []
+        );
+
+        // must be changed when calculateReserveRatio precision changes
+        const PRECISION_DIFFERENCE = '100000000000000000000'; // 23 - 3 == 20
+        expectedReserveRatio = expectedReserveRatio.mul(
+            ethers.BigNumber.from(PRECISION_DIFFERENCE)
+        );
+        let returnedReserveRatio = await abPool.calculateReserveRatio();
+        expect(
+            expectedReserveRatio
+                .sub(returnedReserveRatio)
+                .abs()
+                .lt(ethers.BigNumber.from(PRECISION_DIFFERENCE))
+        );
+    });
+
+    it('Burn -> Should distribute reserve tokens correctly', async () => {
+        const abPool = fixture.abPool;
+        const tokenC = fixture.tokenC;
+        const owner = fixture.owner;
+        const other_account = fixture.accounts[0].address;
+
+        let AInput = 1000 * fixture.A_PRICE;
+        let BInput = (fixture.B_PRICE / fixture.A_PRICE) * AInput;
+
+        await fixture.tokenA.transfer(
+            abPool.address,
+            ethers.utils.parseEther(AInput.toString())
+        );
+        await fixture.tokenB.transfer(
+            abPool.address,
+            ethers.utils.parseEther(BInput.toString())
+        );
+        await abPool.mint(other_account);
+
+        //get LP balance
+        const lpBalance = await abPool.balanceOf(owner.address);
+        const totalSupply = await abPool.totalSupply();
+        const reserveRatio = await abPool.calculateReserveRatio();
+        const cBalancePool = await tokenC.balanceOf(abPool.address);
+        const cBalanceOwner = await tokenC.balanceOf(owner.address);
+
+        //transfer LP tokens to pool
+        let erc20 = IERC20Metadata__factory.connect(abPool.address, owner);
+        await erc20.transfer(abPool.address, lpBalance);
+        //call burn function
+        await abPool.burn(owner.address);
+
+        const cBalancePoolAfter = await tokenC.balanceOf(abPool.address);
+        const cBalanceOwnerAfter = await tokenC.balanceOf(owner.address);
+        const expectedCBalance = cBalancePool.mul(lpBalance).div(totalSupply);
+
+        expect(cBalanceOwnerAfter.sub(cBalanceOwner)).to.equal(
+            expectedCBalance
+        );
     });
 });
