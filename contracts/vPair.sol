@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.2;
 
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
@@ -14,7 +15,7 @@ import './interfaces/IvFlashSwapCallback.sol';
 import './libraries/vSwapLibrary.sol';
 import './vSwapERC20.sol';
 
-contract vPair is IvPair, vSwapERC20 {
+contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
@@ -43,14 +44,6 @@ contract vPair is IvPair, vSwapERC20 {
 
     mapping(address => uint256) public override reservesBaseValue;
     mapping(address => uint256) public override reserves;
-
-    uint256 private unlocked = 1;
-    modifier lock() {
-        require(unlocked == 1, 'L');
-        unlocked = 0;
-        _;
-        unlocked = 1;
-    }
 
     function _onlyFactoryAdmin() internal view {
         require(msg.sender == IvPairFactory(factory).admin(), 'OA');
@@ -137,7 +130,7 @@ contract vPair is IvPair, vSwapERC20 {
         address tokenOut,
         address to,
         bytes calldata data
-    ) external override lock returns (uint256 _amountIn) {
+    ) external override nonReentrant returns (uint256 _amountIn) {
         require(to > address(0) && to != token0 && to != token1, 'IT');
         require(tokenOut == token0 || tokenOut == token1, 'NNT');
         require(amountOut > 0, 'IAO');
@@ -204,7 +197,7 @@ contract vPair is IvPair, vSwapERC20 {
         external
         override
         onlyForExchangeReserves
-        lock
+        nonReentrant
         returns (uint256 _amountIn)
     {
         require(amountOut > 0, 'IAO');
@@ -294,7 +287,7 @@ contract vPair is IvPair, vSwapERC20 {
         address ikPair,
         address to,
         bytes calldata data
-    ) external override lock returns (uint256 amountIn) {
+    ) external override nonReentrant returns (uint256 amountIn) {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
@@ -400,7 +393,7 @@ contract vPair is IvPair, vSwapERC20 {
     function mint(address to)
         external
         override
-        lock
+        nonReentrant
         returns (uint256 liquidity)
     {
         (uint256 _pairBalance0, uint256 _pairBalance1) = (
@@ -441,7 +434,7 @@ contract vPair is IvPair, vSwapERC20 {
     function burn(address to)
         external
         override
-        lock
+        nonReentrant
         returns (uint256 amount0, uint256 amount1)
     {
         address _token0 = token0; // gas savings
