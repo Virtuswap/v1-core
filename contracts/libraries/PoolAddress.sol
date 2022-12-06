@@ -5,21 +5,19 @@ pragma solidity 0.8.2;
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
     bytes32 internal constant POOL_INIT_CODE_HASH =
-        0xd021c2d8943359969e7714b9a5958f384204f545e6bf4cf0c700be8242a17f38;
+        0x0caaccb0dad7165c45423e4e84d514933d5148f22bff95c493a9d314e3398e56;
 
-    function orderAddresses(address tokenA, address tokenB)
-        internal
-        pure
-        returns (address token0, address token1)
-    {
+    function orderAddresses(
+        address tokenA,
+        address tokenB
+    ) internal pure returns (address token0, address token1) {
         return (tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA));
     }
 
-    function getSalt(address tokenA, address tokenB)
-        internal
-        pure
-        returns (bytes32 salt)
-    {
+    function getSalt(
+        address tokenA,
+        address tokenB
+    ) internal pure returns (bytes32 salt) {
         (address token0, address token1) = orderAddresses(tokenA, tokenB);
         salt = keccak256(abi.encode(token0, token1));
     }
