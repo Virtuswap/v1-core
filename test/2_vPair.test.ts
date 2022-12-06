@@ -578,3 +578,109 @@ describe('vPair2', () => {
     expect(cBalanceOwnerAfter.sub(cBalanceOwner)).to.equal(expectedCBalance)
   })
 })
+
+describe('vPair reentrancy guard', () => {
+  let accounts: any = []
+  let fixture: any = {}
+  let exploiter: any;
+
+  before(async function () {
+    fixture = await loadFixture(deployPools)
+    const exploiterFactory = await ethers.getContractFactory("ReentrancyExploiter"); 
+    exploiter = await exploiterFactory.deploy();
+  })
+
+  it('Reentrancy guard in swapNative', async () => {
+    const abPool = fixture.abPool
+    const tokenA = fixture.tokenA
+    const tokenB = fixture.tokenB
+    const owner = fixture.owner
+
+    let aAmountOut = ethers.utils.parseEther('10')
+
+    let amountIn = await fixture.vRouterInstance.getAmountIn(
+      tokenA.address,
+      tokenB.address,
+      aAmountOut,
+    )
+
+    await tokenA.transfer(abPool.address, amountIn)
+    await expect(exploiter.exploitSwapNative(abPool.address, tokenB.address, aAmountOut, owner.address)).to.revertedWith("ReentrancyGuard: reentrant call");
+  })
+
+  it('Reentrancy guard in swapReserveToNative', async () => {
+    const abPool = fixture.abPool
+    const bcPool = fixture.bcPool
+    const tokenA = fixture.tokenA
+    const tokenB = fixture.tokenB
+    const tokenC = fixture.tokenC
+    const owner = fixture.owner
+    const vPairFactoryInstance = fixture.vPairFactoryInstance
+    const vRouterInstance = fixture.vRouterInstance
+
+    let aAmountOut = ethers.utils.parseEther('10')
+
+    let jkAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address,
+    )
+
+    let ikAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address,
+    )
+
+    let amountIn = await vRouterInstance.getVirtualAmountIn(
+      jkAddress,
+      ikAddress,
+      aAmountOut,
+    )
+
+    await tokenC.transfer(abPool.address, amountIn)
+
+    await expect(exploiter.exploitSwapReserveToNative(abPool.address, ikAddress, aAmountOut, owner.address)).to.revertedWith("ReentrancyGuard: reentrant call");
+  })
+
+  it('Reentrancy guard in swapNativeToReserve', async () => {
+    const abPool = fixture.abPool
+    const bcPool = fixture.bcPool
+    const tokenA = fixture.tokenA
+    const tokenB = fixture.tokenB
+    const tokenC = fixture.tokenC
+    const owner = fixture.owner
+    const vPairFactoryInstance = fixture.vPairFactoryInstance
+    const vRouterInstance = fixture.vRouterInstance
+
+    let aAmountOut = ethers.utils.parseEther('10')
+
+    let jkAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenA.address,
+    )
+
+    let ikAddress = await vPairFactoryInstance.getPair(
+      tokenB.address,
+      tokenC.address,
+    )
+
+    let cAmountIn = await vRouterInstance.getVirtualAmountIn(
+      jkAddress,
+      ikAddress,
+      aAmountOut,
+    )
+
+    await abPool.swapReserveToNative(aAmountOut, ikAddress, owner.address, [])
+
+    let amountOut = await abPool.reserves(tokenC.address)
+
+    let amountIn = await vRouterInstance.getVirtualAmountIn(
+      abPool.address,
+      bcPool.address,
+      amountOut,
+    )
+
+    await tokenA.transfer(abPool.address, amountIn)
+
+    await expect(exploiter.exploitSwapReserveToNative(abPool.address, bcPool.address, amountOut, owner.address)).to.revertedWith("ReentrancyGuard: reentrant call");
+  })
+})
