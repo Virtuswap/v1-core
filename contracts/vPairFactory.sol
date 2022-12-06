@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.2;
 
-import "./vPair.sol";
-import "./interfaces/IvPairFactory.sol";
-import "./interfaces/IvSwapPoolDeployer.sol";
-import "./libraries/PoolAddress.sol";
-import "./types.sol";
+import './vPair.sol';
+import './interfaces/IvPairFactory.sol';
+import './interfaces/IvSwapPoolDeployer.sol';
+import './libraries/PoolAddress.sol';
+import './types.sol';
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
@@ -18,7 +18,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     PoolCreationDefaults public override poolCreationDefaults;
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "OA");
+        require(msg.sender == admin, 'OA');
         _;
     }
 
@@ -26,30 +26,27 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         admin = msg.sender;
     }
 
-    function getPair(address tokenA, address tokenB)
-        external
-        view
-        override
-        returns (address)
-    {
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view override returns (address) {
         return pairs[tokenA][tokenB];
     }
 
-    function createPair(address tokenA, address tokenB)
-        external
-        override
-        returns (address pair)
-    {
-        require(tokenA != tokenB, "VSWAP: IDENTICAL_ADDRESSES");
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external override returns (address pair) {
+        require(tokenA != tokenB, 'VSWAP: IDENTICAL_ADDRESSES');
 
         (address token0, address token1) = PoolAddress.orderAddresses(
             tokenA,
             tokenB
         );
 
-        require(token0 != address(0), "VSWAP: ZERO_ADDRESS");
+        require(token0 != address(0), 'VSWAP: ZERO_ADDRESS');
 
-        require(pairs[token0][token1] == address(0), "VSWAP: PAIR_EXISTS");
+        require(pairs[token0][token1] == address(0), 'VSWAP: PAIR_EXISTS');
 
         poolCreationDefaults = PoolCreationDefaults({
             factory: address(this),
@@ -75,14 +72,12 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         return pair;
     }
 
-    function setExchangeReservesAddress(address _exchangeReserves)
-        external
-        override
-        onlyAdmin
-    {
+    function setExchangeReservesAddress(
+        address _exchangeReserves
+    ) external override onlyAdmin {
         require(
             _exchangeReserves > address(0),
-            "VSWAP:INVALID_EXCHANGE_RESERVE_ADDRESS"
+            'VSWAP:INVALID_EXCHANGE_RESERVE_ADDRESS'
         );
         exchangeReserves = _exchangeReserves;
 
@@ -92,11 +87,15 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function changeAdmin(address newAdmin) external override onlyAdmin {
         require(
             newAdmin > address(0) && newAdmin != admin,
-            "VSWAP:INVALID_NEW_ADMIN_ADDRESS"
+            'VSWAP:INVALID_NEW_ADMIN_ADDRESS'
         );
 
         admin = newAdmin;
 
         emit FactoryAdminChanged(newAdmin);
+    }
+
+    function getInitCodeHash() external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(type(vPair).creationCode));
     }
 }
