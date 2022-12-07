@@ -99,7 +99,7 @@ describe('vPair1', () => {
         const aBalanceWalletBefore = await tokenA.balanceOf(owner.address);
         const bBalanceWalletBefore = await tokenC.balanceOf(owner.address);
 
-        let aAmountOut = ethers.utils.parseEther('10');
+        let aAmountOut = ethers.utils.parseEther('1000');
 
         let jkAddress = await vPairFactoryInstance.getPair(
             tokenB.address,
@@ -316,7 +316,7 @@ describe('vPair1', () => {
         let reservesAfter0 = reservesAfter._balance0;
         let reservesAfter1 = reservesAfter._balance1;
 
-        expect(reservesAfter0).to.equal(598); // 598 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter0).to.equal(10655); // 598 = MINIUMUM LOCKED LIQUIDITY
         expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
     });
 
@@ -363,7 +363,7 @@ describe('vPair1', () => {
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
         const vRouterInstance = fixture.vRouterInstance;
 
-        let aAmountOut = ethers.utils.parseEther('10000');
+        let aAmountOut = ethers.utils.parseEther('50000');
 
         let jkAddress = await vPairFactoryInstance.getPair(
             tokenB.address,
