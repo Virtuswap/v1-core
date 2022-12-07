@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-contract-sizer";
+import "hardhat-deploy";
 import "./tasks/compile";
 
 const config: HardhatUserConfig = {
@@ -24,6 +25,21 @@ const config: HardhatUserConfig = {
         bytecodeHash: "none",
       },
     },
+  },
+  defaultNetwork: "hardhat",
+  networks: {
+      hardhat: {
+          chainID: 31337,
+      },
+      localhost: {
+          url: "http://127.0.0.1:8545/",
+          chainID: 31337,
+      },
+  },
+  namedAccounts: {
+      deployer: {
+          default: 0,
+      },
   },
 };
 
