@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-contract-sizer";
+import "./tasks/compile";
 
 const config: HardhatUserConfig = {
   contractSizer: {
