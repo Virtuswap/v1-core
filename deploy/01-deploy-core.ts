@@ -1,14 +1,15 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import { networkConfig } from "../helper-hardhat-config"
+import { networkConfig, developmentChains } from "../helper-hardhat-config"
+import verify from "../utils/verify"
 
 const deployCore: DeployFunction = async function (
     hre: HardhatRuntimeEnvironment
 ) {
-    const { getNamedAccounts, deployments, network } = hre
+    const { getNamedAccounts, deployments, network, config } = hre
     const { deploy, log} = deployments
     const { deployer } = await getNamedAccounts()
-    const chainId: number = network.config.chainId
+    const chainId: number = network.config.chainId!
 
     let weth9Address: string
     if (chainId == 31337) {
@@ -37,6 +38,11 @@ const deployCore: DeployFunction = async function (
         waitConfirmations: networkConfig[network.name].blockConfirmations || 0,
     })
     log("Core contracts deployed!")
+    if (!developmentChains.includes(network.name) && config.etherscan.apiKey.polygonMumbai) {
+        await verify(vPairFactory.address);
+        await verify(vExchangeReserves.address, [vPairFactory.address]);
+        await verify(vRouter.address, [vPairFactory.address, weth9Address]);
+    }
 }
 
 export default deployCore
