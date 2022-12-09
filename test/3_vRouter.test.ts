@@ -7,7 +7,7 @@ import { VRouter__factory } from "../typechain-types/index";
 import _ from "lodash";
 import utils from "./utils";
 
-describe("vRouter", () => {
+describe("vRouter 1", () => {
   let fixture: any = {};
 
   before(async function () {
@@ -851,5 +851,47 @@ describe("vRouter", () => {
     const newFactory = await vRouterInstance.factory();
 
     expect(currentFactory != tokenA.address && newFactory == tokenA.address);
+  });
+});
+
+describe("vRouter 2", () => {
+  let fixture: any = {};
+
+  before(async function () {
+    fixture = await loadFixture(deployPools);
+  });
+
+  it("Should swap WETH9 token", async () => {
+    const vRouterInstance = fixture.vRouterInstance;
+    const WETH9 = await vRouterInstance.WETH9();
+    const tokenB = fixture.tokenB;
+    const owner = fixture.owner;
+    const wbPool = fixture.wbPool;
+
+    const tokenABalanceBefore = await ethers.provider.getBalance(owner.address);
+    const tokenBBalanceBefore = await tokenB.balanceOf(owner.address);
+
+    const amountOut = ethers.utils.parseEther("10");
+
+    let amountIn = await vRouterInstance.getAmountIn(
+      WETH9,
+      tokenB.address,
+      amountOut
+    );
+    const futureTs = await utils.getFutureBlockTimestamp();
+
+    await vRouterInstance.swapExactOutput(
+      WETH9,
+      tokenB.address,
+      amountOut,
+      amountIn,
+      owner.address,
+      futureTs,
+      { value: amountIn },
+    );
+    const tokenABalanceAfter = await ethers.provider.getBalance(owner.address);
+    const tokenBBalanceAfter = await tokenB.balanceOf(owner.address);
+    expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+    expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
   });
 });
