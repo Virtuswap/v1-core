@@ -30,6 +30,15 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             decodedData.jkPair1,
             new bytes(0)
         );
+
+        emit ReservesExchanged(
+            decodedData.jkPair1,
+            decodedData.ikPair1,
+            decodedData.jkPair2,
+            decodedData.ikPair2,
+            requiredBackAmount,
+            decodedData.flashAmountOut
+        );
     }
 
     function exchange(
@@ -46,12 +55,12 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             abi.encode(
                 ExchangeReserveCallbackParams({
                     jkPair1: jkPair1,
+                    ikPair1: ikPair1,
                     jkPair2: jkPair2,
-                    ikPair2: ikPair2
+                    ikPair2: ikPair2,
+                    flashAmountOut: flashAmountOut
                 })
             )
         );
-
-        emit ReservesExchanged();
     }
 }
