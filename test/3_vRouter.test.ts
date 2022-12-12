@@ -861,7 +861,7 @@ describe("vRouter 2", () => {
     fixture = await loadFixture(deployPools);
   });
 
-  it("Should swap WETH9 token", async () => {
+  it("Should swap WETH9<>B token", async () => {
     const vRouterInstance = fixture.vRouterInstance;
     const WETH9 = await vRouterInstance.WETH9();
     const tokenB = fixture.tokenB;
@@ -891,6 +891,39 @@ describe("vRouter 2", () => {
     );
     const tokenABalanceAfter = await ethers.provider.getBalance(owner.address);
     const tokenBBalanceAfter = await tokenB.balanceOf(owner.address);
+    expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+    expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+  });
+
+  it("Should swap B<>WETH9 token", async () => {
+    const vRouterInstance = fixture.vRouterInstance;
+    const WETH9 = await vRouterInstance.WETH9();
+    const tokenB = fixture.tokenB;
+    const owner = fixture.owner;
+    const wbPool = fixture.wbPool;
+
+    const tokenABalanceBefore = await tokenB.balanceOf(owner.address);
+    const tokenBBalanceBefore = await ethers.provider.getBalance(owner.address);
+
+    const amountOut = ethers.utils.parseEther("10");
+
+    let amountIn = await vRouterInstance.getAmountIn(
+      tokenB.address,
+      WETH9,
+      amountOut
+    );
+    const futureTs = await utils.getFutureBlockTimestamp();
+
+    await vRouterInstance.swapExactOutput(
+      tokenB.address,
+      WETH9,
+      amountOut,
+      amountIn,
+      owner.address,
+      futureTs,
+    );
+    const tokenABalanceAfter = await tokenB.balanceOf(owner.address);
+    const tokenBBalanceAfter = await ethers.provider.getBalance(owner.address);
     expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
     expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
   });
