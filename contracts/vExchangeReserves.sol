@@ -3,9 +3,9 @@ pragma solidity 0.8.2;
 
 import "./types.sol";
 import "./interfaces/IvPair.sol";
-import "./interfaces/IvFlashSwapCallback.sol";
+import "./interfaces/IvExchangeReserves.sol";
 
-contract vExchangeReserves is IvFlashSwapCallback {
+contract vExchangeReserves is IvExchangeReserves {
     address immutable factory;
 
     constructor(address _factory) {
@@ -37,7 +37,7 @@ contract vExchangeReserves is IvFlashSwapCallback {
         address jkPair2,
         address ikPair2,
         uint256 flashAmountOut
-    ) external {
+    ) external override {
         IvPair(jkPair1).swapNativeToReserve(
             flashAmountOut,
             ikPair1,
