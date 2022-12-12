@@ -50,5 +50,7 @@ contract vExchangeReserves is IvExchangeReserves {
                 })
             )
         );
+
+        emit ReservesExchanged();
     }
 }

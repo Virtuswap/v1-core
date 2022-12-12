@@ -5,6 +5,8 @@ pragma solidity 0.8.2;
 import "./IvFlashSwapCallback.sol";
 
 interface IvExchangeReserves is IvFlashSwapCallback {
+    event ReservesExchanged();
+
     function exchange(
         address jkPair1,
         address ikPair1,
