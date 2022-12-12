@@ -4,8 +4,9 @@ pragma solidity 0.8.2;
 import "./types.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvExchangeReserves.sol";
+import "./base/multicall.sol";
 
-contract vExchangeReserves is IvExchangeReserves {
+contract vExchangeReserves is IvExchangeReserves, Multicall {
     address immutable factory;
 
     constructor(address _factory) {
