@@ -201,6 +201,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
+        // validate jkPair with factory
+        require(
+            IvPairFactory(factory).getPair(token0, token1) ==
+                address(this),
+            'IJKP'
+        );
 
         VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
             ikPair,
