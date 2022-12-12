@@ -35,14 +35,20 @@ contract vExchangeReserves is IvFlashSwapCallback {
         address jkPair1,
         address ikPair1,
         address jkPair2,
-        uint256 flashAmountOut,
-        bytes calldata swapCallbackData
+        address ikPair2,
+        uint256 flashAmountOut
     ) external {
         IvPair(jkPair1).swapNativeToReserve(
             flashAmountOut,
             ikPair1,
             jkPair2,
-            swapCallbackData
+            abi.encode(
+                ExchangeReserveCallbackParams({
+                    jkPair1: jkPair1,
+                    jkPair2: jkPair2,
+                    ikPair2: ikPair2
+                })
+            )
         );
     }
 }

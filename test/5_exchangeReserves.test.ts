@@ -104,12 +104,6 @@ describe("ExchangeReserves", () => {
 
     let amountAInReserve = await bcPool.reserves(tokenA.address);
 
-    let data = utils.getEncodedExchangeReserveCallbackParams(
-      bcPool.address, //jk1
-      abPool.address, //jk2
-      bcPool.address //ik2
-    );
-
     await tokenC.transfer(bcPool.address, ethers.utils.parseEther("10"));
 
     let aReserveInBC = await bcPool.reserves(tokenA.address);
@@ -126,8 +120,8 @@ describe("ExchangeReserves", () => {
       bcPool.address, //jk1
       abPool.address, // ik1
       abPool.address, //jk2
+      bcPool.address, // ik2
       amountAInReserve,
-      data
     );
 
     let tokenAReserveBaseValueAfter = await bcPool.reservesBaseValue(
