@@ -197,7 +197,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         override
         onlyForExchangeReserves
         nonReentrant
-        returns (uint256 _amountIn)
+        returns (address _token, uint256 _leftovers)
     {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
@@ -241,11 +241,20 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 data
             );
 
-        _amountIn =
-            fetchBalance(vPool.token0) -
-            (vPool.token0 == token0 ? pairBalance0 : pairBalance1);
+        // reverts if overflow occurs since solidity 0.8
+        // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0 
+        // then it is reverted (requiredAmountIn always positive) 
+        if (vPool.token0 == token0) {
+            _leftovers = fetchBalance(vPool.token0) - pairBalance0 - requiredAmountIn;
+            _token = token0;
+        } else {
+            _leftovers = fetchBalance(vPool.token0) - pairBalance1 - requiredAmountIn;
+            _token = token1;
+        }
 
-        require(_amountIn > 0 && _amountIn >= requiredAmountIn, 'IIA');
+        if (_leftovers > 0) {
+            SafeERC20.safeTransfer(IERC20(_token), msg.sender, _leftovers);
+        }
 
         // //update reserve balance in the equivalent of token0 value
 

@@ -72,7 +72,7 @@ interface IvPair {
         address ikPair,
         address to,
         bytes calldata data
-    ) external returns (uint256 _amountIn);
+    ) external returns (address _token, uint256 _leftovers);
 
     function mint(address to) external returns (uint256 liquidity);
 
