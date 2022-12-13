@@ -29,16 +29,17 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
 
         require(msg.sender == decodedData.jkPair1, 'IC');
 
-        address _token;
-        uint256 _leftovers;
-        (_token, _leftovers) = IvPair(decodedData.jkPair2).swapNativeToReserve(
+        address _leftoverToken;
+        uint256 _leftoverAmount;
+        (_leftoverToken, _leftoverAmount) = IvPair(decodedData.jkPair2).swapNativeToReserve(
             requiredBackAmount,
             decodedData.ikPair2,
             decodedData.jkPair1,
             new bytes(0)
         );
 
-        SafeERC20.safeTransfer(IERC20(_token), decodedData.caller, _leftovers);
+        if (_leftoverAmount > 0)
+            SafeERC20.safeTransfer(IERC20(_leftoverToken), decodedData.caller, _leftoverAmount);
 
         emit ReservesExchanged(
             decodedData.jkPair1,
