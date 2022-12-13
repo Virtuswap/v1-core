@@ -30,10 +30,9 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
 
         require(msg.sender == decodedData.jkPair1, 'IC');
 
-        address _leftoverToken;
-        uint256 _leftoverAmount;
-        (_leftoverToken, _leftoverAmount) = IvPair(decodedData.jkPair2)
-            .swapNativeToReserve(
+        (address _leftoverToken, uint256 _leftoverAmount) = IvPair(
+            decodedData.jkPair2
+        ).swapNativeToReserve(
                 requiredBackAmount,
                 decodedData.ikPair2,
                 decodedData.jkPair1,
