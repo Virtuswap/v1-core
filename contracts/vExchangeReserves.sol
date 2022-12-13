@@ -38,7 +38,7 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             new bytes(0)
         );
 
-        SafeERC20.safeTransfer(IERC20(_token), msg.sender, _leftovers);
+        SafeERC20.safeTransfer(IERC20(_token), decodedData.caller, _leftovers);
 
         emit ReservesExchanged(
             decodedData.jkPair1,
@@ -67,7 +67,8 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
                     ikPair1: ikPair1,
                     jkPair2: jkPair2,
                     ikPair2: ikPair2,
-                    flashAmountOut: flashAmountOut
+                    flashAmountOut: flashAmountOut,
+                    caller: msg.sender
                 })
             )
         );
