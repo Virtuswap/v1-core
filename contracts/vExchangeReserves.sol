@@ -7,6 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import "./types.sol";
 import "./interfaces/IvPair.sol";
 import "./interfaces/IvExchangeReserves.sol";
+import "./interfaces/IvPairFactory.sol";
 import "./base/multicall.sol";
 
 contract vExchangeReserves is IvExchangeReserves, Multicall {
@@ -58,6 +59,13 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
         address ikPair2,
         uint256 flashAmountOut
     ) external override {
+        address _jkToken0;
+        address _jkToken1;
+        (_jkToken0, _jkToken1) = IvPair(jkPair1).getTokens();
+        require(IvPairFactory(factory).getPair(_jkToken0, _jkToken1) != address(0), 'IJKP1');
+        (_jkToken0, _jkToken1) = IvPair(jkPair2).getTokens();
+        require(IvPairFactory(factory).getPair(_jkToken0, _jkToken1) != address(0), 'IJKP2');
+
         IvPair(jkPair1).swapNativeToReserve(
             flashAmountOut,
             ikPair1,
