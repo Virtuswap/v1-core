@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.2;
 
-import "./IvFlashSwapCallback.sol";
+import './IvFlashSwapCallback.sol';
 
 interface IvExchangeReserves is IvFlashSwapCallback {
     event ReservesExchanged(

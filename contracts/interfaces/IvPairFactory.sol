@@ -17,14 +17,15 @@ interface IvPairFactory {
 
     event ExchangeReserveAddressChanged(address newExchangeReserve);
 
-    function createPair(address tokenA, address tokenB)
-        external
-        returns (address);
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address);
 
-    function getPair(address tokenA, address tokenB)
-        external
-        view
-        returns (address);
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address);
 
     function admin() external view returns (address);
 

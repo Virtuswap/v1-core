@@ -2,31 +2,34 @@
 
 pragma solidity 0.8.2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
-import "./types.sol";
-import "./vPair.sol";
-import "./base/multicall.sol";
-import "./libraries/PoolAddress.sol";
-import "./libraries/vSwapLibrary.sol";
-import "./interfaces/IvRouter.sol";
-import "./interfaces/IvPairFactory.sol";
-import "./interfaces/IvPair.sol";
-import "./interfaces/external/IWETH9.sol";
+import './types.sol';
+import './vPair.sol';
+import './base/multicall.sol';
+import './libraries/PoolAddress.sol';
+import './libraries/vSwapLibrary.sol';
+import './interfaces/IvRouter.sol';
+import './interfaces/IvPairFactory.sol';
+import './interfaces/IvPair.sol';
+import './interfaces/external/IWETH9.sol';
 
 contract vRouter is IvRouter, Multicall {
     address public override factory;
     address public immutable override WETH9;
 
     modifier _onlyFactoryAdmin() {
-        require(msg.sender == IvPairFactory(factory).admin(), "VSWAP:ONLY_ADMIN");
+        require(
+            msg.sender == IvPairFactory(factory).admin(),
+            'VSWAP:ONLY_ADMIN'
+        );
         _;
     }
 
     modifier notAfter(uint256 deadline) {
-        require(deadline >= block.timestamp, "VSWAP:EXPIRED");
+        require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
         _;
     }
 
@@ -36,22 +39,20 @@ contract vRouter is IvRouter, Multicall {
     }
 
     receive() external payable {
-        require(msg.sender == WETH9, "Not WETH9");
+        require(msg.sender == WETH9, 'Not WETH9');
     }
 
-    function getPairAddress(address tokenA, address tokenB)
-        internal
-        view
-        returns (address)
-    {
+    function getPairAddress(
+        address tokenA,
+        address tokenB
+    ) internal view returns (address) {
         return PoolAddress.computeAddress(factory, tokenA, tokenB);
     }
 
-    function getPair(address tokenA, address tokenB)
-        internal
-        view
-        returns (IvPair)
-    {
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) internal view returns (IvPair) {
         return IvPair(getPairAddress(tokenA, tokenB));
     }
 
@@ -74,25 +75,25 @@ contract vRouter is IvRouter, Multicall {
             require(
                 msg.sender ==
                     PoolAddress.computeAddress(factory, jkToken0, jkToken1),
-                "VSWAP:INVALID_CALLBACK_VPOOL"
+                'VSWAP:INVALID_CALLBACK_VPOOL'
             );
         } else
             require(
                 msg.sender ==
                     PoolAddress.computeAddress(factory, tokenIn, tokenOut),
-                "VSWAP:INVALID_CALLBACK_POOL"
+                'VSWAP:INVALID_CALLBACK_POOL'
             );
 
         //validate amount to pay back dont exceeds
         require(
             requiredBackAmount <= decodedData.tokenInMax,
-            "VSWAP:REQUIRED_AMOUNT_EXCEEDS"
+            'VSWAP:REQUIRED_AMOUNT_EXCEEDS'
         );
         // handle payment
         if (tokenIn == WETH9 && decodedData.ETHValue > 0) {
             require(
                 decodedData.ETHValue >= requiredBackAmount,
-                "VSWAP:INSUFFICIENT_ETH_INPUT_AMOUNT"
+                'VSWAP:INSUFFICIENT_ETH_INPUT_AMOUNT'
             );
             // pay back with WETH9
             IWETH9(WETH9).deposit{value: requiredBackAmount}();
@@ -151,7 +152,7 @@ contract vRouter is IvRouter, Multicall {
         uint256 deadline
     ) external payable override notAfter(deadline) {
         uint256 amountOut = getAmountOut(tokenIn, tokenOut, amountIn);
-        require(amountOut >= minAmountOut, "VSWAP: INSUFFICIENT_OUTPUT_AMOUNT");
+        require(amountOut >= minAmountOut, 'VSWAP: INSUFFICIENT_OUTPUT_AMOUNT');
 
         getPair(tokenIn, tokenOut).swapNative(
             amountOut,
@@ -216,7 +217,7 @@ contract vRouter is IvRouter, Multicall {
 
         require(
             amountOut >= minAmountOut,
-            "VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT"
+            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
         );
 
         IvPair(jkAddress).swapReserveToNative(
@@ -245,14 +246,7 @@ contract vRouter is IvRouter, Multicall {
         uint256 amountBDesired,
         uint256 amountAMin,
         uint256 amountBMin
-    )
-        internal
-        returns (
-            uint256 amountA,
-            uint256 amountB,
-            address pairAddress
-        )
-    {
+    ) internal returns (uint256 amountA, uint256 amountB, address pairAddress) {
         pairAddress = IvPairFactory(factory).getPair(tokenA, tokenB);
         // create the pair if it doesn't exist yet
         if (pairAddress == address(0))
@@ -273,7 +267,7 @@ contract vRouter is IvRouter, Multicall {
             if (amountBOptimal <= amountBDesired) {
                 require(
                     amountBOptimal >= amountBMin,
-                    "VSWAP: INSUFFICIENT_B_AMOUNT"
+                    'VSWAP: INSUFFICIENT_B_AMOUNT'
                 );
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
@@ -286,7 +280,7 @@ contract vRouter is IvRouter, Multicall {
                 assert(amountAOptimal <= amountADesired);
                 require(
                     amountAOptimal >= amountAMin,
-                    "VSWAP: INSUFFICIENT_A_AMOUNT"
+                    'VSWAP: INSUFFICIENT_A_AMOUNT'
                 );
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
@@ -363,8 +357,8 @@ contract vRouter is IvRouter, Multicall {
 
         (amountA, amountB) = IvPair(pairAddress).burn(to);
 
-        require(amountA >= amountAMin, "VSWAP: INSUFFICIENT_A_AMOUNT");
-        require(amountB >= amountBMin, "VSWAP: INSUFFICIENT_B_AMOUNT");
+        require(amountA >= amountAMin, 'VSWAP: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'VSWAP: INSUFFICIENT_B_AMOUNT');
     }
 
     function getVirtualAmountIn(
@@ -397,12 +391,10 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
-    function getVirtualPool(address jkPair, address ikPair)
-        public
-        view
-        override
-        returns (VirtualPoolModel memory vPool)
-    {
+    function getVirtualPool(
+        address jkPair,
+        address ikPair
+    ) public view override returns (VirtualPoolModel memory vPool) {
         vPool = vSwapLibrary.getVirtualPool(jkPair, ikPair);
     }
 
@@ -472,14 +464,12 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
-    function changeFactory(address _factory)
-        external
-        override
-        _onlyFactoryAdmin
-    {
+    function changeFactory(
+        address _factory
+    ) external override _onlyFactoryAdmin {
         require(
             _factory > address(0) && _factory != factory,
-            "VSWAP:INVALID_FACTORY"
+            'VSWAP:INVALID_FACTORY'
         );
         factory = _factory;
 

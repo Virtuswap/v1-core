@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.2;
 
-import "../types.sol";
+import '../types.sol';
 
 interface IvPair {
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
@@ -76,9 +76,9 @@ interface IvPair {
 
     function mint(address to) external returns (uint256 liquidity);
 
-    function burn(address to)
-        external
-        returns (uint256 amount0, uint256 amount1);
+    function burn(
+        address to
+    ) external returns (uint256 amount0, uint256 amount1);
 
     function setAllowList(address[] memory _allowList) external;
 
@@ -111,10 +111,9 @@ interface IvPair {
 
     function getTokens() external view returns (address, address);
 
-    function reservesBaseValue(address reserveAddress)
-        external
-        view
-        returns (uint256);
+    function reservesBaseValue(
+        address reserveAddress
+    ) external view returns (uint256);
 
     function reserves(address reserveAddress) external view returns (uint256);
 }
