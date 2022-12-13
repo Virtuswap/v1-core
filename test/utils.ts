@@ -13,12 +13,15 @@ export default {
   },
   getEncodedExchangeReserveCallbackParams: function (
     jkPair1: any,
+    ikPair1: any,
     jkPair2: any,
-    ikPair2: any
+    ikPair2: any,
+    caller: any,
+    flashAmountOut: any
   ) {
     return abi.encode(
-      ["address", "address", "address"],
-      [jkPair1, jkPair2, ikPair2]
+      ["address", "address", "address", "address", "address", "uint256"],
+      [jkPair1, ikPair1, jkPair2, ikPair2, caller, flashAmountOut]
     );
   },
 };

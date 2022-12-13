@@ -16,6 +16,26 @@ describe("ExchangeReserves", () => {
     );
   });
 
+  it("Should revert when callback caller is not jkPair1", async () => {
+    const abPool = fixture.abPool;
+    const bdPool = fixture.bdPool;
+    const tokenA = fixture.tokenA;
+    const tokenB = fixture.tokenB;
+    const owner = fixture.owner;
+
+    let amountOut = ethers.utils.parseEther("100");
+    let data = utils.getEncodedExchangeReserveCallbackParams(
+        abPool.address, //jk1
+        bdPool.address, //ik1
+        bdPool.address, //jk2
+        abPool.address, //ik2
+        owner.address,
+        amountOut,
+    );
+
+    await expect(fixture.exchageReserveInstance.vFlashSwapCallback(tokenA.address, tokenB.address, amountOut, data)).to.revertedWith("IC");
+  });
+
   it("Should add C to pool A/B", async () => {
     const abPool = fixture.abPool;
     const bcPool = fixture.bcPool;
@@ -101,6 +121,7 @@ describe("ExchangeReserves", () => {
     const bcPool = fixture.bcPool;
     const tokenA = fixture.tokenA;
     const tokenC = fixture.tokenC;
+    const owner = fixture.owner;
 
     let amountAInReserve = await bcPool.reserves(tokenA.address);
 
@@ -115,6 +136,8 @@ describe("ExchangeReserves", () => {
 
     let poolBCRR = await bcPool.calculateReserveRatio();
 
+    let balanceABefore = await tokenA.balanceOf(owner.address);
+
     //get flash swap of amount required amount C from pool BC.
     await fixture.exchageReserveInstance.exchange(
       bcPool.address, //jk1
@@ -123,6 +146,8 @@ describe("ExchangeReserves", () => {
       bcPool.address, // ik2
       amountAInReserve,
     );
+
+    let balanceAAfter = await tokenA.balanceOf(owner.address);
 
     let tokenAReserveBaseValueAfter = await bcPool.reservesBaseValue(
       tokenA.address
@@ -136,6 +161,9 @@ describe("ExchangeReserves", () => {
     let poolABRRAfter = await abPool.calculateReserveRatio();
 
     let poolBCRRAfter = await bcPool.calculateReserveRatio();
+
+    // incentives received
+    expect(balanceAAfter).to.be.above(balanceABefore);
 
     expect(aReserveInBCAfter).to.equal(0);
 
