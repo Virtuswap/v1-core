@@ -773,12 +773,6 @@ describe("Reserve Ratio 2", () => {
 
     let amountDInReserve = await abPool.reserves(tokenD.address);
 
-    let data = utils.getEncodedExchangeReserveCallbackParams(
-      abPool.address, //jk1
-      bdPool.address, //jk2
-      abPool.address //ik2
-    );
-
     let BDRRBefore = await bdPool.calculateReserveRatio();
     console.log(`Reserve ratio of BD pool before = ${BDRRBefore.toString()}`);
 
@@ -791,8 +785,8 @@ describe("Reserve Ratio 2", () => {
       abPool.address, //jk1
       bdPool.address, // ik1
       bdPool.address, //jk2
+      abPool.address, //ik2
       amountDInReserve,
-      data
     );
 
     let BDRRAfter = await bdPool.calculateReserveRatio();
