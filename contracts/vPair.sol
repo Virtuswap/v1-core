@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.2;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
@@ -197,14 +197,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         override
         onlyForExchangeReserves
         nonReentrant
-        returns (address _token, uint256 _leftovers)
+        returns (address _leftoverToken, uint256 _leftoverAmount)
     {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
         // validate jkPair with factory
         require(
-            IvPairFactory(factory).getPair(token0, token1) ==
-                address(this),
+            IvPairFactory(factory).getPair(token0, token1) == address(this),
             'IJKP'
         );
 
@@ -242,18 +241,24 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             );
 
         // reverts if overflow occurs since solidity 0.8
-        // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0 
-        // then it is reverted (requiredAmountIn always positive) 
-        if (vPool.token0 == token0) {
-            _leftovers = fetchBalance(vPool.token0) - pairBalance0 - requiredAmountIn;
-            _token = token0;
-        } else {
-            _leftovers = fetchBalance(vPool.token0) - pairBalance1 - requiredAmountIn;
-            _token = token1;
-        }
+        // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0
+        // then it is reverted (requiredAmountIn always positive)
+        (_leftoverAmount, _leftoverToken) = vPool.token0 == token0
+            ? (
+                fetchBalance(vPool.token0) - pairBalance0 - requiredAmountIn,
+                token0
+            )
+            : (
+                fetchBalance(vPool.token0) - pairBalance1 - requiredAmountIn,
+                token1
+            );
 
-        if (_leftovers > 0) {
-            SafeERC20.safeTransfer(IERC20(_token), msg.sender, _leftovers);
+        if (_leftoverAmount > 0) {
+            SafeERC20.safeTransfer(
+                IERC20(_leftoverToken),
+                msg.sender,
+                _leftoverAmount
+            );
         }
 
         // //update reserve balance in the equivalent of token0 value
@@ -397,17 +402,14 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             totalReserves += reservesBaseValue[allowList[i]];
         }
 
-        rRatio = pairBalance0 > 0 ?
-            totalReserves * RESERVE_RATIO_FACTOR / (2 * pairBalance0) :
-            0;
+        rRatio = pairBalance0 > 0
+            ? (totalReserves * RESERVE_RATIO_FACTOR) / (2 * pairBalance0)
+            : 0;
     }
 
-    function mint(address to)
-        external
-        override
-        nonReentrant
-        returns (uint256 liquidity)
-    {
+    function mint(
+        address to
+    ) external override nonReentrant returns (uint256 liquidity) {
         (uint256 _pairBalance0, uint256 _pairBalance1) = (
             pairBalance0,
             pairBalance1
@@ -431,7 +433,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         //substract reserve ratio PCT from minted liquidity tokens amount
         uint256 reserveRatio = calculateReserveRatio();
 
-        liquidity = (liquidity * RESERVE_RATIO_FACTOR) / (RESERVE_RATIO_FACTOR + reserveRatio);
+        liquidity =
+            (liquidity * RESERVE_RATIO_FACTOR) /
+            (RESERVE_RATIO_FACTOR + reserveRatio);
 
         require(liquidity > 0, 'ILM');
 
@@ -441,7 +445,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit Mint(msg.sender, amount0, amount1);
     }
 
-    function burn(address to)
+    function burn(
+        address to
+    )
         external
         override
         nonReentrant
@@ -494,11 +500,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function setAllowList(address[] memory _allowList)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setAllowList(
+        address[] memory _allowList
+    ) external override onlyFactoryAdmin {
         require(allowList.length < maxAllowListCount, 'MW');
 
         address[] memory _oldWL = allowList;
@@ -521,11 +525,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit FactoryChanged(_factory);
     }
 
-    function setFee(uint24 _fee, uint24 _vFee)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setFee(
+        uint24 _fee,
+        uint24 _vFee
+    ) external override onlyFactoryAdmin {
         require(_fee > 0 && _vFee > 0 && _fee < 1000 && _vFee < 1000, 'IFC');
         fee = _fee;
         vFee = _vFee;
@@ -533,22 +536,18 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit FeeChanged(_fee, _vFee);
     }
 
-    function setMaxReserveThreshold(uint256 threshold)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setMaxReserveThreshold(
+        uint256 threshold
+    ) external override onlyFactoryAdmin {
         require(threshold > 0, 'IRT');
         maxReserveRatio = threshold;
 
         emit ReserveThresholdChanged(threshold);
     }
 
-    function setMaxAllowListCount(uint24 _maxAllowListCount)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setMaxAllowListCount(
+        uint24 _maxAllowListCount
+    ) external override onlyFactoryAdmin {
         maxAllowListCount = _maxAllowListCount;
         emit AllowListCountChanged(_maxAllowListCount);
     }
