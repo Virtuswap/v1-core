@@ -11,7 +11,9 @@ interface IvExchangeReserves is IvFlashSwapCallback {
         address jkPair2,
         address ikPair2,
         uint256 requiredBackAmount,
-        uint256 flashAmountOut
+        uint256 flashAmountOut,
+        address leftOverToken,
+        uint leftOverAmount
     );
 
     function exchange(
