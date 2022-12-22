@@ -52,7 +52,9 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             decodedData.jkPair2,
             decodedData.ikPair2,
             requiredBackAmount,
-            decodedData.flashAmountOut
+            decodedData.flashAmountOut,
+            _leftoverToken,
+            _leftoverAmount
         );
     }
 
