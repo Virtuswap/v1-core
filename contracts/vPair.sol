@@ -498,7 +498,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     function setAllowList(
         address[] memory _allowList
     ) external override onlyFactoryAdmin {
-        require(allowList.length < maxAllowListCount, 'MW');
+        require(_allowList.length < maxAllowListCount, 'MW');
 
         address[] memory _oldWL = allowList;
 
