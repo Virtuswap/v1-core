@@ -319,16 +319,6 @@ describe('vPair1', () => {
         expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
     });
 
-    it('Should set factory', async () => {
-        const abPool = fixture.abPool;
-
-        await abPool.setFactory(accounts[1]);
-
-        const factoryAddress = await abPool.factory();
-
-        expect(factoryAddress).to.be.equal(accounts[1]);
-    });
-
     it('Should mint', async () => {
         const abPool = fixture.abPool;
         const owner = fixture.owner;
