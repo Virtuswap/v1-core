@@ -257,8 +257,7 @@ describe('vPair1', () => {
 
     it('Should not set allowList if list is longer then maxAllowList', async () => {
         const abPool = fixture.abPool;
-
-        await abPool.setMaxAllowListCount(1);
+        await abPool.setMaxAllowListCount(8);
         await expect(abPool.setAllowList(accounts.slice(1, 9))).to.revertedWith(
             'MW'
         );
