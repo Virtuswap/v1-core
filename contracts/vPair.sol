@@ -513,13 +513,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit AllowListChanged(_allowList);
     }
 
-    function setFactory(address _factory) external onlyFactoryAdmin {
-        require(_factory > address(0) && _factory != factory, 'IFA');
-        factory = _factory;
-
-        emit FactoryChanged(_factory);
-    }
-
     function setFee(
         uint24 _fee,
         uint24 _vFee
