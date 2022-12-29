@@ -100,7 +100,10 @@ contract vRouter is IvRouter, Multicall {
             IWETH9(WETH9).transfer(msg.sender, requiredBackAmount);
 
             //send any ETH leftovers to caller
-            payable(decodedData.caller).transfer(address(this).balance);
+            (bool success, ) = decodedData.caller.call{
+                value: address(this).balance
+            }('');
+            require(success, 'ETF');
         } else {
             SafeERC20.safeTransferFrom(
                 IERC20(tokenIn),
@@ -113,7 +116,8 @@ contract vRouter is IvRouter, Multicall {
 
     function unwrapTransferETH(address to, uint256 amount) internal {
         IWETH9(WETH9).withdraw(amount);
-        payable(to).transfer(amount);
+        (bool success, ) = to.call{value: amount}('');
+        require(success, 'ETF');
     }
 
     function swapExactOutput(
