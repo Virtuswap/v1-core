@@ -103,7 +103,7 @@ contract vRouter is IvRouter, Multicall {
             (bool success, ) = decodedData.caller.call{
                 value: address(this).balance
             }('');
-            require(success, 'ETF');
+            require(success, 'VSWAP: TRANSFER FAILED');
         } else {
             SafeERC20.safeTransferFrom(
                 IERC20(tokenIn),
@@ -117,7 +117,7 @@ contract vRouter is IvRouter, Multicall {
     function unwrapTransferETH(address to, uint256 amount) internal {
         IWETH9(WETH9).withdraw(amount);
         (bool success, ) = to.call{value: amount}('');
-        require(success, 'ETF');
+        require(success, 'VSWAP: TRANSFER FAILED');
     }
 
     function swapExactOutput(
