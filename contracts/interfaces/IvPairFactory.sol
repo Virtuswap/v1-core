@@ -13,7 +13,8 @@ interface IvPairFactory {
         uint256 maxReserveRatio
     );
 
-    event FactoryAdminChanged(address newAdmin);
+    event FactoryNewAdmin(address newAdmin);
+    event FactoryNewPendingAdmin(address newPendingAdmin);
 
     event ExchangeReserveAddressChanged(address newExchangeReserve);
 
@@ -29,7 +30,11 @@ interface IvPairFactory {
 
     function admin() external view returns (address);
 
-    function changeAdmin(address newAdmin) external;
+    function pendingAdmin() external view returns (address);
+
+    function setPendingAdmin(address newAdmin) external;
+
+    function acceptAdmin() external;
 
     function exchangeReserves() external view returns (address);
 
