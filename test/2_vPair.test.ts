@@ -1,5 +1,5 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { expect } from 'chai';
+import { expect, assert } from 'chai';
 import { ethers } from 'hardhat';
 import { deployPools } from './fixtures/deployPools';
 import {
@@ -7,6 +7,49 @@ import {
     VPair__factory,
 } from '../typechain-types/index';
 import _ from 'lodash';
+
+describe('vPairFactory', () => {
+    let fixture: any = {};
+    let accounts: any;
+    let owner: any;
+
+    before(async function () {
+        fixture = await loadFixture(deployPools);
+        accounts = fixture.accounts;
+        owner = fixture.owner;
+    });
+
+    it('Only current admin can initiate admin rights transfer', async () => {
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        assert((await vPairFactoryInstance.admin()) == owner.address);
+        await expect(
+            vPairFactoryInstance
+                .connect(accounts[0])
+                .setPendingAdmin(accounts[0].address)
+        ).to.revertedWith('OA');
+    });
+
+    it('Only pendingAdmin can accept admin rights', async () => {
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        assert((await vPairFactoryInstance.admin()) == owner.address);
+        await expect(
+            vPairFactoryInstance.connect(accounts[0]).acceptAdmin()
+        ).to.revertedWith('Only for pending admin');
+    });
+
+    it('Should change admin', async () => {
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        assert((await vPairFactoryInstance.admin()) == owner.address);
+        await vPairFactoryInstance.setPendingAdmin(accounts[0].address);
+        expect(
+            (await vPairFactoryInstance.pendingAdmin()) == accounts[0].address
+        );
+        expect((await vPairFactoryInstance.admin()) == owner.address);
+        await vPairFactoryInstance.connect(accounts[0]).acceptAdmin();
+        expect((await vPairFactoryInstance.pendingAdmin()) == '0');
+        expect((await vPairFactoryInstance.admin()) == accounts[0].address);
+    });
+});
 
 describe('vPair1', () => {
     let accounts: any = [];
