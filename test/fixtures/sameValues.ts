@@ -12,22 +12,22 @@ import {
 // We define a fixture to reuse the same setup in every test.
 // We use loadFixture to run this setup once, snapshot that state,
 // and reset Hardhat Network to that snapshot in every test.
-export async function reserveRatioManipulation() {
+export async function sameValues() {
     console.log('==================');
     console.log('Reserve ratio manipulation fixture');
     console.log('==================');
 
     const issueAmount = ethers.utils.parseEther(
-        '100000000000000000000000000000000000'
+        '10000000000000000000000000000000000000000000000'
     );
 
     // Contracts are deployed using the first signer/account by default
     const [owner] = await ethers.getSigners();
 
     const A_PRICE = 1;
-    const B_PRICE = 3;
-    const C_PRICE = 6;
-    const D_PRICE = 9;
+    const B_PRICE = 1;
+    const C_PRICE = 1;
+    const D_PRICE = 1;
 
     const erc20ContractFactory = await new ERC20PresetFixedSupply__factory(
         owner
@@ -72,6 +72,14 @@ export async function reserveRatioManipulation() {
         WETH9Instance.address
     );
 
+    const vExchangeReserveContractFactory = await ethers.getContractFactory(
+        'vExchangeReserves'
+    );
+    const exchangeReserveInstance =
+        await vExchangeReserveContractFactory.deploy(
+            vPairFactoryInstance.address
+        );
+
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
     await tokenC.approve(vRouterInstance.address, issueAmount);
@@ -82,10 +90,10 @@ export async function reserveRatioManipulation() {
     await vRouterInstance.addLiquidity(
         tokenA.address,
         tokenB.address,
-        ethers.utils.parseEther('100'),
-        ethers.utils.parseEther('100'),
-        ethers.utils.parseEther('100'),
-        ethers.utils.parseEther('100'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
         owner.address,
         futureTs
     );
@@ -96,10 +104,10 @@ export async function reserveRatioManipulation() {
     await vRouterInstance.addLiquidity(
         tokenA.address,
         tokenC.address,
-        ethers.utils.parseEther('50'),
-        ethers.utils.parseEther('200'),
-        ethers.utils.parseEther('50'),
-        ethers.utils.parseEther('200'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
         owner.address,
         futureTs
     );
@@ -110,10 +118,21 @@ export async function reserveRatioManipulation() {
     await vRouterInstance.addLiquidity(
         tokenB.address,
         tokenC.address,
-        ethers.utils.parseEther('50'),
-        ethers.utils.parseEther('200'),
-        ethers.utils.parseEther('50'),
-        ethers.utils.parseEther('200'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        owner.address,
+        futureTs
+    );
+
+    await vRouterInstance.addLiquidity(
+        tokenB.address,
+        tokenD.address,
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
+        ethers.utils.parseEther('50000000'),
         owner.address,
         futureTs
     );
@@ -149,11 +168,22 @@ export async function reserveRatioManipulation() {
         tokenB.address,
         tokenC.address
     );
-    const bcPool = VPair__factory.connect(acAddress, owner);
+    const bcPool = VPair__factory.connect(bcAddress, owner);
 
     //whitelist token A
     await bcPool.setAllowList([tokenA.address, tokenD.address]);
     await bcPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
+
+    // pool 4
+    const bdAddress = await vPairFactoryInstance.getPair(
+        tokenB.address,
+        tokenD.address
+    );
+    const bdPool = VPair__factory.connect(bdAddress, owner);
+
+    //whitelist token A
+    await bdPool.setAllowList([tokenA.address, tokenC.address]);
+    await bdPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
 
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
 
@@ -169,8 +199,10 @@ export async function reserveRatioManipulation() {
         abPool,
         bcPool,
         acPool,
+        bdPool,
         vRouterInstance,
         owner,
         vPairFactoryInstance,
+        exchangeReserveInstance,
     };
 }

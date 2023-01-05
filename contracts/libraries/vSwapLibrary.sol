@@ -2,12 +2,12 @@
 
 pragma solidity 0.8.2;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../types.sol";
-import "../interfaces/IvPair.sol";
+import '@openzeppelin/contracts/utils/math/Math.sol';
+import '../types.sol';
+import '../interfaces/IvPair.sol';
 
 library vSwapLibrary {
-    uint24 internal constant PRICE_FEE_FACTOR = 10**3;
+    uint24 internal constant PRICE_FEE_FACTOR = 10 ** 3;
 
     //find common token and assign to ikToken1 and jkToken1
     function findCommonToken(
@@ -28,18 +28,6 @@ library vSwapLibrary {
             : (ikToken1 == jkToken0)
             ? (ikToken0, ikToken1, jkToken1, jkToken0)
             : (ikToken0, ikToken1, jkToken0, jkToken1); //default
-    }
-
-    function percent(uint256 numerator, uint256 denominator)
-        internal
-        pure
-        returns (uint256 quotient)
-    {
-        // caution, check safe-to-multiply here
-        uint256 _numerator = numerator * 10**(18 + 1);
-        // with rounding of last digit
-        uint256 _quotient = ((_numerator / denominator) + 5) / 10;
-        return (_quotient);
     }
 
     function calculateVPool(
@@ -86,8 +74,8 @@ library vSwapLibrary {
         uint256 balanceA,
         uint256 balanceB
     ) internal pure returns (uint256 amountB) {
-        require(amountA > 0, "VSWAP: INSUFFICIENT_AMOUNT");
-        require(balanceA > 0 && balanceB > 0, "VSWAP: INSUFFICIENT_LIQUIDITY");
+        require(amountA > 0, 'VSWAP: INSUFFICIENT_AMOUNT');
+        require(balanceA > 0 && balanceB > 0, 'VSWAP: INSUFFICIENT_LIQUIDITY');
         amountB = (amountA * balanceB) / balanceA;
     }
 
@@ -120,7 +108,7 @@ library vSwapLibrary {
             jk1
         );
 
-        require(vPoolTokens.ik1 == vPoolTokens.jk1, "IOP");
+        require(vPoolTokens.ik1 == vPoolTokens.jk1, 'IOP');
 
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
@@ -141,11 +129,10 @@ library vSwapLibrary {
         vPool.fee = jkvFee;
     }
 
-    function getVirtualPool(address jkPair, address ikPair)
-        internal
-        view
-        returns (VirtualPoolModel memory vPool)
-    {
+    function getVirtualPool(
+        address jkPair,
+        address ikPair
+    ) internal view returns (VirtualPoolModel memory vPool) {
         (address jk0, address jk1) = IvPair(jkPair).getTokens();
         (uint256 _balance0, uint256 _balance1, ) = IvPair(jkPair)
             .getLastBalances();
