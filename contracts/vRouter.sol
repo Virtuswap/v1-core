@@ -260,8 +260,8 @@ contract vRouter is IvRouter, Multicall {
             .getBalances();
 
         (reserve0, reserve1) = vSwapLibrary.sortBalances(
+            IvPair(pairAddress).token0(),
             tokenA,
-            tokenB,
             reserve0,
             reserve1
         );
@@ -271,8 +271,8 @@ contract vRouter is IvRouter, Multicall {
         } else {
             uint256 amountBOptimal = vSwapLibrary.quote(
                 amountADesired,
-                reserve1,
-                reserve0
+                reserve0,
+                reserve1
             );
 
             if (amountBOptimal <= amountBDesired) {
@@ -284,8 +284,8 @@ contract vRouter is IvRouter, Multicall {
             } else {
                 uint256 amountAOptimal = vSwapLibrary.quote(
                     amountBDesired,
-                    reserve0,
-                    reserve1
+                    reserve1,
+                    reserve0
                 );
 
                 assert(amountAOptimal <= amountADesired);
