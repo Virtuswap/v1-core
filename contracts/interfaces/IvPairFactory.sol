@@ -13,6 +13,8 @@ interface IvPairFactory {
         uint256 maxReserveRatio
     );
 
+    event DefaultAllowListChanged(address[] allowList);
+
     event FactoryNewAdmin(address newAdmin);
     event FactoryNewPendingAdmin(address newPendingAdmin);
 
@@ -27,6 +29,8 @@ interface IvPairFactory {
         address tokenA,
         address tokenB
     ) external view returns (address);
+
+    function setDefaultAllowList(address[] calldata _defaultAllowList) external;
 
     function admin() external view returns (address);
 

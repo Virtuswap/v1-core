@@ -93,6 +93,17 @@ export async function deployPools() {
         vPairFactoryInstance.address
     );
 
+    await vPairFactoryInstance.setDefaultAllowList([
+        tokenA.address,
+        tokenB.address,
+        tokenC.address,
+        tokenD.address,
+        tokenA.address,
+        tokenB.address,
+        tokenC.address,
+        tokenD.address,
+    ]);
+
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
     await tokenC.approve(vRouterInstance.address, issueAmount);
@@ -185,7 +196,7 @@ export async function deployPools() {
     const abPool = VPair__factory.connect(address1, owner);
 
     // whitelist token C
-    await abPool.setAllowList([tokenC.address]);
+    // await abPool.setAllowList([tokenC.address]);
 
     const reserve0Pool1 = await abPool.pairBalance0();
     const reserve1Pool1 = await abPool.pairBalance1();
@@ -204,7 +215,7 @@ export async function deployPools() {
     const acPool = VPair__factory.connect(address2, owner);
 
     // whitelist token B
-    await acPool.setAllowList([tokenB.address]);
+    // await acPool.setAllowList([tokenB.address]);
 
     const reserve0Pool2 = await acPool.pairBalance0();
     const reserve1Pool2 = await acPool.pairBalance1();
@@ -223,7 +234,7 @@ export async function deployPools() {
     const bcPool = VPair__factory.connect(address3, owner);
 
     // whitelist token A
-    await bcPool.setAllowList([tokenA.address]);
+    // await bcPool.setAllowList([tokenA.address]);
 
     const reserve0Pool3 = await bcPool.pairBalance0();
     const reserve1Pool3 = await bcPool.pairBalance1();

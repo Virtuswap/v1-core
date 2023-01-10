@@ -59,6 +59,11 @@ describe('vPair1', () => {
         fixture = await loadFixture(deployPools);
     });
 
+    it('Should have 4 tokens in allowList', async () => {
+        const allowListCount = await fixture.abPool.maxAllowListCount();
+        expect(allowListCount).to.be.equal(8);
+    });
+
     it('Should swap native A to B on pool A/B', async () => {
         accounts = _.map(fixture.accounts, 'address');
         const abPool = fixture.abPool;

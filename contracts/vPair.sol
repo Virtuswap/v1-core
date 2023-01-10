@@ -45,7 +45,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     mapping(address => uint256) public override reserves;
 
     function _onlyFactoryAdmin() internal view {
-        require(msg.sender == IvPairFactory(factory).admin(), 'OA');
+        require(
+            msg.sender == IvPairFactory(factory).admin() ||
+                msg.sender == factory,
+            'OA'
+        );
     }
 
     modifier onlyFactoryAdmin() {
