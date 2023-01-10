@@ -3,6 +3,7 @@
 pragma solidity 0.8.2;
 
 import './vPair.sol';
+import './interfaces/IvPair.sol';
 import './interfaces/IvPairFactory.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './libraries/PoolAddress.sol';
@@ -15,6 +16,8 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     address public override admin;
     address public override pendingAdmin;
     address public override exchangeReserves;
+
+    address[] defaultAllowList;
 
     PoolCreationDefaults public override poolCreationDefaults;
 
@@ -64,6 +67,8 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
         delete poolCreationDefaults;
 
+        IvPair(pair).setAllowList(defaultAllowList);
+
         pairs[token0][token1] = pair;
         pairs[token1][token0] = pair;
         allPairs.push(pair);
@@ -100,6 +105,13 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         admin = pendingAdmin;
         pendingAdmin = address(0);
         emit FactoryNewAdmin(admin);
+    }
+
+    function setDefaultAllowList(
+        address[] calldata _defaultAllowList
+    ) external override onlyAdmin {
+        defaultAllowList = _defaultAllowList;
+        emit DefaultAllowListChanged(_defaultAllowList);
     }
 
     function getInitCodeHash() external pure returns (bytes32) {
