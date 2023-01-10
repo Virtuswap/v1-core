@@ -58,7 +58,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             token1: token1,
             fee: 997,
             vFee: 997,
-            maxAllowListCount: 8,
+            maxAllowListCount: uint24(defaultAllowList.length),
             maxReserveRatio: 2000
         });
 

@@ -66,6 +66,17 @@ export async function sameValues() {
     );
     const vPairFactoryInstance = await vPairContractFactory.deploy();
 
+    await vPairFactoryInstance.setDefaultAllowList([
+        tokenA.address,
+        tokenB.address,
+        tokenC.address,
+        tokenD.address,
+        tokenA.address,
+        tokenB.address,
+        tokenC.address,
+        tokenD.address,
+    ]);
+
     const vRouterContractFactory = await ethers.getContractFactory('vRouter');
     const vRouterInstance = await vRouterContractFactory.deploy(
         vPairFactoryInstance.address,
@@ -75,10 +86,9 @@ export async function sameValues() {
     const vExchangeReserveContractFactory = await ethers.getContractFactory(
         'vExchangeReserves'
     );
-    const exchangeReserveInstance =
-        await vExchangeReserveContractFactory.deploy(
-            vPairFactoryInstance.address
-        );
+    const exchangeReserveInstance = await vExchangeReserveContractFactory.deploy(
+        vPairFactoryInstance.address
+    );
 
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
