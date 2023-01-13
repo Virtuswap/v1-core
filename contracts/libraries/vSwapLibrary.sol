@@ -146,5 +146,6 @@ library vSwapLibrary {
             vFee,
             ikPair
         );
+        require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
     }
 }

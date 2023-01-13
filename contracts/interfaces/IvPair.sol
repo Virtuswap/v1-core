@@ -82,6 +82,8 @@ interface IvPair {
 
     function setMaxAllowListCount(uint24 _maxAllowListCount) external;
 
+    function allowListMap(address _token) external view returns (bool allowed);
+
     function calculateReserveRatio() external view returns (uint256 rRatio);
 
     function setMaxReserveThreshold(uint256 threshold) external;

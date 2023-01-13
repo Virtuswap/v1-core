@@ -38,7 +38,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 public maxReserveRatio;
 
     address[] public allowList;
-    mapping(address => bool) public allowListMap;
+    mapping(address => bool) public override allowListMap;
     uint24 public override maxAllowListCount;
 
     mapping(address => uint256) public override reservesBaseValue;
