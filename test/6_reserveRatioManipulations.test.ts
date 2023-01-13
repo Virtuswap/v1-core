@@ -20,6 +20,11 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP1: Buying A and paying 300 B in pool AB');
         console.log('===========================================');
 
+        await fixture.acPool.setAllowList([
+            fixture.tokenB.address,
+            fixture.tokenD.address,
+        ]);
+
         let amountIn = ethers.utils.parseEther('300');
         let amountOut = await fixture.vRouterInstance.getAmountOut(
             fixture.tokenB.address,
@@ -73,11 +78,6 @@ describe('ExchangeReserves manipulation scenarios', () => {
                 utils.fromWeiToNumber(rrBefore) / 1000 +
                 '%'
         );
-
-        await fixture.acPool.setAllowList([
-            fixture.tokenB.address,
-            fixture.tokenD.address,
-        ]);
 
         await fixture.vRouterInstance.swapReserveExactOutput(
             fixture.tokenC.address,

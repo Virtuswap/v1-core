@@ -86,9 +86,10 @@ export async function sameValues() {
     const vExchangeReserveContractFactory = await ethers.getContractFactory(
         'vExchangeReserves'
     );
-    const exchangeReserveInstance = await vExchangeReserveContractFactory.deploy(
-        vPairFactoryInstance.address
-    );
+    const exchangeReserveInstance =
+        await vExchangeReserveContractFactory.deploy(
+            vPairFactoryInstance.address
+        );
 
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
