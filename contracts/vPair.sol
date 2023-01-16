@@ -195,7 +195,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         uint256 amountOut,
         address ikPair,
         address to,
-        uint8 incentivesLimitPct,
+        uint256 incentivesLimitPct,
         bytes calldata data
     )
         external
@@ -237,46 +237,52 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 data
             );
 
-        // reverts if overflow occurs since solidity 0.8
-        // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0
-        // then it is reverted (requiredAmountIn always positive)
-        _leftoverAmount = Math.min(
-            fetchBalance(vPool.token0) -
-                (vPool.token0 == token0 ? pairBalance0 : pairBalance1) -
-                requiredAmountIn,
-            ((fetchBalance(vPool.token0) -
-                (vPool.token0 == token0 ? pairBalance0 : pairBalance1)) *
-                incentivesLimitPct) / 100
-        );
-        _leftoverToken = vPool.token0;
-        if (_leftoverAmount > 0) {
-            SafeERC20.safeTransfer(
-                IERC20(_leftoverToken),
-                msg.sender,
-                _leftoverAmount
+        {
+            // scope to avoid stack too deep errors
+            uint256 balanceDiff = fetchBalance(vPool.token0) -
+                (vPool.token0 == token0 ? pairBalance0 : pairBalance1);
+            // reverts if overflow occurs since solidity 0.8
+            // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0
+            // then it is reverted (requiredAmountIn always positive)
+            (_leftoverAmount, _leftoverToken) = (
+                Math.min(
+                    balanceDiff - requiredAmountIn,
+                    (balanceDiff * incentivesLimitPct) / 100
+                ),
+                vPool.token0
             );
+            if (_leftoverAmount > 0) {
+                SafeERC20.safeTransfer(
+                    IERC20(_leftoverToken),
+                    msg.sender,
+                    _leftoverAmount
+                );
+            }
         }
 
-        // //update reserve balance in the equivalent of token0 value
-        uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
-        if (_reserveBaseValue > 0) {
-            // //re-calculate price of reserve asset in token0 for the whole pool blance
-            _reserveBaseValue = vSwapLibrary.quote(
-                _reserveBaseValue,
-                vPool.balance1,
-                vPool.balance0
-            );
-        }
+        {
+            // scope to avoid stack too deep errors
+            // //update reserve balance in the equivalent of token0 value
+            uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
+            if (_reserveBaseValue > 0) {
+                // //re-calculate price of reserve asset in token0 for the whole pool blance
+                _reserveBaseValue = vSwapLibrary.quote(
+                    _reserveBaseValue,
+                    vPool.balance1,
+                    vPool.balance0
+                );
+            }
 
-        if (_reserveBaseValue > 0 && vPool.token0 == token1) {
-            //if tokenOut is not token0 we should quote it to token0 value
-            _reserveBaseValue = vSwapLibrary.quote(
-                _reserveBaseValue,
-                pairBalance1,
-                pairBalance0
-            );
+            if (_reserveBaseValue > 0 && vPool.token0 == token1) {
+                //if tokenOut is not token0 we should quote it to token0 value
+                _reserveBaseValue = vSwapLibrary.quote(
+                    _reserveBaseValue,
+                    pairBalance1,
+                    pairBalance0
+                );
+            }
+            reservesBaseValue[vPool.token1] = _reserveBaseValue;
         }
-        reservesBaseValue[vPool.token1] = _reserveBaseValue;
 
         //update reserve balance
         reserves[vPool.token1] -= amountOut;
