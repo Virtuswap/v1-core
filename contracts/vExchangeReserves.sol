@@ -11,10 +11,18 @@ import './interfaces/IvPairFactory.sol';
 import './base/multicall.sol';
 
 contract vExchangeReserves is IvExchangeReserves, Multicall {
-    address immutable factory;
+    address public immutable factory;
+    uint256 public incentivesLimitPct;
 
     constructor(address _factory) {
         factory = _factory;
+        incentivesLimitPct = 1;
+    }
+
+    function changeIncentivesLimitPct(uint256 newLimit) external override {
+        require(msg.sender == IvPairFactory(factory).admin(), 'Admin only');
+        require(newLimit <= 100, 'Invalid limit');
+        incentivesLimitPct = newLimit;
     }
 
     function vFlashSwapCallback(
@@ -36,7 +44,7 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
                 requiredBackAmount,
                 decodedData.ikPair2,
                 decodedData.jkPair1,
-                1,
+                incentivesLimitPct,
                 new bytes(0)
             );
 
@@ -83,7 +91,7 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             flashAmountOut,
             ikPair1,
             jkPair2,
-            1,
+            incentivesLimitPct,
             abi.encode(
                 ExchangeReserveCallbackParams({
                     jkPair1: jkPair1,
