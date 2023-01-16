@@ -441,7 +441,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         _mint(to, liquidity);
 
         _update(currentBalance0, currentBalance1);
-        emit Mint(msg.sender, amount0, amount1, liquidity, totalSupply());
+        emit Mint(to, amount0, amount1, liquidity, totalSupply());
     }
 
     function burn(
