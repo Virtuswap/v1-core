@@ -69,6 +69,7 @@ interface IvPair {
         uint256 amountOut,
         address ikPair,
         address to,
+        uint8 incentivesLimitPct,
         bytes calldata data
     ) external returns (address _token, uint256 _leftovers);
 

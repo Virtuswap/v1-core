@@ -195,6 +195,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         uint256 amountOut,
         address ikPair,
         address to,
+        uint8 incentivesLimitPct,
         bytes calldata data
     )
         external
@@ -217,15 +218,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 ikPair,
             'IIKP'
         );
-
         require(amountOut <= vPool.balance1, 'AOE');
         require(allowListMap[vPool.token1], 'TNW');
         require(vPool.token0 == token0 || vPool.token0 == token1, 'NNT');
 
         SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
-        uint256 requiredAmountIn = 0;
-
-        requiredAmountIn = vSwapLibrary.quote(
+        uint256 requiredAmountIn = vSwapLibrary.quote(
             amountOut,
             vPool.balance1,
             vPool.balance0
@@ -242,16 +240,15 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         // reverts if overflow occurs since solidity 0.8
         // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0
         // then it is reverted (requiredAmountIn always positive)
-        (_leftoverAmount, _leftoverToken) = vPool.token0 == token0
-            ? (
-                fetchBalance(vPool.token0) - pairBalance0 - requiredAmountIn,
-                token0
-            )
-            : (
-                fetchBalance(vPool.token0) - pairBalance1 - requiredAmountIn,
-                token1
-            );
-
+        _leftoverAmount = Math.min(
+            fetchBalance(vPool.token0) -
+                (vPool.token0 == token0 ? pairBalance0 : pairBalance1) -
+                requiredAmountIn,
+            ((fetchBalance(vPool.token0) -
+                (vPool.token0 == token0 ? pairBalance0 : pairBalance1)) *
+                incentivesLimitPct) / 100
+        );
+        _leftoverToken = vPool.token0;
         if (_leftoverAmount > 0) {
             SafeERC20.safeTransfer(
                 IERC20(_leftoverToken),
@@ -261,7 +258,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         }
 
         // //update reserve balance in the equivalent of token0 value
-
         uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
         if (_reserveBaseValue > 0) {
             // //re-calculate price of reserve asset in token0 for the whole pool blance
@@ -280,7 +276,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 pairBalance0
             );
         }
-
         reservesBaseValue[vPool.token1] = _reserveBaseValue;
 
         //update reserve balance
@@ -299,6 +294,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             to
         );
     }
+
+    function _calculateLeftovers(
+        address vPoolToken0,
+        uint256 pairBalance,
+        uint256 requiredAmountIn,
+        uint256 incentivesLimitPct
+    ) private returns (uint256 leftoversAmount) {}
 
     function swapReserveToNative(
         uint256 amountOut,
