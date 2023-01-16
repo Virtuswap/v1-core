@@ -216,6 +216,7 @@ describe('vPair1', () => {
             amountOut,
             bcPool.address,
             owner.address,
+            1,
             []
         );
 
@@ -363,7 +364,7 @@ describe('vPair1', () => {
         let reservesAfter0 = reservesAfter._balance0;
         let reservesAfter1 = reservesAfter._balance1;
 
-        expect(reservesAfter0).to.equal(578); // 598 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter0).to.equal(10553); // 598 = MINIUMUM LOCKED LIQUIDITY
         expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
     });
 
@@ -497,7 +498,6 @@ describe('vPair1', () => {
 });
 
 describe('vPair2', () => {
-    let accounts: any = [];
     let fixture: any = {};
 
     before(async function () {
@@ -576,21 +576,11 @@ describe('vPair2', () => {
             cAmountOut,
             ikAddress,
             owner.address,
+            1,
             []
         );
-
-        // must be changed when calculateReserveRatio precision changes
-        const PRECISION_DIFFERENCE = '100000000000000000000'; // 23 - 3 == 20
-        expectedReserveRatio = expectedReserveRatio.mul(
-            ethers.BigNumber.from(PRECISION_DIFFERENCE)
-        );
         let returnedReserveRatio = await abPool.calculateReserveRatio();
-        expect(
-            expectedReserveRatio
-                .sub(returnedReserveRatio)
-                .abs()
-                .lt(ethers.BigNumber.from(PRECISION_DIFFERENCE))
-        );
+        expect(expectedReserveRatio).to.be.equal(returnedReserveRatio);
     });
 
     it('Burn -> Should distribute reserve tokens correctly', async () => {
