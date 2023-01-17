@@ -301,13 +301,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         );
     }
 
-    function _calculateLeftovers(
-        address vPoolToken0,
-        uint256 pairBalance,
-        uint256 requiredAmountIn,
-        uint256 incentivesLimitPct
-    ) private returns (uint256 leftoversAmount) {}
-
     function swapReserveToNative(
         uint256 amountOut,
         address ikPair,
