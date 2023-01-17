@@ -66,6 +66,17 @@ export async function sameValues() {
     );
     const vPairFactoryInstance = await vPairContractFactory.deploy();
 
+    await vPairFactoryInstance.setDefaultAllowList([
+        tokenA.address,
+        tokenB.address,
+        tokenC.address,
+        tokenD.address,
+        tokenA.address,
+        tokenB.address,
+        tokenC.address,
+        tokenD.address,
+    ]);
+
     const vRouterContractFactory = await ethers.getContractFactory('vRouter');
     const vRouterInstance = await vRouterContractFactory.deploy(
         vPairFactoryInstance.address,

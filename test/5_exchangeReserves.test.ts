@@ -16,6 +16,26 @@ describe('ExchangeReserves', () => {
         );
     });
 
+    it('Should change incentives limit', async () => {
+        const exchangeReserves = fixture.exchageReserveInstance;
+        const incentivesLimitBefore =
+            await exchangeReserves.incentivesLimitPct();
+        await exchangeReserves.changeIncentivesLimitPct(50);
+        const incentivesLimitAfter =
+            await exchangeReserves.incentivesLimitPct();
+        expect(incentivesLimitBefore).to.equal(1);
+        expect(incentivesLimitAfter).to.equal(50);
+    });
+
+    it('Incentives limit can be changed only by factory admin', async () => {
+        const exchangeReserves = fixture.exchageReserveInstance;
+        await expect(
+            exchangeReserves
+                .connect(fixture.accounts[1])
+                .changeIncentivesLimitPct(50)
+        ).to.revertedWith('Admin only');
+    });
+
     it('Should revert when callback caller is not jkPair1', async () => {
         const abPool = fixture.abPool;
         const bdPool = fixture.bdPool;

@@ -5,7 +5,13 @@ pragma solidity 0.8.2;
 import '../types.sol';
 
 interface IvPair {
-    event Mint(address indexed sender, uint256 amount0, uint256 amount1);
+    event Mint(
+        address indexed sender,
+        uint256 amount0,
+        uint256 amount1,
+        uint lpTokens,
+        uint poolLPTokens
+    );
 
     event Burn(
         address indexed sender,
@@ -69,6 +75,7 @@ interface IvPair {
         uint256 amountOut,
         address ikPair,
         address to,
+        uint256 incentivesLimitPct,
         bytes calldata data
     ) external returns (address _token, uint256 _leftovers);
 
