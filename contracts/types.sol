@@ -2,6 +2,19 @@
 
 pragma solidity 0.8.2;
 
+struct MaxTradeAmountParams {
+    int256 f;
+    int256 b0;
+    int256 b1;
+    int256 vb0;
+    int256 vb1;
+    int256 R;
+    int256 F;
+    int256 T;
+    int256 r;
+    int256 s;
+}
+
 struct VirtualPoolModel {
     uint24 fee;
     address token0;

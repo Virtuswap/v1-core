@@ -6,7 +6,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "1.0.4",
     "@nomicfoundation/hardhat-toolbox": "1.0.2",
-    "@openzeppelin/contracts": "4.7.0",
+    "@openzeppelin/contracts": "4.8.1",
     "@openzeppelin/test-helpers": "0.5.15",
     "@typechain/hardhat": "6.1.2",
     "@types/chai": "4.3.1",

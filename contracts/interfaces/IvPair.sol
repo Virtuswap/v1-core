@@ -98,6 +98,8 @@ interface IvPair {
 
     function maxAllowListCount() external view returns (uint24);
 
+    function maxReserveRatio() external view returns (uint256);
+
     function getBalances() external view returns (uint256, uint256);
 
     function getLastBalances()
@@ -116,4 +118,8 @@ interface IvPair {
     ) external view returns (uint256);
 
     function reserves(address reserveAddress) external view returns (uint256);
+
+    function reservesBaseSum() external view returns (uint256);
+
+    function reserveRatioFactor() external pure returns (uint256);
 }

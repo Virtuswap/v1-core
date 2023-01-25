@@ -35,7 +35,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 private _lastPairBalance0;
     uint256 private _lastPairBalance1;
 
-    uint256 public maxReserveRatio;
+    uint256 public override maxReserveRatio;
 
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
@@ -542,5 +542,16 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     ) external override onlyFactoryAdmin {
         maxAllowListCount = _maxAllowListCount;
         emit AllowListCountChanged(_maxAllowListCount);
+    }
+
+    function reservesBaseSum() external view override returns (uint256 sum) {
+        uint256 allowListLength = allowList.length;
+        for (uint256 i = 0; i < allowListLength; ++i) {
+            sum += reservesBaseValue[allowList[i]];
+        }
+    }
+
+    function reserveRatioFactor() external pure override returns (uint256) {
+        return RESERVE_RATIO_FACTOR;
     }
 }
