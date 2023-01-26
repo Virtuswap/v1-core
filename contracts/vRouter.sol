@@ -479,14 +479,13 @@ contract vRouter is IvRouter, Multicall {
             assert(root0 >= 0 || root1 >= 0);
             amountIn = uint256(root0 >= 0 ? root0 : root1);
         } else {
-            OverflowMath.OverflowedValue memory product = OverflowMath.mul(
-                params.b1 * params.vb0,
-                2 * params.b0 * params.T - params.R * params.s
-            );
-            amountIn = uint256(
-                ((product.value / (params.b0 * params.R * params.vb1)) <<
-                    product.power) - params.r
-            );
+            amountIn =
+                Math.mulDiv(
+                    uint256(params.b1 * params.vb0),
+                    uint256(2 * params.b0 * params.T - params.R * params.s),
+                    uint256(params.b0 * params.R * params.vb1)
+                ) -
+                uint256(params.r);
         }
     }
 
