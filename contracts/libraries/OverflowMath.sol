@@ -29,18 +29,28 @@ library OverflowMath {
             b = -b;
             negative = !negative;
         }
-        uint256 productPower = (a <= 1 ? 0 : Math.log2(uint256(a)) + 1) +
-            (b <= 1 ? 0 : Math.log2(uint256(b)) + 1);
-        if ((a == 0 || (a & (a - 1)) == 0) && (b == 0 || (b & (b - 1)) == 0))
-            --productPower;
 
-        if (productPower > 255) {
-            product.power = productPower - 255;
+        uint256 log2A = (a <= 1 ? 0 : Math.log2(uint256(a)) + 1);
+        uint256 log2B = (b <= 1 ? 0 : Math.log2(uint256(b)) + 1);
+        product.power = log2A + log2B + 1;
+        if ((a == 0 || (a & (a - 1)) == 0) && (b == 0 || (b & (b - 1)) == 0))
+            --product.power;
+
+        uint256 reducePowerB;
+        uint256 reducePowerA;
+        if (product.power > 255) {
+            product.power -= 255;
+            reducePowerB = product.power <= 1
+                ? 0
+                : (product.power * log2B) / (log2A + log2B);
+            reducePowerA = product.power - reducePowerB;
+        } else {
+            product.power = 0;
         }
         product.value =
             (negative ? -1 : int8(1)) *
-            (a >> ((product.power >> 1) + (product.power & 1))) *
-            (b >> (product.power >> 1));
+            (a >> reducePowerA) *
+            (b >> reducePowerB);
     }
 
     function sub(
