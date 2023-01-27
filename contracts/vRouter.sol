@@ -407,7 +407,7 @@ contract vRouter is IvRouter, Multicall {
         address jkPair,
         address ikPair
     ) external view override returns (uint256 amountIn) {
-        VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
+        VirtualPoolModel memory vPool = getVirtualPool(ikPair, jkPair);
         amountIn =
             vSwapLibrary.getAmountIn(
                 IvPair(jkPair).reserves(vPool.token1),
@@ -444,6 +444,7 @@ contract vRouter is IvRouter, Multicall {
         params.s = int256(
             jkPair.reservesBaseSum() - jkPair.reservesBaseValue(vPool.token0)
         );
+
         // reserve-to-native
         if (jkPair.token0() == vPool.token1) {
             OverflowMath.OverflowedValue memory a = OverflowMath
@@ -467,7 +468,7 @@ contract vRouter is IvRouter, Multicall {
                     0
                 );
             OverflowMath.OverflowedValue memory c = OverflowMath.mul(
-                -params.F * params.b0,
+                -params.F * params.vb0,
                 2 *
                     params.b0 *
                     params.T *

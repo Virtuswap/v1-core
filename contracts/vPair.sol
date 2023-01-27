@@ -376,7 +376,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         _update(fetchBalance(token0), fetchBalance(token1));
 
-        require(calculateReserveRatio() < maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
+        require(calculateReserveRatio() <= maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
 
         emit ReserveSync(vPool.token0, reserves[vPool.token0]);
         emit SwapReserve(
