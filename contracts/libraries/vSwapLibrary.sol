@@ -108,7 +108,11 @@ library vSwapLibrary {
             jk1
         );
 
-        require(vPoolTokens.ik1 == vPoolTokens.jk1, 'IOP');
+        require(
+            (vPoolTokens.ik0 != vPoolTokens.jk0) &&
+                (vPoolTokens.ik1 == vPoolTokens.jk1),
+            'IOP'
+        );
 
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
