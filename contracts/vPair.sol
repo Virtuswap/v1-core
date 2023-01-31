@@ -329,14 +329,23 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(allowListMap[vPool.token0], 'TNW');
         require(vPool.token1 == token0 || vPool.token1 == token1, 'NNT');
 
-        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
-
         uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
             vPool.balance0,
             vPool.balance1,
             vFee
         );
+
+        require(
+            requiredAmountIn <=
+                vSwapLibrary.getMaxVirtualTradeAmountRtoN(
+                    address(this),
+                    ikPair
+                ),
+            'TBPT'
+        ); // reserve amount goes beyond pool threshold
+
+        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
 
         if (data.length > 0)
             IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
@@ -375,8 +384,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         reserves[vPool.token0] += amountIn;
 
         _update(fetchBalance(token0), fetchBalance(token1));
-
-        require(calculateReserveRatio() <= maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
 
         emit ReserveSync(vPool.token0, reserves[vPool.token0]);
         emit SwapReserve(
