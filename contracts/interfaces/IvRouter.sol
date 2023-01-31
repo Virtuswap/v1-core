@@ -103,16 +103,6 @@ interface IvRouter is IvFlashSwapCallback {
         uint256 amountOut
     ) external view returns (uint256 amountIn);
 
-    function getMaxVirtualTradeAmountNtoR(
-        address jkPair,
-        address ikPair
-    ) external view returns (uint256 amountIn);
-
-    function getMaxVirtualTradeAmountRtoN(
-        address jkPair,
-        address ikPair
-    ) external view returns (uint256 amountIn);
-
     function getVirtualAmountOut(
         address jkPair,
         address ikPair,

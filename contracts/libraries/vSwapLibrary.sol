@@ -3,6 +3,7 @@
 pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
+import './QuadraticEquation.sol';
 import '../types.sol';
 import '../interfaces/IvPair.sol';
 
@@ -147,5 +148,93 @@ library vSwapLibrary {
             ikPair
         );
         require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
+    }
+
+    function getMaxVirtualTradeAmountNtoR(
+        address jkPair,
+        address ikPair
+    ) internal view returns (uint256 amountIn) {
+        VirtualPoolModel memory vPool = getVirtualPool(ikPair, jkPair);
+        amountIn =
+            getAmountIn(
+                IvPair(jkPair).reserves(vPool.token1),
+                vPool.balance0,
+                vPool.balance1,
+                vPool.fee
+            ) -
+            1;
+    }
+
+    function getMaxVirtualTradeAmountRtoN(
+        address jkPair,
+        address ikPair
+    ) internal view returns (uint256 amountIn) {
+        VirtualPoolModel memory vPool = getVirtualPoolBase(
+            IvPair(jkPair).token0(),
+            IvPair(jkPair).token1(),
+            IvPair(jkPair).pairBalance0(),
+            IvPair(jkPair).pairBalance1(),
+            IvPair(jkPair).vFee(),
+            ikPair
+        );
+
+        MaxTradeAmountParams memory params;
+        params.f = int256(uint256(vPool.fee));
+        params.b0 = int256(IvPair(jkPair).pairBalance0());
+        params.b1 = int256(IvPair(jkPair).pairBalance1());
+        params.vb0 = int256(vPool.balance0);
+        params.vb1 = int256(vPool.balance1);
+        params.R = int256(IvPair(jkPair).reserveRatioFactor());
+        params.F = int256(uint256(vSwapLibrary.PRICE_FEE_FACTOR));
+        params.T = int256(IvPair(jkPair).maxReserveRatio());
+        params.r = int256(IvPair(jkPair).reserves(vPool.token0));
+        params.s = int256(
+            IvPair(jkPair).reservesBaseSum() -
+                IvPair(jkPair).reservesBaseValue(vPool.token0)
+        );
+
+        // reserve-to-native
+        if (IvPair(jkPair).token0() == vPool.token1) {
+            OverflowMath.OverflowedValue memory a = OverflowMath
+                .OverflowedValue(params.vb1 * params.R * params.f, 0);
+            OverflowMath.OverflowedValue memory b = OverflowMath
+                .OverflowedValue(
+                    params.vb0 *
+                        (-2 *
+                            params.b0 *
+                            params.f *
+                            params.T +
+                            params.vb1 *
+                            (2 * params.f * params.T + params.F * params.R) +
+                            params.f *
+                            params.R *
+                            params.s) +
+                        params.f *
+                        params.r *
+                        params.R *
+                        params.vb1,
+                    0
+                );
+            OverflowMath.OverflowedValue memory c = OverflowMath.mul(
+                -params.F * params.vb0,
+                2 *
+                    params.b0 *
+                    params.T *
+                    params.vb0 -
+                    params.R *
+                    (params.r * params.vb1 + params.s * params.vb0)
+            );
+            (int256 root0, int256 root1) = QuadraticEquation.solve(a, b, c);
+            assert(root0 >= 0 || root1 >= 0);
+            amountIn = uint256(root0 >= 0 ? root0 : root1);
+        } else {
+            amountIn =
+                Math.mulDiv(
+                    uint256(params.b1 * params.vb0),
+                    uint256(2 * params.b0 * params.T - params.R * params.s),
+                    uint256(params.b0 * params.R * params.vb1)
+                ) -
+                uint256(params.r);
+        }
     }
 }

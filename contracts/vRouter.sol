@@ -11,7 +11,6 @@ import './vPair.sol';
 import './base/multicall.sol';
 import './libraries/PoolAddress.sol';
 import './libraries/vSwapLibrary.sol';
-import './libraries/QuadraticEquation.sol';
 import './interfaces/IvRouter.sol';
 import './interfaces/IvPairFactory.sol';
 import './interfaces/IvPair.sol';
@@ -401,93 +400,6 @@ contract vRouter is IvRouter, Multicall {
             vPool.balance1,
             vPool.fee
         );
-    }
-
-    function getMaxVirtualTradeAmountNtoR(
-        address jkPair,
-        address ikPair
-    ) external view override returns (uint256 amountIn) {
-        VirtualPoolModel memory vPool = getVirtualPool(ikPair, jkPair);
-        amountIn =
-            vSwapLibrary.getAmountIn(
-                IvPair(jkPair).reserves(vPool.token1),
-                vPool.balance0,
-                vPool.balance1,
-                vPool.fee
-            ) -
-            1;
-    }
-
-    function getMaxVirtualTradeAmountRtoN(
-        address jkPair,
-        address ikPair
-    ) external view override returns (uint256 amountIn) {
-        IvPair jkPair = IvPair(jkPair);
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPoolBase(
-            jkPair.token0(),
-            jkPair.token1(),
-            jkPair.pairBalance0(),
-            jkPair.pairBalance1(),
-            jkPair.vFee(),
-            ikPair
-        );
-        MaxTradeAmountParams memory params;
-        params.f = int256(uint256(vPool.fee));
-        params.b0 = int256(jkPair.pairBalance0());
-        params.b1 = int256(jkPair.pairBalance1());
-        params.vb0 = int256(vPool.balance0);
-        params.vb1 = int256(vPool.balance1);
-        params.R = int256(jkPair.reserveRatioFactor());
-        params.F = int256(uint256(vSwapLibrary.PRICE_FEE_FACTOR));
-        params.T = int256(jkPair.maxReserveRatio());
-        params.r = int256(jkPair.reserves(vPool.token0));
-        params.s = int256(
-            jkPair.reservesBaseSum() - jkPair.reservesBaseValue(vPool.token0)
-        );
-
-        // reserve-to-native
-        if (jkPair.token0() == vPool.token1) {
-            OverflowMath.OverflowedValue memory a = OverflowMath
-                .OverflowedValue(params.vb1 * params.R * params.f, 0);
-            OverflowMath.OverflowedValue memory b = OverflowMath
-                .OverflowedValue(
-                    params.vb0 *
-                        (-2 *
-                            params.b0 *
-                            params.f *
-                            params.T +
-                            params.vb1 *
-                            (2 * params.f * params.T + params.F * params.R) +
-                            params.f *
-                            params.R *
-                            params.s) +
-                        params.f *
-                        params.r *
-                        params.R *
-                        params.vb1,
-                    0
-                );
-            OverflowMath.OverflowedValue memory c = OverflowMath.mul(
-                -params.F * params.vb0,
-                2 *
-                    params.b0 *
-                    params.T *
-                    params.vb0 -
-                    params.R *
-                    (params.r * params.vb1 + params.s * params.vb0)
-            );
-            (int256 root0, int256 root1) = QuadraticEquation.solve(a, b, c);
-            assert(root0 >= 0 || root1 >= 0);
-            amountIn = uint256(root0 >= 0 ? root0 : root1);
-        } else {
-            amountIn =
-                Math.mulDiv(
-                    uint256(params.b1 * params.vb0),
-                    uint256(2 * params.b0 * params.T - params.R * params.s),
-                    uint256(params.b0 * params.R * params.vb1)
-                ) -
-                uint256(params.r);
-        }
     }
 
     function getVirtualPool(
