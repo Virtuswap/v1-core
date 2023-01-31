@@ -309,12 +309,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPoolBase(
-            token0,
-            token1,
-            pairBalance0,
-            pairBalance1,
-            vFee,
+        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
+            address(this),
             ikPair
         );
 
@@ -338,10 +334,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         require(
             requiredAmountIn <=
-                vSwapLibrary.getMaxVirtualTradeAmountRtoN(
-                    address(this),
-                    ikPair
-                ),
+                vSwapLibrary.getMaxVirtualTradeAmountRtoN(vPool),
             'TBPT'
         ); // reserve amount goes beyond pool threshold
 

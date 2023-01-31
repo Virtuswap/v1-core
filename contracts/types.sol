@@ -22,6 +22,8 @@ struct VirtualPoolModel {
     uint256 balance0;
     uint256 balance1;
     address commonToken;
+    address jkPair;
+    address ikPair;
 }
 
 struct VirtualPoolTokens {

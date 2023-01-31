@@ -98,9 +98,14 @@ library vSwapLibrary {
         uint256 jkBalance1,
         uint24 jkvFee,
         address ikPair
+    ) internal view returns (VirtualPoolModel memory vPool) {}
+
+    function getVirtualPool(
+        address jkPair,
+        address ikPair
     ) internal view returns (VirtualPoolModel memory vPool) {
+        (address jk0, address jk1) = IvPair(jkPair).getTokens();
         (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        (address jk0, address jk1) = (jkToken0, jkToken1); //gas saving
 
         VirtualPoolTokens memory vPoolTokens = findCommonToken(
             ik0,
@@ -109,12 +114,17 @@ library vSwapLibrary {
             jk1
         );
 
-        require(vPoolTokens.ik1 == vPoolTokens.jk1, 'IOP');
+        require(
+            (vPoolTokens.ik0 != vPoolTokens.jk0) &&
+                (vPoolTokens.ik1 == vPoolTokens.jk1),
+            'IOP'
+        );
 
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
 
-        (uint256 _jkBalance0, uint256 _jkBalance1) = (jkBalance0, jkBalance1); //gas saving
+        (uint256 _jkBalance0, uint256 _jkBalance1, ) = IvPair(jkPair)
+            .getLastBalances();
 
         vPool = calculateVPool(
             vPoolTokens.ik0 == ik0 ? ikBalance0 : ikBalance1,
@@ -123,41 +133,26 @@ library vSwapLibrary {
             vPoolTokens.jk0 == jk0 ? _jkBalance1 : _jkBalance0
         );
 
+        // require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
+
+        uint24 vFee = IvPair(jkPair).vFee();
+
         vPool.token0 = vPoolTokens.ik0;
         vPool.token1 = vPoolTokens.jk0;
         vPool.commonToken = vPoolTokens.ik1;
 
-        vPool.fee = jkvFee;
-    }
+        vPool.fee = vFee;
 
-    function getVirtualPool(
-        address jkPair,
-        address ikPair
-    ) internal view returns (VirtualPoolModel memory vPool) {
-        (address jk0, address jk1) = IvPair(jkPair).getTokens();
-        (uint256 _balance0, uint256 _balance1, ) = IvPair(jkPair)
-            .getLastBalances();
-        uint24 vFee = IvPair(jkPair).vFee();
-
-        vPool = getVirtualPoolBase(
-            jk0,
-            jk1,
-            _balance0,
-            _balance1,
-            vFee,
-            ikPair
-        );
-        require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
+        vPool.jkPair = jkPair;
+        vPool.ikPair = ikPair;
     }
 
     function getMaxVirtualTradeAmountNtoR(
-        address jkPair,
-        address ikPair
+        VirtualPoolModel memory vPool
     ) internal view returns (uint256 amountIn) {
-        VirtualPoolModel memory vPool = getVirtualPool(ikPair, jkPair);
         amountIn =
             getAmountIn(
-                IvPair(jkPair).reserves(vPool.token1),
+                IvPair(vPool.jkPair).reserves(vPool.token1),
                 vPool.balance0,
                 vPool.balance1,
                 vPool.fee
@@ -166,35 +161,26 @@ library vSwapLibrary {
     }
 
     function getMaxVirtualTradeAmountRtoN(
-        address jkPair,
-        address ikPair
-    ) internal view returns (uint256 amountIn) {
-        VirtualPoolModel memory vPool = getVirtualPoolBase(
-            IvPair(jkPair).token0(),
-            IvPair(jkPair).token1(),
-            IvPair(jkPair).pairBalance0(),
-            IvPair(jkPair).pairBalance1(),
-            IvPair(jkPair).vFee(),
-            ikPair
-        );
-
+        VirtualPoolModel memory vPool
+    ) internal view returns (uint256 maxAmountIn) {
         MaxTradeAmountParams memory params;
+
         params.f = int256(uint256(vPool.fee));
-        params.b0 = int256(IvPair(jkPair).pairBalance0());
-        params.b1 = int256(IvPair(jkPair).pairBalance1());
+        params.b0 = int256(IvPair(vPool.jkPair).pairBalance0());
+        params.b1 = int256(IvPair(vPool.jkPair).pairBalance1());
         params.vb0 = int256(vPool.balance0);
         params.vb1 = int256(vPool.balance1);
-        params.R = int256(IvPair(jkPair).reserveRatioFactor());
+        params.R = int256(IvPair(vPool.jkPair).reserveRatioFactor());
         params.F = int256(uint256(vSwapLibrary.PRICE_FEE_FACTOR));
-        params.T = int256(IvPair(jkPair).maxReserveRatio());
-        params.r = int256(IvPair(jkPair).reserves(vPool.token0));
+        params.T = int256(IvPair(vPool.jkPair).maxReserveRatio());
+        params.r = int256(IvPair(vPool.jkPair).reserves(vPool.token0));
         params.s = int256(
-            IvPair(jkPair).reservesBaseSum() -
-                IvPair(jkPair).reservesBaseValue(vPool.token0)
+            IvPair(vPool.ikPair).reservesBaseSum() -
+                IvPair(vPool.jkPair).reservesBaseValue(vPool.token0)
         );
 
         // reserve-to-native
-        if (IvPair(jkPair).token0() == vPool.token1) {
+        if (IvPair(vPool.jkPair).token0() == vPool.token1) {
             OverflowMath.OverflowedValue memory a = OverflowMath
                 .OverflowedValue(params.vb1 * params.R * params.f, 0);
             OverflowMath.OverflowedValue memory b = OverflowMath
@@ -226,9 +212,9 @@ library vSwapLibrary {
             );
             (int256 root0, int256 root1) = QuadraticEquation.solve(a, b, c);
             assert(root0 >= 0 || root1 >= 0);
-            amountIn = uint256(root0 >= 0 ? root0 : root1);
+            maxAmountIn = uint256(root0 >= 0 ? root0 : root1);
         } else {
-            amountIn =
+            maxAmountIn =
                 Math.mulDiv(
                     uint256(params.b1 * params.vb0),
                     uint256(2 * params.b0 * params.T - params.R * params.s),
