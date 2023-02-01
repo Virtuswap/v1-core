@@ -289,7 +289,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         _update(fetchBalance(token0), fetchBalance(token1));
 
-        emit ReserveSync(vPool.token1, reserves[vPool.token1]);
+        emit ReserveSync(
+            vPool.token1,
+            reserves[vPool.token1],
+            calculateReserveRatio()
+        );
         emit SwapReserve(
             msg.sender,
             vPool.token0,
@@ -379,7 +383,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         _update(fetchBalance(token0), fetchBalance(token1));
 
-        emit ReserveSync(vPool.token0, reserves[vPool.token0]);
+        emit ReserveSync(
+            vPool.token0,
+            reserves[vPool.token0],
+            calculateReserveRatio()
+        );
+
         emit SwapReserve(
             msg.sender,
             vPool.token0,
