@@ -133,13 +133,13 @@ library vSwapLibrary {
             vPoolTokens.jk0 == jk0 ? _jkBalance1 : _jkBalance0
         );
 
-        // require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
-
         uint24 vFee = IvPair(jkPair).vFee();
 
         vPool.token0 = vPoolTokens.ik0;
         vPool.token1 = vPoolTokens.jk0;
         vPool.commonToken = vPoolTokens.ik1;
+
+        require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
 
         vPool.fee = vFee;
 
