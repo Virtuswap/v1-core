@@ -117,7 +117,7 @@ library vSwapLibrary {
         require(
             (vPoolTokens.ik0 != vPoolTokens.jk0) &&
                 (vPoolTokens.ik1 == vPoolTokens.jk1),
-            'IOP'
+            'VSWAP: INVALID_VPOOL'
         );
 
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)

@@ -23,4 +23,6 @@ interface IvExchangeReserves is IvFlashSwapCallback {
         address ikPair2,
         uint256 flashAmountOut
     ) external;
+
+    function changeIncentivesLimitPct(uint256 newLimit) external;
 }

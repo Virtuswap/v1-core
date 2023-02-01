@@ -491,6 +491,37 @@ describe('vRouter 1', () => {
         );
     });
 
+    it('Should revent on swap exact input with invalid pool C/B on pool B/C', async () => {
+        const bcPool = fixture.bcPool;
+
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+
+        const tokenC = fixture.tokenC;
+        const vRouterInstance = fixture.vRouterInstance;
+
+        let amountIn = ethers.utils.parseEther('1');
+
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        let reverted = false;
+        try {
+            await vRouterInstance.swapReserveExactInput(
+                tokenC.address,
+                tokenB.address,
+                bcPool.address,
+                amountIn,
+                amountInTokenC,
+                owner.address,
+                futureTs
+            );
+        } catch {
+            reverted = true;
+        }
+
+        expect(reverted).to.be.true;
+    });
+
     it('Should Total Pool swap -> 1. C to A on pool A/C   2. C to A on pool A/B', async () => {
         const tokenA = fixture.tokenA;
         const tokenB = fixture.tokenB;
