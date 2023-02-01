@@ -123,17 +123,15 @@ library vSwapLibrary {
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
 
-        (uint256 _jkBalance0, uint256 _jkBalance1, ) = IvPair(jkPair)
+        (uint256 jkBalance0, uint256 jkBalance1, ) = IvPair(jkPair)
             .getLastBalances();
 
         vPool = calculateVPool(
             vPoolTokens.ik0 == ik0 ? ikBalance0 : ikBalance1,
             vPoolTokens.ik0 == ik0 ? ikBalance1 : ikBalance0,
-            vPoolTokens.jk0 == jk0 ? _jkBalance0 : _jkBalance1,
-            vPoolTokens.jk0 == jk0 ? _jkBalance1 : _jkBalance0
+            vPoolTokens.jk0 == jk0 ? jkBalance0 : jkBalance1,
+            vPoolTokens.jk0 == jk0 ? jkBalance1 : jkBalance0
         );
-
-        uint24 vFee = IvPair(jkPair).vFee();
 
         vPool.token0 = vPoolTokens.ik0;
         vPool.token1 = vPoolTokens.jk0;
@@ -141,7 +139,7 @@ library vSwapLibrary {
 
         require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
 
-        vPool.fee = vFee;
+        vPool.fee = IvPair(jkPair).vFee();
 
         vPool.jkPair = jkPair;
         vPool.ikPair = ikPair;
@@ -175,7 +173,7 @@ library vSwapLibrary {
         params.T = int256(IvPair(vPool.jkPair).maxReserveRatio());
         params.r = int256(IvPair(vPool.jkPair).reserves(vPool.token0));
         params.s = int256(
-            IvPair(vPool.ikPair).reservesBaseSum() -
+            IvPair(vPool.jkPair).reservesBaseSum() -
                 IvPair(vPool.jkPair).reservesBaseValue(vPool.token0)
         );
 
