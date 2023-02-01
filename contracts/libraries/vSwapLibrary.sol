@@ -3,6 +3,7 @@
 pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
+import './QuadraticEquation.sol';
 import '../types.sol';
 import '../interfaces/IvPair.sol';
 
@@ -97,9 +98,14 @@ library vSwapLibrary {
         uint256 jkBalance1,
         uint24 jkvFee,
         address ikPair
+    ) internal view returns (VirtualPoolModel memory vPool) {}
+
+    function getVirtualPool(
+        address jkPair,
+        address ikPair
     ) internal view returns (VirtualPoolModel memory vPool) {
+        (address jk0, address jk1) = IvPair(jkPair).getTokens();
         (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        (address jk0, address jk1) = (jkToken0, jkToken1); //gas saving
 
         VirtualPoolTokens memory vPoolTokens = findCommonToken(
             ik0,
@@ -111,44 +117,108 @@ library vSwapLibrary {
         require(
             (vPoolTokens.ik0 != vPoolTokens.jk0) &&
                 (vPoolTokens.ik1 == vPoolTokens.jk1),
-            'IOP'
+            'VSWAP: INVALID_VPOOL'
         );
 
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
 
-        (uint256 _jkBalance0, uint256 _jkBalance1) = (jkBalance0, jkBalance1); //gas saving
+        (uint256 jkBalance0, uint256 jkBalance1, ) = IvPair(jkPair)
+            .getLastBalances();
 
         vPool = calculateVPool(
             vPoolTokens.ik0 == ik0 ? ikBalance0 : ikBalance1,
             vPoolTokens.ik0 == ik0 ? ikBalance1 : ikBalance0,
-            vPoolTokens.jk0 == jk0 ? _jkBalance0 : _jkBalance1,
-            vPoolTokens.jk0 == jk0 ? _jkBalance1 : _jkBalance0
+            vPoolTokens.jk0 == jk0 ? jkBalance0 : jkBalance1,
+            vPoolTokens.jk0 == jk0 ? jkBalance1 : jkBalance0
         );
 
         vPool.token0 = vPoolTokens.ik0;
         vPool.token1 = vPoolTokens.jk0;
         vPool.commonToken = vPoolTokens.ik1;
 
-        vPool.fee = jkvFee;
+        require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
+
+        vPool.fee = IvPair(jkPair).vFee();
+
+        vPool.jkPair = jkPair;
+        vPool.ikPair = ikPair;
     }
 
-    function getVirtualPool(
-        address jkPair,
-        address ikPair
-    ) internal view returns (VirtualPoolModel memory vPool) {
-        (address jk0, address jk1) = IvPair(jkPair).getTokens();
-        (uint256 _balance0, uint256 _balance1, ) = IvPair(jkPair)
-            .getLastBalances();
-        uint24 vFee = IvPair(jkPair).vFee();
+    function getMaxVirtualTradeAmountNtoR(
+        VirtualPoolModel memory vPool
+    ) internal view returns (uint256 amountIn) {
+        amountIn =
+            getAmountIn(
+                IvPair(vPool.jkPair).reserves(vPool.token1),
+                vPool.balance0,
+                vPool.balance1,
+                vPool.fee
+            ) -
+            1;
+    }
 
-        vPool = getVirtualPoolBase(
-            jk0,
-            jk1,
-            _balance0,
-            _balance1,
-            vFee,
-            ikPair
+    function getMaxVirtualTradeAmountRtoN(
+        VirtualPoolModel memory vPool
+    ) internal view returns (uint256 maxAmountIn) {
+        MaxTradeAmountParams memory params;
+
+        params.f = int256(uint256(vPool.fee));
+        params.b0 = int256(IvPair(vPool.jkPair).pairBalance0());
+        params.b1 = int256(IvPair(vPool.jkPair).pairBalance1());
+        params.vb0 = int256(vPool.balance0);
+        params.vb1 = int256(vPool.balance1);
+        params.R = int256(IvPair(vPool.jkPair).reserveRatioFactor());
+        params.F = int256(uint256(vSwapLibrary.PRICE_FEE_FACTOR));
+        params.T = int256(IvPair(vPool.jkPair).maxReserveRatio());
+        params.r = int256(IvPair(vPool.jkPair).reserves(vPool.token0));
+        params.s = int256(
+            IvPair(vPool.jkPair).reservesBaseSum() -
+                IvPair(vPool.jkPair).reservesBaseValue(vPool.token0)
         );
+
+        // reserve-to-native
+        if (IvPair(vPool.jkPair).token0() == vPool.token1) {
+            OverflowMath.OverflowedValue memory a = OverflowMath
+                .OverflowedValue(params.vb1 * params.R * params.f, 0);
+            OverflowMath.OverflowedValue memory b = OverflowMath
+                .OverflowedValue(
+                    params.vb0 *
+                        (-2 *
+                            params.b0 *
+                            params.f *
+                            params.T +
+                            params.vb1 *
+                            (2 * params.f * params.T + params.F * params.R) +
+                            params.f *
+                            params.R *
+                            params.s) +
+                        params.f *
+                        params.r *
+                        params.R *
+                        params.vb1,
+                    0
+                );
+            OverflowMath.OverflowedValue memory c = OverflowMath.mul(
+                -params.F * params.vb0,
+                2 *
+                    params.b0 *
+                    params.T *
+                    params.vb0 -
+                    params.R *
+                    (params.r * params.vb1 + params.s * params.vb0)
+            );
+            (int256 root0, int256 root1) = QuadraticEquation.solve(a, b, c);
+            assert(root0 >= 0 || root1 >= 0);
+            maxAmountIn = uint256(root0 >= 0 ? root0 : root1);
+        } else {
+            maxAmountIn =
+                Math.mulDiv(
+                    uint256(params.b1 * params.vb0),
+                    uint256(2 * params.b0 * params.T - params.R * params.s),
+                    uint256(params.b0 * params.R * params.vb1)
+                ) -
+                uint256(params.r);
+        }
     }
 }

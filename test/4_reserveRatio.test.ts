@@ -450,19 +450,16 @@ describe('Reserve Ratio 1', () => {
     //   });
 
     it('Should revert swap that goes beyond reserve ratio', async () => {
-        const abPool = fixture.abPool;
-        const bcPool = fixture.bcPool;
         const tokenA = fixture.tokenA;
         const tokenB = fixture.tokenB;
         const tokenC = fixture.tokenC;
-        const tokenD = fixture.tokenD;
 
         const owner = fixture.owner;
         const vRouterInstance = fixture.vRouterInstance;
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
         const ikPair = await vPairFactoryInstance.getPair(
-            tokenD.address,
+            tokenC.address,
             tokenB.address
         );
 
@@ -488,7 +485,7 @@ describe('Reserve Ratio 1', () => {
                 [amountIn],
                 [amountOut],
                 [ikPair],
-                tokenD.address,
+                tokenC.address,
                 tokenA.address,
                 owner.address,
                 futureTs

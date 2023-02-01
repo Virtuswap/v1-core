@@ -35,10 +35,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 private _lastPairBalance0;
     uint256 private _lastPairBalance1;
 
-    uint256 public maxReserveRatio;
+    uint256 public override maxReserveRatio;
 
     address[] public allowList;
-    mapping(address => bool) public allowListMap;
+    mapping(address => bool) public override allowListMap;
     uint24 public override maxAllowListCount;
 
     mapping(address => uint256) public override reservesBaseValue;
@@ -310,12 +310,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPoolBase(
-            token0,
-            token1,
-            pairBalance0,
-            pairBalance1,
-            vFee,
+        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
+            address(this),
             ikPair
         );
 
@@ -330,14 +326,20 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(allowListMap[vPool.token0], 'TNW');
         require(vPool.token1 == token0 || vPool.token1 == token1, 'NNT');
 
-        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
-
         uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
             vPool.balance0,
             vPool.balance1,
             vFee
         );
+
+        require(
+            requiredAmountIn <=
+                vSwapLibrary.getMaxVirtualTradeAmountRtoN(vPool),
+            'TBPT'
+        ); // reserve amount goes beyond pool threshold
+
+        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
 
         if (data.length > 0)
             IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
@@ -376,8 +378,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         reserves[vPool.token0] += amountIn;
 
         _update(fetchBalance(token0), fetchBalance(token1));
-
-        require(calculateReserveRatio() < maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
 
         emit ReserveSync(vPool.token0, reserves[vPool.token0]);
         emit SwapReserve(
@@ -543,5 +543,16 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     ) external override onlyFactoryAdmin {
         maxAllowListCount = _maxAllowListCount;
         emit AllowListCountChanged(_maxAllowListCount);
+    }
+
+    function reservesBaseSum() external view override returns (uint256 sum) {
+        uint256 allowListLength = allowList.length;
+        for (uint256 i = 0; i < allowListLength; ++i) {
+            sum += reservesBaseValue[allowList[i]];
+        }
+    }
+
+    function reserveRatioFactor() external pure override returns (uint256) {
+        return RESERVE_RATIO_FACTOR;
     }
 }

@@ -89,6 +89,8 @@ interface IvPair {
 
     function setMaxAllowListCount(uint24 _maxAllowListCount) external;
 
+    function allowListMap(address _token) external view returns (bool allowed);
+
     function calculateReserveRatio() external view returns (uint256 rRatio);
 
     function setMaxReserveThreshold(uint256 threshold) external;
@@ -102,6 +104,8 @@ interface IvPair {
     function pairBalance1() external view returns (uint256);
 
     function maxAllowListCount() external view returns (uint24);
+
+    function maxReserveRatio() external view returns (uint256);
 
     function getBalances() external view returns (uint256, uint256);
 
@@ -121,4 +125,8 @@ interface IvPair {
     ) external view returns (uint256);
 
     function reserves(address reserveAddress) external view returns (uint256);
+
+    function reservesBaseSum() external view returns (uint256);
+
+    function reserveRatioFactor() external pure returns (uint256);
 }

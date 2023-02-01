@@ -1,9 +1,13 @@
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { deployPools } from './fixtures/deployPools';
 
-import { VRouter__factory } from '../typechain-types/index';
+import {
+    VRouter__factory,
+    ERC20PresetFixedSupply__factory,
+    VPair__factory,
+} from '../typechain-types/index';
 import _ from 'lodash';
 import utils from './utils';
 
@@ -983,3 +987,334 @@ describe('vRouter 2', () => {
         expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
     });
 });
+
+/*
+describe('vRouter: getVirtualMaxTradeAmount', () => {
+    let fixture: any = {};
+    let tokenNumber = 1;
+    let tokenA: any;
+    let tokenB: any;
+    let tokenC: any;
+
+    let deployPoolsWithAmounts = async function (
+        amountA: string,
+        amountB: string,
+        amountC: string
+    ) {
+        const issueAmount = ethers.utils.parseEther(
+            '100000000000000000000000000000000000'
+        );
+        const erc20ContractFactory = new ERC20PresetFixedSupply__factory(
+            fixture.owner
+        );
+        tokenA = await erc20ContractFactory.deploy(
+            `token ${tokenNumber}`,
+            `${tokenNumber++}`,
+            issueAmount,
+            fixture.owner.address
+        );
+        tokenB = await erc20ContractFactory.deploy(
+            `token ${tokenNumber}`,
+            `${tokenNumber++}`,
+            issueAmount,
+            fixture.owner.address
+        );
+        tokenC = await erc20ContractFactory.deploy(
+            `token ${tokenNumber}`,
+            `${tokenNumber++}`,
+            issueAmount,
+            fixture.owner.address
+        );
+
+        await tokenA.approve(fixture.vRouterInstance.address, issueAmount);
+        await tokenB.approve(fixture.vRouterInstance.address, issueAmount);
+        await tokenC.approve(fixture.vRouterInstance.address, issueAmount);
+
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+
+        await vPairFactoryInstance.setDefaultAllowList([
+            tokenA.address,
+            tokenB.address,
+            tokenC.address,
+        ]);
+
+        const futureTs = (await time.latest()) + 1000000;
+
+        await fixture.vRouterInstance.addLiquidity(
+            tokenA.address,
+            tokenB.address,
+            ethers.utils.parseEther(amountA),
+            ethers.utils.parseEther(amountB),
+            ethers.utils.parseEther(amountA),
+            ethers.utils.parseEther(amountB),
+            fixture.owner.address,
+            futureTs
+        );
+        await fixture.vRouterInstance.addLiquidity(
+            tokenB.address,
+            tokenC.address,
+            ethers.utils.parseEther(amountB),
+            ethers.utils.parseEther(amountC),
+            ethers.utils.parseEther(amountB),
+            ethers.utils.parseEther(amountC),
+            fixture.owner.address,
+            futureTs
+        );
+
+        const addr1 = await vPairFactoryInstance.getPair(
+            tokenA.address,
+            tokenB.address
+        );
+        const addr2 = await vPairFactoryInstance.getPair(
+            tokenB.address,
+            tokenC.address
+        );
+        const abPool = VPair__factory.connect(addr1, fixture.owner);
+        const bcPool = VPair__factory.connect(addr2, fixture.owner);
+
+        return { abPool, bcPool };
+    };
+
+    before(async function () {
+        fixture = await loadFixture(deployPools);
+    });
+
+    it('Small pool balances', async () => {
+        const pools = await deployPoolsWithAmounts('3', '1', '7');
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.bcPool.address,
+            pools.abPool.address
+        );
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.bcPool.address,
+            pools.abPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenC.address,
+            tokenB.address,
+            pools.abPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.bcPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.bcPool.calculateReserveRatio()).to.be.above('1998');
+    });
+
+    it('Medium pool balances', async () => {
+        const pools = await deployPoolsWithAmounts(
+            '7000000',
+            '1000000',
+            '3000000'
+        );
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
+    });
+
+    it('Large pool balances', async () => {
+        const pools = await deployPoolsWithAmounts(
+            '9000000000000',
+            '1000000000000',
+            '5000000000000'
+        );
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
+    });
+
+    it('The first balance is greater than the second', async () => {
+        const pools = await deployPoolsWithAmounts(
+            '100',
+            '100000000',
+            '1000000000000'
+        );
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
+    });
+
+    it('The second balance is greater than the first', async () => {
+        const pools = await deployPoolsWithAmounts(
+            '1000000000000',
+            '100000000',
+            '100'
+        );
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
+    });
+
+    it('Swap maximum twice', async () => {
+        const pools = await deployPoolsWithAmounts(
+            '9000000000000',
+            '1000000000000',
+            '7000000000000'
+        );
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+
+        amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
+    });
+
+    it('Swap twice by halfs', async () => {
+        const pools = await deployPoolsWithAmounts(
+            '9000000000000',
+            '1000000000000',
+            '8000000000000'
+        );
+        const vRouterInstance = fixture.vRouterInstance;
+        let amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        amountIn = amountIn.div(ethers.BigNumber.from('2'));
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+
+        amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
+            pools.abPool.address,
+            pools.bcPool.address
+        );
+        amountOut = await vRouterInstance.getVirtualAmountOut(
+            pools.abPool.address,
+            pools.bcPool.address,
+            amountIn
+        );
+        await vRouterInstance.swapReserveExactInput(
+            tokenA.address,
+            tokenB.address,
+            pools.bcPool.address,
+            amountIn,
+            amountOut,
+            fixture.owner.address,
+            (await time.latest()) + 100000
+        );
+        expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
+        expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
+    });
+});
+*/

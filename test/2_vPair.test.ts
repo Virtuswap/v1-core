@@ -428,7 +428,6 @@ describe('vPair1', () => {
     it('Should not swap reserves if ik0 is not whitelisted', async () => {
         const bcPool = fixture.bcPool;
         const tokenA = fixture.tokenA;
-        const owner = fixture.owner;
         const tokenB = fixture.tokenB;
         const tokenC = fixture.tokenC;
         const tokenD = fixture.tokenD;
@@ -437,9 +436,6 @@ describe('vPair1', () => {
 
         await bcPool.setAllowList([tokenD.address]);
         // tokenA is not in the allow list anymore
-
-        let cAmountOut = ethers.utils.parseEther('10');
-        //ethers.utils.parseEther('1');
 
         let jkAddress = await vPairFactoryInstance.getPair(
             tokenB.address,
@@ -451,19 +447,9 @@ describe('vPair1', () => {
             tokenA.address
         );
 
-        let vPool = await vRouterInstance.getVirtualPool(jkAddress, ikAddress);
-
-        let amountIn = await vRouterInstance.getVirtualAmountIn(
-            jkAddress,
-            ikAddress,
-            cAmountOut
-        );
-
-        await tokenA.transfer(bcPool.address, amountIn);
-
         await expect(
-            bcPool.swapReserveToNative(cAmountOut, ikAddress, owner.address, [])
-        ).to.revertedWith('TNW');
+            vRouterInstance.getVirtualPool(jkAddress, ikAddress)
+        ).to.revertedWith('NA');
     });
 
     it('Should not swap native if address is 0', async () => {
