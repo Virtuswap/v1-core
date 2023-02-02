@@ -18,7 +18,7 @@ import './vSwapERC20.sol';
 contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
-    uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
+    uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR * 100;
 
     address public factory;
 

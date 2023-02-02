@@ -147,7 +147,7 @@ describe('vPair1', () => {
         const aBalanceWalletBefore = await tokenA.balanceOf(owner.address);
         const bBalanceWalletBefore = await tokenC.balanceOf(owner.address);
 
-        let aAmountOut = ethers.utils.parseEther('1000');
+        let aAmountOut = ethers.utils.parseEther('300');
 
         let jkAddress = await vPairFactoryInstance.getPair(
             tokenB.address,

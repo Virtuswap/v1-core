@@ -595,7 +595,7 @@ describe('Reserve Ratio 2', () => {
         let ABRRAfter = (await abPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of AB pool after = ${ABRRAfter}`);
 
-        expect(ABRRAfter).to.equal('5');
+        expect(ABRRAfter).to.equal('504');
 
         console.log(`Exchanged ${amountCIn} of C for ${amountBOut} of B`);
         console.log(
@@ -648,7 +648,7 @@ describe('Reserve Ratio 2', () => {
         let ABRRAfter = (await abPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of AB pool after = ${ABRRAfter}`);
 
-        expect(ABRRAfter).to.equal('10');
+        expect(ABRRAfter).to.equal('1009');
 
         console.log(`Exchanged ${amountDIn} of D for ${amountAOut} of A`);
         console.log(
@@ -697,7 +697,7 @@ describe('Reserve Ratio 2', () => {
         let ABRRAfter = (await abPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of AB pool after = ${ABRRAfter}`);
 
-        expect(ABRRAfter).to.equal('13');
+        expect(ABRRAfter).to.equal('1312');
 
         console.log(`Exchanged ${amountCIn} of C for ${amountAOut} of A`);
         console.log(
@@ -750,7 +750,7 @@ describe('Reserve Ratio 2', () => {
         let BDRRAfter = (await bdPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of BD pool after = ${BDRRAfter}`);
 
-        expect(BDRRAfter).to.equal('10');
+        expect(BDRRAfter).to.equal('1006');
 
         console.log(
             `Reserve base value of token A = ${(
