@@ -473,18 +473,18 @@ describe('vRouter 1', () => {
         const tokenC = fixture.tokenC;
         const vRouterInstance = fixture.vRouterInstance;
 
-        let amountIn = await vRouterInstance.getVirtualAmountOut(
+        let amountOut = await vRouterInstance.getVirtualAmountOut(
             bcPool.address,
             abPool.address,
             amountInTokenC
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactOutput(
             tokenB.address,
             tokenC.address,
             abPool.address,
-            amountIn,
+            amountOut,
             amountInTokenC,
             owner.address,
             futureTs
