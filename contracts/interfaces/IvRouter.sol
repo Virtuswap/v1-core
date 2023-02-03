@@ -114,11 +114,6 @@ interface IvRouter is IvFlashSwapCallback {
         address ikPair
     ) external view returns (VirtualPoolModel memory vPool);
 
-    function getMaxVirtualTradeAmountNtoR(
-        address jkPair,
-        address ikPair
-    ) external view returns (uint256 maxAmountIn);
-
     function getMaxVirtualTradeAmountRtoN(
         address jkPair,
         address ikPair

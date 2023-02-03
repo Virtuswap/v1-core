@@ -144,19 +144,6 @@ library vSwapLibrary {
         vPool.ikPair = ikPair;
     }
 
-    function getMaxVirtualTradeAmountNtoR(
-        VirtualPoolModel memory vPool
-    ) internal view returns (uint256 amountIn) {
-        amountIn =
-            getAmountIn(
-                IvPair(vPool.jkPair).reserves(vPool.token1),
-                vPool.balance0,
-                vPool.balance1,
-                vPool.fee
-            ) -
-            1;
-    }
-
     function getMaxVirtualTradeAmountRtoN(
         VirtualPoolModel memory vPool
     ) internal view returns (uint256 maxAmountIn) {

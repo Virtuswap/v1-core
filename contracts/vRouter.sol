@@ -475,14 +475,6 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
-    function getMaxVirtualTradeAmountNtoR(
-        address jkPair,
-        address ikPair
-    ) external view override returns (uint256 maxAmountIn) {
-        VirtualPoolModel memory vPool = getVirtualPool(ikPair, jkPair);
-        maxAmountIn = vSwapLibrary.getMaxVirtualTradeAmountNtoR(vPool);
-    }
-
     function getMaxVirtualTradeAmountRtoN(
         address jkPair,
         address ikPair
