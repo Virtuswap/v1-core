@@ -158,8 +158,7 @@ export async function sameValues() {
 
     const abPool = VPair__factory.connect(abAddress, owner);
 
-    // whitelist token C
-    await abPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
+    await abPool.setMaxReserveThreshold(2000);
     //whitelist token C
     await abPool.setAllowList([tokenC.address, tokenD.address]);
 
@@ -172,7 +171,7 @@ export async function sameValues() {
 
     //whitelist token B
     await acPool.setAllowList([tokenB.address, tokenD.address]);
-    await acPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
+    await acPool.setMaxReserveThreshold(2000);
 
     //pool 3
     const bcAddress = await vPairFactoryInstance.getPair(
@@ -183,7 +182,7 @@ export async function sameValues() {
 
     //whitelist token A
     await bcPool.setAllowList([tokenA.address, tokenD.address]);
-    await bcPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
+    await bcPool.setMaxReserveThreshold(2000);
 
     // pool 4
     const bdAddress = await vPairFactoryInstance.getPair(
@@ -194,7 +193,7 @@ export async function sameValues() {
 
     //whitelist token A
     await bdPool.setAllowList([tokenA.address, tokenC.address]);
-    await bdPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
+    await bdPool.setMaxReserveThreshold(2000);
 
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);
 
