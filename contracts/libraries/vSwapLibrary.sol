@@ -3,7 +3,6 @@
 pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import './QuadraticEquation.sol';
 import '../types.sol';
 import '../interfaces/IvPair.sol';
 
@@ -161,64 +160,122 @@ library vSwapLibrary {
     function getMaxVirtualTradeAmountRtoN(
         VirtualPoolModel memory vPool
     ) internal view returns (uint256 maxAmountIn) {
+        // never reverts if vPool is valid and balances <= 10^32
         MaxTradeAmountParams memory params;
 
-        params.f = int256(uint256(vPool.fee));
-        params.b0 = int256(IvPair(vPool.jkPair).pairBalance0());
-        params.b1 = int256(IvPair(vPool.jkPair).pairBalance1());
-        params.vb0 = int256(vPool.balance0);
-        params.vb1 = int256(vPool.balance1);
-        params.R = int256(IvPair(vPool.jkPair).reserveRatioFactor());
-        params.F = int256(uint256(vSwapLibrary.PRICE_FEE_FACTOR));
-        params.T = int256(IvPair(vPool.jkPair).maxReserveRatio());
-        params.r = int256(IvPair(vPool.jkPair).reserves(vPool.token0));
-        params.s = int256(
+        params.f = uint256(vPool.fee);
+        params.b0 = IvPair(vPool.jkPair).pairBalance0();
+        params.b1 = IvPair(vPool.jkPair).pairBalance1();
+        params.vb0 = vPool.balance0;
+        params.vb1 = vPool.balance1;
+        params.R = IvPair(vPool.jkPair).reserveRatioFactor();
+        params.F = uint256(PRICE_FEE_FACTOR);
+        params.T = IvPair(vPool.jkPair).maxReserveRatio();
+        params.r = IvPair(vPool.jkPair).reserves(vPool.token0);
+        params.s =
             IvPair(vPool.jkPair).reservesBaseSum() -
-                IvPair(vPool.jkPair).reservesBaseValue(vPool.token0)
-        );
+            IvPair(vPool.jkPair).reservesBaseValue(vPool.token0);
 
-        // reserve-to-native
         if (IvPair(vPool.jkPair).token0() == vPool.token1) {
-            OverflowMath.OverflowedValue memory a = OverflowMath
-                .OverflowedValue(params.vb1 * params.R * params.f, 0);
-            OverflowMath.OverflowedValue memory b = OverflowMath
-                .OverflowedValue(
-                    params.vb0 *
-                        (-2 *
-                            params.b0 *
-                            params.f *
-                            params.T +
+            // all calculations fit in uint256
+            unchecked {
+                uint256 a = params.vb1 * params.R * params.f;
+                int256 b = int256(params.vb0) *
+                    (-2 *
+                        int256(params.b0 * params.f * params.T) +
+                        int256(
                             params.vb1 *
-                            (2 * params.f * params.T + params.F * params.R) +
-                            params.f *
-                            params.R *
-                            params.s) +
-                        params.f *
-                        params.r *
-                        params.R *
-                        params.vb1,
-                    0
-                );
-            OverflowMath.OverflowedValue memory c = OverflowMath.mul(
-                -params.F * params.vb0,
-                2 *
+                                (2 *
+                                    params.f *
+                                    params.T +
+                                    params.F *
+                                    params.R) +
+                                params.f *
+                                params.R *
+                                params.s
+                        )) +
+                    int256(params.f * params.r * params.R * params.vb1);
+                uint256 c1 = params.F * params.vb0;
+                uint256 c2 = 2 *
                     params.b0 *
                     params.T *
                     params.vb0 -
                     params.R *
-                    (params.r * params.vb1 + params.s * params.vb0)
-            );
-            (int256 root0, int256 root1) = QuadraticEquation.solve(a, b, c);
-            assert(root0 >= 0 || root1 >= 0);
-            maxAmountIn = uint256(root0 >= 0 ? root0 : root1);
+                    (params.r * params.vb1 + params.s * params.vb0);
+
+                (bool negative, uint256 ub) = (
+                    b < 0 ? (true, uint256(-b)) : (false, uint256(b))
+                );
+
+                // initial approximation: maxAmountIn always <= vb0
+                maxAmountIn = params.vb0;
+                // 2 * a * x + b <= 5 * 10^75 < 2^256
+                uint256 temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                uint256 derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+
+                temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+
+                temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+
+                temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+
+                temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+
+                temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+
+                temp = (
+                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                );
+                derivative = temp + a * maxAmountIn;
+                maxAmountIn +=
+                    Math.mulDiv(c1, c2, derivative) -
+                    Math.mulDiv(maxAmountIn, temp, derivative);
+            }
         } else {
-            maxAmountIn =
-                Math.mulDiv(
-                    uint256(params.b1 * params.vb0),
-                    uint256(2 * params.b0 * params.T - params.R * params.s),
-                    uint256(params.b0 * params.R * params.vb1)
-                ) -
-                uint256(params.r);
+            unchecked {
+                maxAmountIn =
+                    Math.mulDiv(
+                        params.b1 * params.vb0,
+                        2 * params.b0 * params.T - params.R * params.s,
+                        params.b0 * params.R * params.vb1
+                    ) -
+                    params.r;
+            }
         }
     }
 }
