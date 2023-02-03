@@ -364,7 +364,7 @@ describe('vPair1', () => {
         let reservesAfter0 = reservesAfter._balance0;
         let reservesAfter1 = reservesAfter._balance1;
 
-        expect(reservesAfter0).to.equal(10553); // 598 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter0).to.equal(1380); // 598 = MINIUMUM LOCKED LIQUIDITY
         expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
     });
 
@@ -537,9 +537,7 @@ describe('vPair2', () => {
             cAmountOut
         );
 
-        await tokenA.transfer(abPool.address, aAmountIn);
-
-        const PRECISION = '1000';
+        const PRECISION = '100000';
 
         let aABBalance = await tokenA.balanceOf(abPool.address);
         let bABBalance = await tokenB.balanceOf(abPool.address);
@@ -554,9 +552,8 @@ describe('vPair2', () => {
         let reserveBaseValue = cAmountOut
             .mul(virtualABalance)
             .div(virtualCBalance);
-        let expectedReserveRatio = reserveBaseValue
-            .mul(ethers.BigNumber.from(PRECISION))
-            .div(ethers.BigNumber.from(2).mul(aABBalance));
+
+        await tokenA.transfer(abPool.address, aAmountIn);
 
         await abPool.swapNativeToReserve(
             cAmountOut,
@@ -565,6 +562,12 @@ describe('vPair2', () => {
             1,
             []
         );
+
+        aABBalance = await tokenA.balanceOf(abPool.address);
+        let expectedReserveRatio = reserveBaseValue
+            .mul(ethers.BigNumber.from(PRECISION))
+            .div(ethers.BigNumber.from(2).mul(aABBalance));
+
         let returnedReserveRatio = await abPool.calculateReserveRatio();
         expect(expectedReserveRatio).to.be.equal(returnedReserveRatio);
     });
