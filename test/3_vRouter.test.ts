@@ -988,7 +988,6 @@ describe('vRouter 2', () => {
     });
 });
 
-/*
 describe('vRouter: getVirtualMaxTradeAmount', () => {
     let fixture: any = {};
     let tokenNumber = 1;
@@ -1317,4 +1316,3 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
 });
-*/
