@@ -109,14 +109,7 @@ interface IvPair {
 
     function getBalances() external view returns (uint256, uint256);
 
-    function getLastBalances()
-        external
-        view
-        returns (
-            uint256 _lastBalance0,
-            uint256 _lastBalance1,
-            uint256 _blockNumber
-        );
+    function getTwapX128() external view returns (uint256, uint256, uint256);
 
     function getTokens() external view returns (address, address);
 

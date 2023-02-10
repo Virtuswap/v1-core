@@ -31,18 +31,16 @@ library vSwapLibrary {
     }
 
     function calculateVPool(
-        uint256 ikTokenABalance,
-        uint256 ikTokenBBalance,
-        uint256 jkTokenABalance,
-        uint256 jkTokenBBalance
+        uint256 ikTwap,
+        uint256 jkTwap,
+        uint256 ikRealBalance,
+        uint256 jkRealBalance
     ) internal pure returns (VirtualPoolModel memory vPool) {
-        vPool.balance0 =
-            (ikTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
-            Math.max(ikTokenBBalance, 1);
-
-        vPool.balance1 =
-            (jkTokenABalance * Math.min(ikTokenBBalance, jkTokenBBalance)) /
-            Math.max(jkTokenBBalance, 1);
+        uint256 priceX128 = Math.mulDiv(jkTwap, ikTwap, 1 << 128);
+        uint256 jkOptimal = Math.mulDiv(ikRealBalance, priceX128, 1 << 128);
+        (vPool.balance0, vPool.balance1) = jkOptimal <= jkRealBalance
+            ? (ikRealBalance, jkOptimal)
+            : ((jkRealBalance << 128) / priceX128, jkRealBalance);
     }
 
     function getAmountIn(
@@ -119,17 +117,37 @@ library vSwapLibrary {
             'VSWAP: INVALID_VPOOL'
         );
 
-        (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
-            .getLastBalances();
+        (uint256 ikTwap0x128, uint256 ikTwap1x128, ) = IvPair(ikPair)
+            .getTwapX128();
 
-        (uint256 jkBalance0, uint256 jkBalance1, ) = IvPair(jkPair)
-            .getLastBalances();
+        (uint256 jkTwap0x128, uint256 jkTwap1x128, ) = IvPair(jkPair)
+            .getTwapX128();
+
+        (uint256 ikReal0, uint256 ikReal1) = IvPair(ikPair).getBalances();
+
+        if (vPoolTokens.ik0 == ik1) {
+            if (ikReal0 != ikReal1) {
+                ikReal0 ^= ikReal1;
+                ikReal1 ^= ikReal0;
+                ikReal0 ^= ikReal1;
+            }
+        }
+
+        (uint256 jkReal0, uint256 jkReal1) = IvPair(jkPair).getBalances();
+
+        if (vPoolTokens.jk0 == jk1) {
+            if (jkReal0 != jkReal1) {
+                jkReal0 ^= jkReal1;
+                jkReal1 ^= jkReal0;
+                jkReal0 ^= jkReal1;
+            }
+        }
 
         vPool = calculateVPool(
-            vPoolTokens.ik0 == ik0 ? ikBalance0 : ikBalance1,
-            vPoolTokens.ik0 == ik0 ? ikBalance1 : ikBalance0,
-            vPoolTokens.jk0 == jk0 ? jkBalance0 : jkBalance1,
-            vPoolTokens.jk0 == jk0 ? jkBalance1 : jkBalance0
+            vPoolTokens.ik0 == ik0 ? ikTwap1x128 : ikTwap0x128,
+            vPoolTokens.jk0 == jk0 ? jkTwap0x128 : jkTwap1x128,
+            ikReal0,
+            jkReal0
         );
 
         vPool.token0 = vPoolTokens.ik0;

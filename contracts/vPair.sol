@@ -19,6 +19,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR * 100;
+    uint24 internal constant PERIOD = 1 hours;
 
     address public factory;
 
@@ -31,9 +32,17 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 public override pairBalance0;
     uint256 public override pairBalance1;
 
-    uint256 private _lastBlockUpdated;
-    uint256 private _lastPairBalance0;
-    uint256 private _lastPairBalance1;
+    uint256 private lastCumulativeUpdateTs;
+    uint256 private lastTwapUpdateTs;
+    uint256 private cumulativePrice0;
+    uint256 private cumulativePrice1;
+    uint256 private lastTwapCumulativePrice0;
+    uint256 private lastTwapCumulativePrice1;
+    uint256 private averagePairBalance0;
+    uint256 private averagePairBalance1;
+
+    uint256 public twap0x128;
+    uint256 public twap1x128;
 
     uint256 public override maxReserveRatio;
 
@@ -87,9 +96,34 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
-        if (block.number > _lastBlockUpdated) {
-            (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
-            _lastBlockUpdated = block.number;
+        uint256 timeElapsedCumulative = block.timestamp -
+            lastCumulativeUpdateTs;
+        if (timeElapsedCumulative > 0) {
+            // overflow is desired
+            unchecked {
+                cumulativePrice0 +=
+                    ((balance0 << 128) / balance1) *
+                    timeElapsedCumulative;
+                cumulativePrice1 +=
+                    ((balance1 << 128) / balance0) *
+                    timeElapsedCumulative;
+            }
+            lastCumulativeUpdateTs = block.timestamp;
+        }
+        uint256 timeElapsedTwap = block.timestamp - lastTwapUpdateTs;
+        if (timeElapsedTwap > PERIOD) {
+            // overflow is desired
+            unchecked {
+                twap0x128 =
+                    (cumulativePrice0 - lastTwapCumulativePrice0) /
+                    timeElapsedTwap;
+                twap1x128 =
+                    (cumulativePrice1 - lastTwapCumulativePrice1) /
+                    timeElapsedTwap;
+            }
+            lastTwapCumulativePrice0 = cumulativePrice0;
+            lastTwapCumulativePrice0 = cumulativePrice1;
+            lastTwapUpdateTs = block.timestamp;
         }
 
         (pairBalance0, pairBalance1) = (balance0, balance1);
@@ -97,17 +131,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit Sync(balance0, balance1);
     }
 
-    function getLastBalances()
+    function getTwapX128()
         external
         view
         override
-        returns (
-            uint256 _lastBalance0,
-            uint256 _lastBalance1,
-            uint256 _blockNumber
-        )
+        returns (uint256, uint256, uint256)
     {
-        return (_lastPairBalance0, _lastPairBalance1, _lastBlockUpdated);
+        return (twap0x128, twap1x128, lastTwapUpdateTs);
     }
 
     function getBalances()
