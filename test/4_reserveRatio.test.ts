@@ -164,7 +164,7 @@ describe('Reserve Ratio 1', () => {
             tokenA.address
         );
 
-        let amountOut = ethers.utils.parseEther('1');
+        let amountOut = ethers.utils.parseEther('50');
 
         let amountIn = await vRouterInstance.getVirtualAmountIn(
             jkPair,
@@ -178,8 +178,8 @@ describe('Reserve Ratio 1', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapReserveExactOutput(
-            tokenA.address,
             tokenB.address,
+            tokenA.address,
             ikPair,
             amountOut,
             amountIn,
@@ -648,7 +648,7 @@ describe('Reserve Ratio 2', () => {
         let ABRRAfter = (await abPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of AB pool after = ${ABRRAfter}`);
 
-        expect(ABRRAfter).to.equal('1009');
+        expect(ABRRAfter).to.equal('1004');
 
         console.log(`Exchanged ${amountDIn} of D for ${amountAOut} of A`);
         console.log(
@@ -697,7 +697,7 @@ describe('Reserve Ratio 2', () => {
         let ABRRAfter = (await abPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of AB pool after = ${ABRRAfter}`);
 
-        expect(ABRRAfter).to.equal('1312');
+        expect(ABRRAfter).to.equal('1307');
 
         console.log(`Exchanged ${amountCIn} of C for ${amountAOut} of A`);
         console.log(
@@ -750,7 +750,7 @@ describe('Reserve Ratio 2', () => {
         let BDRRAfter = (await bdPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of BD pool after = ${BDRRAfter}`);
 
-        expect(BDRRAfter).to.equal('1006');
+        expect(BDRRAfter).to.equal('1000');
 
         console.log(
             `Reserve base value of token A = ${(

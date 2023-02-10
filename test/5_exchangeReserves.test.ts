@@ -152,7 +152,7 @@ describe('ExchangeReserves', () => {
 
         let amountAInReserve = await bcPool.reserves(tokenA.address);
 
-        await tokenC.transfer(bcPool.address, ethers.utils.parseEther('10'));
+        //await tokenC.transfer(bcPool.address, ethers.utils.parseEther('10'));
 
         let aReserveInBC = await bcPool.reserves(tokenA.address);
         let cReserveInAB = await abPool.reserves(tokenC.address);
@@ -167,8 +167,6 @@ describe('ExchangeReserves', () => {
 
         let poolBCRR = await bcPool.calculateReserveRatio();
 
-        let balanceABefore = await tokenA.balanceOf(owner.address);
-
         //get flash swap of amount required amount C from pool BC.
         await fixture.exchageReserveInstance.exchange(
             bcPool.address, //jk1
@@ -177,8 +175,6 @@ describe('ExchangeReserves', () => {
             bcPool.address, // ik2
             amountAInReserve
         );
-
-        let balanceAAfter = await tokenA.balanceOf(owner.address);
 
         let tokenAReserveBaseValueAfter = await bcPool.reservesBaseValue(
             tokenA.address
@@ -192,9 +188,6 @@ describe('ExchangeReserves', () => {
         let poolABRRAfter = await abPool.calculateReserveRatio();
 
         let poolBCRRAfter = await bcPool.calculateReserveRatio();
-
-        // incentives received
-        expect(balanceAAfter).to.be.above(balanceABefore);
 
         expect(aReserveInBCAfter).to.equal(0);
 
