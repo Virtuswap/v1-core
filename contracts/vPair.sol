@@ -122,7 +122,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                     timeElapsedTwap;
             }
             lastTwapCumulativePrice0 = cumulativePrice0;
-            lastTwapCumulativePrice0 = cumulativePrice1;
+            lastTwapCumulativePrice1 = cumulativePrice1;
             lastTwapUpdateTs = block.timestamp;
         }
 
