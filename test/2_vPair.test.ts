@@ -6,6 +6,7 @@ import {
     IERC20Metadata__factory,
     VPair__factory,
 } from '../typechain-types/index';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 import _ from 'lodash';
 
 describe('vPairFactory', () => {
@@ -747,5 +748,80 @@ describe('vPair reentrancy guard', () => {
                 owner.address
             )
         ).to.revertedWith('ReentrancyGuard: reentrant call');
+    });
+});
+
+describe('vPair TWAP', () => {
+    let accounts: any = [];
+    let fixture: any = {};
+
+    beforeEach(async function () {
+        fixture = await loadFixture(deployPools);
+    });
+
+    it('Twap is updated every hour', async () => {
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+
+        const twapBefore = await abPool.getTwapX128();
+
+        await time.setNextBlockTimestamp((await time.latest()) + 24 * 60 * 60);
+
+        const bAmountOut = ethers.utils.parseEther('10');
+
+        const aAmountIn = await fixture.vRouterInstance.getAmountIn(
+            tokenA.address,
+            tokenB.address,
+            bAmountOut
+        );
+
+        await tokenA.transfer(abPool.address, aAmountIn);
+
+        await abPool.swapNative(bAmountOut, tokenB.address, owner.address, []);
+
+        const twapAfter = await abPool.getTwapX128();
+        expect(twapAfter[0]).to.be.greaterThan(twapBefore[0]);
+        expect(twapAfter[1]).to.be.lessThan(twapBefore[1]);
+        expect(twapAfter[2]).to.be.greaterThan(twapBefore[2]);
+    });
+
+    it('Twap is correct after long period', async () => {
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+
+        const bAmountOut = ethers.utils.parseEther('10');
+
+        const aAmountIn = await fixture.vRouterInstance.getAmountIn(
+            tokenA.address,
+            tokenB.address,
+            bAmountOut
+        );
+
+        await tokenA.transfer(abPool.address, aAmountIn);
+
+        await abPool.swapNative(bAmountOut, tokenB.address, owner.address, []);
+        const twapBefore = await abPool.getTwapX128();
+        await time.setNextBlockTimestamp(
+            (await time.latest()) + 365 * 24 * 60 * 60
+        );
+        const aAmountOut = ethers.utils.parseEther('5');
+
+        const bAmountIn = await fixture.vRouterInstance.getAmountIn(
+            tokenB.address,
+            tokenA.address,
+            aAmountOut
+        );
+
+        await tokenB.transfer(abPool.address, bAmountIn);
+
+        await abPool.swapNative(aAmountOut, tokenA.address, owner.address, []);
+        const twapAfter = await abPool.getTwapX128();
+        expect(twapAfter[0]).to.be.lessThan(twapBefore[0]);
+        expect(twapAfter[1]).to.be.greaterThan(twapBefore[1]);
+        expect(twapAfter[2]).to.be.greaterThan(twapBefore[2]);
     });
 });
