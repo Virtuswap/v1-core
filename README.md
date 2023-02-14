@@ -6,7 +6,7 @@ More in-depth documentation is available at [docs.virtuswap.io](https://docs.vir
 #  Security  #
 
 ## Bug Bounty
-The repository is part of VirtuSwap Bug Bounty program run by Hacken. See the details [here](https://hackenproof.com/virtuswap)
+The repository is part of VirtuSwap Bug Bounty program run by Hacken. See the details [here](https://hackenproof.com/virtuswap).
 
 ## Security Audits
 -   [CertiK](https://github.com/Virtuswap/v1-core/blob/main/audits/REP-final-20220915T000103Z.pdf)
