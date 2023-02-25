@@ -122,8 +122,8 @@ library vSwapLibrary {
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
 
-        (uint256 jkBalance0, uint256 jkBalance1, ) = IvPair(jkPair)
-            .getLastBalances();
+        (uint256 jkBalance0, uint256 jkBalance1) = IvPair(jkPair)
+            .getBalances();
 
         vPool = calculateVPool(
             vPoolTokens.ik0 == ik0 ? ikBalance0 : ikBalance1,
