@@ -32,6 +32,10 @@ interface IvPairFactory {
 
     function setDefaultAllowList(address[] calldata _defaultAllowList) external;
 
+    function allPairs(uint256 index) external view returns (address);
+
+    function allPairsLength() external view returns (uint256);
+
     function admin() external view returns (address);
 
     function pendingAdmin() external view returns (address);

@@ -11,7 +11,7 @@ import './types.sol';
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
-    address[] public allPairs;
+    address[] public override allPairs;
 
     address public override admin;
     address public override pendingAdmin;
@@ -112,6 +112,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     ) external override onlyAdmin {
         defaultAllowList = _defaultAllowList;
         emit DefaultAllowListChanged(_defaultAllowList);
+    }
+
+    function allPairsLength() external view override returns (uint256) {
+        return allPairs.length;
     }
 
     function getInitCodeHash() external pure returns (bytes32) {
