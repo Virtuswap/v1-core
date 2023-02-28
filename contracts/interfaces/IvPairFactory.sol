@@ -36,6 +36,8 @@ interface IvPairFactory {
 
     function allPairsLength() external view returns (uint256);
 
+    function vPoolManager() external view returns (address);
+
     function admin() external view returns (address);
 
     function pendingAdmin() external view returns (address);

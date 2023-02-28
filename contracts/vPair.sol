@@ -11,6 +11,7 @@ import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './interfaces/IvPairFactory.sol';
+import './interfaces/IvPoolManager.sol';
 import './interfaces/IvFlashSwapCallback.sol';
 import './libraries/vSwapLibrary.sol';
 import './vSwapERC20.sol';
@@ -207,10 +208,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
-            ikPair,
-            address(this)
-        );
+        VirtualPoolModel memory vPool = IvPoolManager(
+            IvPairFactory(factory).vPoolManager()
+        ).getVirtualPool(ikPair, address(this));
 
         // validate ikPair with factory
         require(
@@ -258,6 +258,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                     _leftoverAmount
                 );
             }
+            IvPoolManager(IvPairFactory(factory).vPoolManager())
+                .updateVirtualPoolBalances(
+                    vPool,
+                    vPool.balance0 + balanceDiff - _leftoverAmount,
+                    vPool.balance1 - amountOut
+                );
         }
 
         {
@@ -314,10 +320,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
-            address(this),
-            ikPair
-        );
+        VirtualPoolModel memory vPool = IvPoolManager(
+            IvPairFactory(factory).vPoolManager()
+        ).getVirtualPool(address(this), ikPair);
 
         // validate ikPair with factory
         require(
@@ -382,6 +387,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         reserves[vPool.token0] += amountIn;
 
         _update(fetchBalance(token0), fetchBalance(token1));
+        IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .updateVirtualPoolBalances(
+                vPool,
+                vPool.balance0 + amountIn,
+                vPool.balance1 - amountOut
+            );
 
         emit ReserveSync(
             vPool.token0,

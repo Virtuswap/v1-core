@@ -16,6 +16,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     address public override admin;
     address public override pendingAdmin;
     address public override exchangeReserves;
+    address public override vPoolManager;
 
     address[] defaultAllowList;
 
@@ -88,6 +89,14 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         exchangeReserves = _exchangeReserves;
 
         emit ExchangeReserveAddressChanged(_exchangeReserves);
+    }
+
+    function setVPoolManagerAddress(address _vPoolManager) external onlyAdmin {
+        require(
+            _vPoolManager > address(0),
+            'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
+        );
+        vPoolManager = _vPoolManager;
     }
 
     function setPendingAdmin(
