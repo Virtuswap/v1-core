@@ -44,6 +44,8 @@ interface IvPairFactory {
 
     function setPendingAdmin(address newAdmin) external;
 
+    function setVPoolManagerAddress(address _vPoolManager) external;
+
     function acceptAdmin() external;
 
     function exchangeReserves() external view returns (address);

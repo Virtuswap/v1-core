@@ -93,6 +93,15 @@ export async function deployPools() {
         vPairFactoryInstance.address
     );
 
+    const vPoolManagerFactory = await ethers.getContractFactory('vPoolManager');
+    const vPoolManagerInstance = await vPoolManagerFactory.deploy(
+        vPairFactoryInstance.address
+    );
+
+    await vPairFactoryInstance.setVPoolManagerAddress(
+        vPoolManagerInstance.address
+    );
+
     await vPairFactoryInstance.setDefaultAllowList([
         tokenA.address,
         tokenB.address,

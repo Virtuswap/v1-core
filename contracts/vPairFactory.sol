@@ -91,7 +91,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         emit ExchangeReserveAddressChanged(_exchangeReserves);
     }
 
-    function setVPoolManagerAddress(address _vPoolManager) external onlyAdmin {
+    function setVPoolManagerAddress(address _vPoolManager) external override onlyAdmin {
         require(
             _vPoolManager > address(0),
             'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
