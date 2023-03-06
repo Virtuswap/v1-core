@@ -8,8 +8,6 @@ import './interfaces/IvPairFactory.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvPoolManager.sol';
 
-import 'hardhat/console.sol';
-
 contract vPoolManager is IvPoolManager {
     struct VirtualPoolWithBlock {
         VirtualPoolModel vPool;
@@ -37,13 +35,6 @@ contract vPoolManager is IvPoolManager {
         } else {
             vPool = vSwapLibrary.getVirtualPool(jkPair, ikPair);
         }
-        console.log('VB0=', vPool.balance0);
-        console.log('VB1=', vPool.balance1);
-        console.log('JKB0=', IvPair(vPool.jkPair).pairBalance0());
-        console.log('JKB1=', IvPair(vPool.jkPair).pairBalance1());
-        console.log('IKB0=', IvPair(vPool.ikPair).pairBalance0());
-        console.log('IKB1=', IvPair(vPool.ikPair).pairBalance1());
-        console.log('RR=', IvPair(vPool.jkPair).calculateReserveRatio());
     }
 
     function getVirtualPools()
@@ -55,8 +46,9 @@ contract vPoolManager is IvPoolManager {
         uint256 allPairsLength = IvPairFactory(pairFactory).allPairsLength();
         uint256 vPoolsNumber;
         for (uint256 i = 0; i < allPairsLength; ++i) {
-            for (uint256 j = i + 1; j < allPairsLength; ++j) {
+            for (uint256 j = 0; j < allPairsLength; ++j) {
                 if (
+                    i != j &&
                     _vPoolCanBeConstructed(
                         IvPairFactory(pairFactory).allPairs(i),
                         IvPairFactory(pairFactory).allPairs(j)
@@ -68,14 +60,15 @@ contract vPoolManager is IvPoolManager {
         }
         vPools = new VirtualPoolModel[](vPoolsNumber);
         for (uint256 i = 0; i < allPairsLength; ++i) {
-            for (uint256 j = i + 1; j < allPairsLength; ++j) {
+            for (uint256 j = 0; j < allPairsLength; ++j) {
                 if (
+                    i != j &&
                     _vPoolCanBeConstructed(
                         IvPairFactory(pairFactory).allPairs(i),
                         IvPairFactory(pairFactory).allPairs(j)
                     )
                 ) {
-                    vPools[vPoolsNumber--] = getVirtualPool(
+                    vPools[--vPoolsNumber] = getVirtualPool(
                         IvPairFactory(pairFactory).allPairs(i),
                         IvPairFactory(pairFactory).allPairs(j)
                     );
@@ -89,8 +82,19 @@ contract vPoolManager is IvPoolManager {
         uint256 balance0,
         uint256 balance1
     ) external override {
-        require(msg.sender == IvPairFactory(pairFactory).getPair(vPool.commonToken, vPool.token0) ||
-            msg.sender == IvPairFactory(pairFactory).getPair(vPool.commonToken, vPool.token1), 'Only pools');
+        require(
+            msg.sender ==
+                IvPairFactory(pairFactory).getPair(
+                    vPool.commonToken,
+                    vPool.token0
+                ) ||
+                msg.sender ==
+                IvPairFactory(pairFactory).getPair(
+                    vPool.commonToken,
+                    vPool.token1
+                ),
+            'Only pools'
+        );
         vPool.balance0 = balance0;
         vPool.balance1 = balance1;
         vPoolsCache[vPool.jkPair][vPool.ikPair] = VirtualPoolWithBlock(
@@ -142,10 +146,10 @@ contract vPoolManager is IvPoolManager {
         address ikPair
     ) private view returns (bool) {
         VirtualPoolTokens memory vPoolTokens = vSwapLibrary.findCommonToken(
-            IvPair(jkPair).token0(),
-            IvPair(jkPair).token1(),
             IvPair(ikPair).token0(),
-            IvPair(ikPair).token1()
+            IvPair(ikPair).token1(),
+            IvPair(jkPair).token0(),
+            IvPair(jkPair).token1()
         );
         return
             vPoolTokens.jk1 == vPoolTokens.ik1 &&
