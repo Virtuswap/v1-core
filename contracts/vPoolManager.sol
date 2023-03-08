@@ -104,8 +104,8 @@ contract vPoolManager is IvPoolManager {
     }
 
     function _reduceBalances(VirtualPoolModel memory vPool) private view {
-        (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(vPool.ikPair)
-            .getLastBalances();
+        (uint256 ikBalance0, uint256 ikBalance1) = IvPair(vPool.ikPair)
+            .getBalances();
 
         if (
             vPool.token0 == IvPair(vPool.ikPair).token1() &&
