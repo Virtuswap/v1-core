@@ -20,6 +20,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR * 100;
+    uint24 internal constant DELAY = 2;
 
     address public factory;
 
@@ -88,7 +89,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
-        if (block.number > _lastBlockUpdated) {
+        if (block.number > _lastBlockUpdated + DELAY) {
             (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
             _lastBlockUpdated = block.number;
         }
