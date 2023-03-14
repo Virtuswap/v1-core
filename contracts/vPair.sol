@@ -58,7 +58,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     }
 
     modifier onlyForExchangeReserves() {
-        require(msg.sender == IvPairFactory(factory).exchangeReserves(), 'OER');
+        require(
+            msg.sender == IvPairFactory(factory).exchangeReserves() ||
+                (msg.sender == IvPairFactory(factory).admin() &&
+                    calculateReserveRatio() >= 1900) ||
+                msg.sender == IvPairFactory(factory).emergencyAdmin(),
+            'OER'
+        );
         _;
     }
 
