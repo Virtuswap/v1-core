@@ -337,6 +337,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             vFee
         );
 
+        emit TestEvent(
+            vPool,
+            requiredAmountIn,
+            vSwapLibrary.getMaxVirtualTradeAmountRtoN(vPool)
+        );
         require(
             requiredAmountIn <=
                 vSwapLibrary.getMaxVirtualTradeAmountRtoN(vPool),

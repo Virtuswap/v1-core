@@ -5,6 +5,12 @@ pragma solidity 0.8.2;
 import '../types.sol';
 
 interface IvPair {
+    event TestEvent(
+        VirtualPoolModel vPool,
+        uint256 amountIn,
+        uint256 maxTradeAmount
+    );
+
     event Mint(
         address indexed sender,
         uint256 amount0,
