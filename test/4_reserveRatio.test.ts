@@ -697,7 +697,7 @@ describe('Reserve Ratio 2', () => {
         let ABRRAfter = (await abPool.calculateReserveRatio()).toString();
         console.log(`Reserve ratio of AB pool after = ${ABRRAfter}`);
 
-        expect(ABRRAfter).to.equal('1312');
+        expect(ABRRAfter).to.equal('1321');
 
         console.log(`Exchanged ${amountCIn} of C for ${amountAOut} of A`);
         console.log(

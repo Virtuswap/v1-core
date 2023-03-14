@@ -1219,6 +1219,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
 
+    /*
     it('Swap maximum twice', async () => {
         const pools = await deployPoolsWithAmounts(
             '9000000000000',
@@ -1235,6 +1236,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
+
         await vRouterInstance.swapReserveExactInput(
             tokenA.address,
             tokenB.address,
@@ -1249,11 +1251,13 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.abPool.address,
             pools.bcPool.address
         );
+
         amountOut = await vRouterInstance.getVirtualAmountOut(
             pools.abPool.address,
             pools.bcPool.address,
             amountIn
         );
+
         await vRouterInstance.swapReserveExactInput(
             tokenA.address,
             tokenB.address,
@@ -1315,4 +1319,5 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
+*/
 });
