@@ -403,6 +403,14 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
+    function getVirtualPools(
+        address token0,
+        address token1
+    ) external view override returns (VirtualPoolModel[] memory vPools) {
+        vPools = IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .getVirtualPools(token0, token1);
+    }
+
     function getVirtualPool(
         address jkPair,
         address ikPair

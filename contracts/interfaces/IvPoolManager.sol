@@ -10,10 +10,10 @@ interface IvPoolManager {
         address ikPair
     ) external view returns (VirtualPoolModel memory vPool);
 
-    function getVirtualPools()
-        external
-        view
-        returns (VirtualPoolModel[] memory vPools);
+    function getVirtualPools(
+        address token0,
+        address token1
+    ) external view returns (VirtualPoolModel[] memory vPools);
 
     function updateVirtualPoolBalances(
         VirtualPoolModel memory vPool,

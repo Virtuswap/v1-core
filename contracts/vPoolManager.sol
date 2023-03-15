@@ -37,41 +37,49 @@ contract vPoolManager is IvPoolManager {
         }
     }
 
-    function getVirtualPools()
-        external
-        view
-        override
-        returns (VirtualPoolModel[] memory vPools)
-    {
+    function getVirtualPools(
+        address token0,
+        address token1
+    ) external view override returns (VirtualPoolModel[] memory vPools) {
         uint256 allPairsLength = IvPairFactory(pairFactory).allPairsLength();
         uint256 vPoolsNumber;
+        address jk0;
+        address jk1;
+        address jkPair;
         for (uint256 i = 0; i < allPairsLength; ++i) {
-            for (uint256 j = 0; j < allPairsLength; ++j) {
-                if (
-                    i != j &&
-                    _vPoolCanBeConstructed(
-                        IvPairFactory(pairFactory).allPairs(i),
-                        IvPairFactory(pairFactory).allPairs(j)
-                    )
-                ) {
-                    ++vPoolsNumber;
-                }
+            jkPair = IvPairFactory(pairFactory).allPairs(i);
+            (jk0, jk1) = IvPair(jkPair).getTokens();
+            if (
+                (jk0 == token1 || jk1 == token1) &&
+                jk0 != token0 &&
+                jk1 != token0 &&
+                IvPair(jkPair).allowListMap(token0) &&
+                IvPairFactory(pairFactory).getPair(
+                    token0,
+                    jk0 == token1 ? jk1 : jk0
+                ) !=
+                address(0)
+            ) {
+                ++vPoolsNumber;
             }
         }
         vPools = new VirtualPoolModel[](vPoolsNumber);
+        address ikPair;
         for (uint256 i = 0; i < allPairsLength; ++i) {
-            for (uint256 j = 0; j < allPairsLength; ++j) {
-                if (
-                    i != j &&
-                    _vPoolCanBeConstructed(
-                        IvPairFactory(pairFactory).allPairs(i),
-                        IvPairFactory(pairFactory).allPairs(j)
-                    )
-                ) {
-                    vPools[--vPoolsNumber] = getVirtualPool(
-                        IvPairFactory(pairFactory).allPairs(i),
-                        IvPairFactory(pairFactory).allPairs(j)
-                    );
+            jkPair = IvPairFactory(pairFactory).allPairs(i);
+            (jk0, jk1) = IvPair(jkPair).getTokens();
+            if (
+                (jk0 == token1 || jk1 == token1) &&
+                jk0 != token0 &&
+                jk1 != token0 &&
+                IvPair(jkPair).allowListMap(token0)
+            ) {
+                ikPair = IvPairFactory(pairFactory).getPair(
+                    token0,
+                    jk0 == token1 ? jk1 : jk0
+                );
+                if (ikPair != address(0)) {
+                    vPools[--vPoolsNumber] = getVirtualPool(jkPair, ikPair);
                 }
             }
         }
@@ -139,20 +147,5 @@ contract vPoolManager is IvPoolManager {
             vPool.balance0 = (vPool.balance0 * jkBalance0) / vPool.balance1;
             vPool.balance1 = jkBalance0;
         }
-    }
-
-    function _vPoolCanBeConstructed(
-        address jkPair,
-        address ikPair
-    ) private view returns (bool) {
-        VirtualPoolTokens memory vPoolTokens = vSwapLibrary.findCommonToken(
-            IvPair(ikPair).token0(),
-            IvPair(ikPair).token1(),
-            IvPair(jkPair).token0(),
-            IvPair(jkPair).token1()
-        );
-        return
-            vPoolTokens.jk1 == vPoolTokens.ik1 &&
-            IvPair(jkPair).allowListMap(vPoolTokens.ik0);
     }
 }
