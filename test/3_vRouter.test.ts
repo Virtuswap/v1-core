@@ -284,7 +284,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        await vRouterInstance.multicall(multiData, false);
+        await vRouterInstance.multicall(multiData);
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenCBalanceAfter = await tokenC.balanceOf(owner.address);
         expect(tokenCBalanceAfter).to.be.above(tokenCBalanceBefore);
@@ -359,7 +359,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        await vRouterInstance.multicall(multiData, false);
+        await vRouterInstance.multicall(multiData);
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenCBalanceAfter = await tokenC.balanceOf(owner.address);
         expect(tokenCBalanceAfter).to.be.above(tokenCBalanceBefore);
@@ -576,7 +576,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        await vRouterInstance.multicall(multiData, false);
+        await vRouterInstance.multicall(multiData);
     });
 
     it('Should revert on swap A to C on pool A/C with insuficient input amount', async () => {

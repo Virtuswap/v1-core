@@ -4,11 +4,11 @@ pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/utils/Multicall.sol";
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import './types.sol';
 import './vPair.sol';
-import './base/multicall.sol';
 import './libraries/PoolAddress.sol';
 import './libraries/vSwapLibrary.sol';
 import './interfaces/IvRouter.sol';
