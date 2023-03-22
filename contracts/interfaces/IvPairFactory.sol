@@ -35,6 +35,12 @@ interface IvPairFactory {
 
     function setDefaultAllowList(address[] calldata _defaultAllowList) external;
 
+    function allPairs(uint256 index) external view returns (address);
+
+    function allPairsLength() external view returns (uint256);
+
+    function vPoolManager() external view returns (address);
+
     function admin() external view returns (address);
 
     function emergencyAdmin() external view returns (address);
@@ -48,6 +54,8 @@ interface IvPairFactory {
     function pendingAdmin() external view returns (address);
 
     function setPendingAdmin(address newAdmin) external;
+
+    function setVPoolManagerAddress(address _vPoolManager) external;
 
     function acceptAdmin() external;
 

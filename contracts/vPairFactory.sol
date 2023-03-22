@@ -11,13 +11,14 @@ import './types.sol';
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
-    address[] public allPairs;
+    address[] public override allPairs;
 
     address public override admin;
     address public override pendingAdmin;
     address public override emergencyAdmin;
     address public override pendingEmergencyAdmin;
     address public override exchangeReserves;
+    address public override vPoolManager;
 
     address[] defaultAllowList;
 
@@ -98,6 +99,16 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         emit ExchangeReserveAddressChanged(_exchangeReserves);
     }
 
+    function setVPoolManagerAddress(
+        address _vPoolManager
+    ) external override onlyAdmin {
+        require(
+            _vPoolManager > address(0),
+            'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
+        );
+        vPoolManager = _vPoolManager;
+    }
+
     function setPendingAdmin(
         address newPendingAdmin
     ) external override onlyAdmin {
@@ -137,6 +148,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     ) external override onlyAdmin {
         defaultAllowList = _defaultAllowList;
         emit DefaultAllowListChanged(_defaultAllowList);
+    }
+
+    function allPairsLength() external view override returns (uint256) {
+        return allPairs.length;
     }
 
     function getInitCodeHash() external pure returns (bytes32) {

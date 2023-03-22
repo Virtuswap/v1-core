@@ -13,6 +13,7 @@ import './libraries/PoolAddress.sol';
 import './libraries/vSwapLibrary.sol';
 import './interfaces/IvRouter.sol';
 import './interfaces/IvPairFactory.sol';
+import './interfaces/IvPoolManager.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/external/IWETH9.sol';
 
@@ -402,11 +403,20 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
+    function getVirtualPools(
+        address token0,
+        address token1
+    ) external view override returns (VirtualPoolModel[] memory vPools) {
+        vPools = IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .getVirtualPools(token0, token1);
+    }
+
     function getVirtualPool(
         address jkPair,
         address ikPair
     ) public view override returns (VirtualPoolModel memory vPool) {
-        vPool = vSwapLibrary.getVirtualPool(jkPair, ikPair);
+        vPool = IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .getVirtualPool(jkPair, ikPair);
     }
 
     function quote(
