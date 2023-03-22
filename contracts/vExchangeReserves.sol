@@ -3,12 +3,12 @@ pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/utils/Multicall.sol";
 
 import './types.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvExchangeReserves.sol';
 import './interfaces/IvPairFactory.sol';
-import './base/multicall.sol';
 
 contract vExchangeReserves is IvExchangeReserves, Multicall {
     address public immutable factory;
