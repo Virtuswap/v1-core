@@ -15,6 +15,8 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
     address public override admin;
     address public override pendingAdmin;
+    address public override emergencyAdmin;
+    address public override pendingEmergencyAdmin;
     address public override exchangeReserves;
     address public override vPoolManager;
 
@@ -27,8 +29,14 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         _;
     }
 
+    modifier onlyEmergencyAdmin() {
+        require(msg.sender == emergencyAdmin, 'OEA');
+        _;
+    }
+
     constructor() {
         admin = msg.sender;
+        emergencyAdmin = msg.sender;
     }
 
     function getPair(
@@ -116,6 +124,23 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         admin = pendingAdmin;
         pendingAdmin = address(0);
         emit FactoryNewAdmin(admin);
+    }
+
+    function setPendingEmergencyAdmin(
+        address newPendingEmergencyAdmin
+    ) external override onlyEmergencyAdmin {
+        pendingEmergencyAdmin = newPendingEmergencyAdmin;
+        emit FactoryNewPendingEmergencyAdmin(newPendingEmergencyAdmin);
+    }
+
+    function acceptEmergencyAdmin() external override {
+        require(
+            msg.sender != address(0) && msg.sender == pendingEmergencyAdmin,
+            'Only for pending emergency admin'
+        );
+        emergencyAdmin = pendingEmergencyAdmin;
+        pendingEmergencyAdmin = address(0);
+        emit FactoryNewEmergencyAdmin(emergencyAdmin);
     }
 
     function setDefaultAllowList(

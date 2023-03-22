@@ -122,8 +122,7 @@ library vSwapLibrary {
         (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
             .getLastBalances();
 
-        (uint256 jkBalance0, uint256 jkBalance1, ) = IvPair(jkPair)
-            .getLastBalances();
+        (uint256 jkBalance0, uint256 jkBalance1) = IvPair(jkPair).getBalances();
 
         vPool = calculateVPool(
             vPoolTokens.ik0 == ik0 ? ikBalance0 : ikBalance1,
@@ -183,75 +182,121 @@ library vSwapLibrary {
                         )) +
                     int256(params.f * params.r * params.R * params.vb1);
                 uint256 c1 = params.F * params.vb0;
-                uint256 c2 = 2 *
-                    params.b0 *
-                    params.T *
-                    params.vb0 -
-                    params.R *
-                    (params.r * params.vb1 + params.s * params.vb0);
+                int256 c2 = 2 *
+                    int256(params.b0 * params.T * params.vb0) -
+                    int256(
+                        params.R *
+                            (params.r * params.vb1 + params.s * params.vb0)
+                    );
 
-                (bool negative, uint256 ub) = (
+                (bool negativeB, uint256 ub) = (
                     b < 0 ? (true, uint256(-b)) : (false, uint256(b))
+                );
+
+                (bool negativeC, uint256 uc2) = (
+                    c2 < 0 ? (false, uint256(-c2)) : (true, uint256(c2))
                 );
 
                 // initial approximation: maxAmountIn always <= vb0
                 maxAmountIn = params.vb0;
                 // 2 * a * x + b <= 5 * 10^75 < 2^256
                 uint256 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 uint256 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
 
                 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
 
                 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
 
                 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
 
                 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
 
                 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
 
                 temp = (
-                    negative ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
                 );
                 derivative = temp + a * maxAmountIn;
-                maxAmountIn +=
-                    Math.mulDiv(c1, c2, derivative) -
-                    Math.mulDiv(maxAmountIn, temp, derivative);
+                if (negativeC) {
+                    maxAmountIn +=
+                        Math.mulDiv(c1, uc2, derivative) -
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                } else {
+                    maxAmountIn -=
+                        Math.mulDiv(c1, uc2, derivative) +
+                        Math.mulDiv(maxAmountIn, temp, derivative);
+                }
             }
         } else {
             unchecked {

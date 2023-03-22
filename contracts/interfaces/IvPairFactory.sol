@@ -18,6 +18,9 @@ interface IvPairFactory {
     event FactoryNewAdmin(address newAdmin);
     event FactoryNewPendingAdmin(address newPendingAdmin);
 
+    event FactoryNewEmergencyAdmin(address newEmergencyAdmin);
+    event FactoryNewPendingEmergencyAdmin(address newPendingEmergencyAdmin);
+
     event ExchangeReserveAddressChanged(address newExchangeReserve);
 
     function createPair(
@@ -39,6 +42,14 @@ interface IvPairFactory {
     function vPoolManager() external view returns (address);
 
     function admin() external view returns (address);
+
+    function emergencyAdmin() external view returns (address);
+
+    function pendingEmergencyAdmin() external view returns (address);
+
+    function setPendingEmergencyAdmin(address newEmergencyAdmin) external;
+
+    function acceptEmergencyAdmin() external;
 
     function pendingAdmin() external view returns (address);
 
