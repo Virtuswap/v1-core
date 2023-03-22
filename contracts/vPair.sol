@@ -11,6 +11,7 @@ import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './interfaces/IvPairFactory.sol';
+import './interfaces/IvPoolManager.sol';
 import './interfaces/IvFlashSwapCallback.sol';
 import './libraries/vSwapLibrary.sol';
 import './vSwapERC20.sol';
@@ -19,6 +20,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR * 100;
+    uint24 internal constant DELAY = 2;
 
     address public factory;
 
@@ -36,6 +38,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 private _lastPairBalance1;
 
     uint256 public override maxReserveRatio;
+    uint256 public reserveRatioWarningThreshold;
+    uint256 public emergencyDiscount;
 
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
@@ -57,8 +61,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         _;
     }
 
-    modifier onlyForExchangeReserves() {
-        require(msg.sender == IvPairFactory(factory).exchangeReserves(), 'OER');
+    modifier onlyEmergencyAdmin() {
+        require(msg.sender == IvPairFactory(factory).emergencyAdmin(), 'OEA');
         _;
     }
 
@@ -84,10 +88,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             maxAllowListCount,
             maxReserveRatio
         ) = IvSwapPoolDeployer(msg.sender).poolCreationDefaults();
+        reserveRatioWarningThreshold = 1900;
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
-        if (block.number > _lastBlockUpdated) {
+        if (block.number > _lastBlockUpdated + DELAY) {
             (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
             _lastBlockUpdated = block.number;
         }
@@ -200,17 +205,22 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     )
         external
         override
-        onlyForExchangeReserves
         nonReentrant
         returns (address _leftoverToken, uint256 _leftoverAmount)
     {
+        require(
+            msg.sender == IvPairFactory(factory).exchangeReserves() ||
+                (msg.sender == IvPairFactory(factory).admin() &&
+                    calculateReserveRatio() >= reserveRatioWarningThreshold) ||
+                msg.sender == IvPairFactory(factory).emergencyAdmin(),
+            'OAER'
+        );
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
-            ikPair,
-            address(this)
-        );
+        VirtualPoolModel memory vPool = IvPoolManager(
+            IvPairFactory(factory).vPoolManager()
+        ).getVirtualPool(ikPair, address(this));
 
         // validate ikPair with factory
         require(
@@ -228,6 +238,15 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             vPool.balance1,
             vPool.balance0
         );
+
+        if (
+            msg.sender == IvPairFactory(factory).admin() ||
+            msg.sender == IvPairFactory(factory).emergencyAdmin()
+        ) {
+            requiredAmountIn =
+                (requiredAmountIn * (BASE_FACTOR - emergencyDiscount)) /
+                BASE_FACTOR;
+        }
 
         if (data.length > 0)
             IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
@@ -258,6 +277,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                     _leftoverAmount
                 );
             }
+            IvPoolManager(IvPairFactory(factory).vPoolManager())
+                .updateVirtualPoolBalances(
+                    vPool,
+                    vPool.balance0 + balanceDiff - _leftoverAmount,
+                    vPool.balance1 - amountOut
+                );
         }
 
         {
@@ -314,10 +339,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
-            address(this),
-            ikPair
-        );
+        VirtualPoolModel memory vPool = IvPoolManager(
+            IvPairFactory(factory).vPoolManager()
+        ).getVirtualPool(address(this), ikPair);
 
         // validate ikPair with factory
         require(
@@ -382,6 +406,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         reserves[vPool.token0] += amountIn;
 
         _update(fetchBalance(token0), fetchBalance(token1));
+        IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .updateVirtualPoolBalances(
+                vPool,
+                vPool.balance0 + amountIn,
+                vPool.balance1 - amountOut
+            );
 
         emit ReserveSync(
             vPool.token0,
@@ -552,6 +582,19 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     ) external override onlyFactoryAdmin {
         maxAllowListCount = _maxAllowListCount;
         emit AllowListCountChanged(_maxAllowListCount);
+    }
+
+    function setReserveRatioWarningThreshold(
+        uint256 _reserveRatioWarningThreshold
+    ) external override onlyEmergencyAdmin {
+        reserveRatioWarningThreshold = _reserveRatioWarningThreshold;
+    }
+
+    function setEmergencyDiscount(
+        uint256 _emergencyDiscount
+    ) external override onlyEmergencyAdmin {
+        require(_emergencyDiscount <= BASE_FACTOR, 'IED');
+        emergencyDiscount = _emergencyDiscount;
     }
 
     function reservesBaseSum() external view override returns (uint256 sum) {

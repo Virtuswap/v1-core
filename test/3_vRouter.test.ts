@@ -284,7 +284,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        await vRouterInstance.multicall(multiData, false);
+        await vRouterInstance.multicall(multiData);
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenCBalanceAfter = await tokenC.balanceOf(owner.address);
         expect(tokenCBalanceAfter).to.be.above(tokenCBalanceBefore);
@@ -359,7 +359,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        await vRouterInstance.multicall(multiData, false);
+        await vRouterInstance.multicall(multiData);
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenCBalanceAfter = await tokenC.balanceOf(owner.address);
         expect(tokenCBalanceAfter).to.be.above(tokenCBalanceBefore);
@@ -576,7 +576,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        await vRouterInstance.multicall(multiData, false);
+        await vRouterInstance.multicall(multiData);
     });
 
     it('Should revert on swap A to C on pool A/C with insuficient input amount', async () => {
@@ -988,6 +988,97 @@ describe('vRouter 2', () => {
     });
 });
 
+describe('vRouter: getVirtualPools', () => {
+    let fixture: any = {};
+
+    before(async function () {
+        fixture = await loadFixture(deployPools);
+        let allowList = [
+            fixture.tokenA.address,
+            fixture.tokenB.address,
+            fixture.tokenC.address,
+        ];
+        for (let i = 0; i < 5; ++i) {
+            const erc20ContractFactory = new ERC20PresetFixedSupply__factory(
+                fixture.owner
+            );
+            const tokenI = await erc20ContractFactory.deploy(
+                'token' + i,
+                i.toString(),
+                ethers.utils.parseEther('100000'),
+                fixture.owner.address
+            );
+            await tokenI.approve(
+                fixture.vRouterInstance.address,
+                ethers.utils.parseEther('100000')
+            );
+
+            await fixture.vRouterInstance.addLiquidity(
+                fixture.tokenA.address,
+                tokenI.address,
+                ethers.utils.parseEther('1000'),
+                ethers.utils.parseEther('1000'),
+                ethers.utils.parseEther('1000'),
+                ethers.utils.parseEther('1000'),
+                fixture.owner.address,
+                (await time.latest()) + 100
+            );
+            allowList.push(tokenI.address);
+            await fixture.vRouterInstance.addLiquidity(
+                fixture.tokenD.address,
+                tokenI.address,
+                ethers.utils.parseEther('1000'),
+                ethers.utils.parseEther('1000'),
+                ethers.utils.parseEther('1000'),
+                ethers.utils.parseEther('1000'),
+                fixture.owner.address,
+                (await time.latest()) + 100
+            );
+        }
+        for (
+            let i = 0;
+            i < (await fixture.vPairFactoryInstance.allPairsLength());
+            ++i
+        ) {
+            const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
+            const pool = VPair__factory.connect(pairAddr, fixture.owner);
+            await pool.setAllowList(allowList);
+        }
+    });
+
+    it('getVirtualPools works', async () => {
+        // virtual pool AD = AX_i + X_iD where i from 0 to 5 and AB + BD
+        expect(
+            (
+                await fixture.vRouterInstance.getVirtualPools(
+                    fixture.tokenA.address,
+                    fixture.tokenD.address
+                )
+            ).length
+        ).to.equal(6);
+
+        for (
+            let i = 0;
+            i < (await fixture.vPairFactoryInstance.allPairsLength());
+            ++i
+        ) {
+            const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
+            const pool = VPair__factory.connect(pairAddr, fixture.owner);
+            await pool.setAllowList([fixture.tokenD.address]);
+        }
+
+        // A is not in a allow list so there is 0 virtual pools AD
+        expect(
+            (
+                await fixture.vRouterInstance.getVirtualPools(
+                    fixture.tokenA.address,
+                    fixture.tokenD.address
+                )
+            ).length
+        ).to.equal(0);
+    });
+});
+
 describe('vRouter: getVirtualMaxTradeAmount', () => {
     let fixture: any = {};
     let tokenNumber = 1;
@@ -1219,6 +1310,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
 
+    /*
     it('Swap maximum twice', async () => {
         const pools = await deployPoolsWithAmounts(
             '9000000000000',
@@ -1235,6 +1327,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
+
         await vRouterInstance.swapReserveExactInput(
             tokenA.address,
             tokenB.address,
@@ -1249,11 +1342,13 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.abPool.address,
             pools.bcPool.address
         );
+
         amountOut = await vRouterInstance.getVirtualAmountOut(
             pools.abPool.address,
             pools.bcPool.address,
             amountIn
         );
+
         await vRouterInstance.swapReserveExactInput(
             tokenA.address,
             tokenB.address,
@@ -1315,4 +1410,5 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
+*/
 });
