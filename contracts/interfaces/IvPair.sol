@@ -95,6 +95,10 @@ interface IvPair {
 
     function setMaxReserveThreshold(uint256 threshold) external;
 
+    function setReserveRatioWarningThreshold(uint256 threshold) external;
+
+    function setEmergencyDiscount(uint256 discount) external;
+
     function token0() external view returns (address);
 
     function token1() external view returns (address);

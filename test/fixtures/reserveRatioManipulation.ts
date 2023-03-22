@@ -66,6 +66,15 @@ export async function reserveRatioManipulation() {
     );
     const vPairFactoryInstance = await vPairContractFactory.deploy();
 
+    const vPoolManagerFactory = await ethers.getContractFactory('vPoolManager');
+    const vPoolManagerInstance = await vPoolManagerFactory.deploy(
+        vPairFactoryInstance.address
+    );
+
+    await vPairFactoryInstance.setVPoolManagerAddress(
+        vPoolManagerInstance.address
+    );
+
     await vPairFactoryInstance.setDefaultAllowList([
         tokenA.address,
         tokenB.address,
