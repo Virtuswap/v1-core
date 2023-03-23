@@ -536,7 +536,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         balance1 = fetchBalance(_token1);
 
         _update(balance0, balance1);
-        emit Burn(msg.sender, amount0, amount1, to);
+        emit Burn(msg.sender, amount0, amount1, to, totalSupply());
     }
 
     function setAllowList(
