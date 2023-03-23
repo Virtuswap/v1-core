@@ -17,7 +17,8 @@ interface IvPair {
         address indexed sender,
         uint256 amount0,
         uint256 amount1,
-        address indexed to
+        address indexed to,
+        uint256 totalSupply
     );
 
     event Swap(
