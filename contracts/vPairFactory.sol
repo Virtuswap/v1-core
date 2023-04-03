@@ -3,6 +3,7 @@
 pragma solidity 0.8.2;
 
 import './vPair.sol';
+import './interfaces/IvPair.sol';
 import './interfaces/IvPairFactory.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './libraries/PoolAddress.sol';
@@ -10,10 +11,16 @@ import './types.sol';
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     mapping(address => mapping(address => address)) public pairs;
-    address[] public allPairs;
+    address[] public override allPairs;
 
     address public override admin;
+    address public override pendingAdmin;
+    address public override emergencyAdmin;
+    address public override pendingEmergencyAdmin;
     address public override exchangeReserves;
+    address public override vPoolManager;
+
+    address[] defaultAllowList;
 
     PoolCreationDefaults public override poolCreationDefaults;
 
@@ -22,8 +29,14 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         _;
     }
 
+    modifier onlyEmergencyAdmin() {
+        require(msg.sender == emergencyAdmin, 'OEA');
+        _;
+    }
+
     constructor() {
         admin = msg.sender;
+        emergencyAdmin = msg.sender;
     }
 
     function getPair(
@@ -54,14 +67,16 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             token1: token1,
             fee: 997,
             vFee: 997,
-            maxAllowListCount: 8,
-            maxReserveRatio: 2000 * 1e18
+            maxAllowListCount: uint24(defaultAllowList.length),
+            maxReserveRatio: 2000
         });
 
         bytes32 _salt = PoolAddress.getSalt(token0, token1);
         pair = address(new vPair{salt: _salt}());
 
         delete poolCreationDefaults;
+
+        IvPair(pair).setAllowList(defaultAllowList);
 
         pairs[token0][token1] = pair;
         pairs[token1][token0] = pair;
@@ -84,15 +99,59 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         emit ExchangeReserveAddressChanged(_exchangeReserves);
     }
 
-    function changeAdmin(address newAdmin) external override onlyAdmin {
+    function setVPoolManagerAddress(
+        address _vPoolManager
+    ) external override onlyAdmin {
         require(
-            newAdmin > address(0) && newAdmin != admin,
-            'VSWAP:INVALID_NEW_ADMIN_ADDRESS'
+            _vPoolManager > address(0),
+            'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
         );
+        vPoolManager = _vPoolManager;
+    }
 
-        admin = newAdmin;
+    function setPendingAdmin(
+        address newPendingAdmin
+    ) external override onlyAdmin {
+        pendingAdmin = newPendingAdmin;
+        emit FactoryNewPendingAdmin(newPendingAdmin);
+    }
 
-        emit FactoryAdminChanged(newAdmin);
+    function acceptAdmin() external override {
+        require(
+            msg.sender != address(0) && msg.sender == pendingAdmin,
+            'Only for pending admin'
+        );
+        admin = pendingAdmin;
+        pendingAdmin = address(0);
+        emit FactoryNewAdmin(admin);
+    }
+
+    function setPendingEmergencyAdmin(
+        address newPendingEmergencyAdmin
+    ) external override onlyEmergencyAdmin {
+        pendingEmergencyAdmin = newPendingEmergencyAdmin;
+        emit FactoryNewPendingEmergencyAdmin(newPendingEmergencyAdmin);
+    }
+
+    function acceptEmergencyAdmin() external override {
+        require(
+            msg.sender != address(0) && msg.sender == pendingEmergencyAdmin,
+            'Only for pending emergency admin'
+        );
+        emergencyAdmin = pendingEmergencyAdmin;
+        pendingEmergencyAdmin = address(0);
+        emit FactoryNewEmergencyAdmin(emergencyAdmin);
+    }
+
+    function setDefaultAllowList(
+        address[] calldata _defaultAllowList
+    ) external override onlyAdmin {
+        defaultAllowList = _defaultAllowList;
+        emit DefaultAllowListChanged(_defaultAllowList);
+    }
+
+    function allPairsLength() external view override returns (uint256) {
+        return allPairs.length;
     }
 
     function getInitCodeHash() external pure returns (bytes32) {

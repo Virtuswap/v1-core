@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pragma solidity 0.8.2;
-import "../types.sol";
-import "./IvFlashSwapCallback.sol";
+import '../types.sol';
+import './IvFlashSwapCallback.sol';
 
 interface IvRouter is IvFlashSwapCallback {
     event RouterFactoryChanged(address newFactoryAddress);
@@ -109,8 +109,18 @@ interface IvRouter is IvFlashSwapCallback {
         uint256 amountIn
     ) external view returns (uint256 amountOut);
 
-    function getVirtualPool(address jkPair, address ikPair)
-        external
-        view
-        returns (VirtualPoolModel memory vPool);
+    function getVirtualPool(
+        address jkPair,
+        address ikPair
+    ) external view returns (VirtualPoolModel memory vPool);
+
+    function getVirtualPools(
+        address token0,
+        address token1
+    ) external view returns (VirtualPoolModel[] memory vPools);
+
+    function getMaxVirtualTradeAmountRtoN(
+        address jkPair,
+        address ikPair
+    ) external view returns (uint256 maxAmountIn);
 }

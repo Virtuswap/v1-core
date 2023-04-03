@@ -2,16 +2,23 @@
 
 pragma solidity 0.8.2;
 
-import "../types.sol";
+import '../types.sol';
 
 interface IvPair {
-    event Mint(address indexed sender, uint256 amount0, uint256 amount1);
+    event Mint(
+        address indexed sender,
+        uint256 amount0,
+        uint256 amount1,
+        uint lpTokens,
+        uint poolLPTokens
+    );
 
     event Burn(
         address indexed sender,
         uint256 amount0,
         uint256 amount1,
-        address indexed to
+        address indexed to,
+        uint256 totalSupply
     );
 
     event Swap(
@@ -37,9 +44,7 @@ interface IvPair {
 
     event Sync(uint256 balance0, uint256 balance1);
 
-    event ReserveSync(address asset, uint256 balance);
-
-    event FactoryChanged(address newFactory);
+    event ReserveSync(address asset, uint256 balance, uint256 rRatio);
 
     event FeeChanged(uint24 fee, uint24 vFee);
 
@@ -71,22 +76,29 @@ interface IvPair {
         uint256 amountOut,
         address ikPair,
         address to,
+        uint256 incentivesLimitPct,
         bytes calldata data
-    ) external returns (uint256 _amountIn);
+    ) external returns (address _token, uint256 _leftovers);
 
     function mint(address to) external returns (uint256 liquidity);
 
-    function burn(address to)
-        external
-        returns (uint256 amount0, uint256 amount1);
+    function burn(
+        address to
+    ) external returns (uint256 amount0, uint256 amount1);
 
     function setAllowList(address[] memory _allowList) external;
 
     function setMaxAllowListCount(uint24 _maxAllowListCount) external;
 
+    function allowListMap(address _token) external view returns (bool allowed);
+
     function calculateReserveRatio() external view returns (uint256 rRatio);
 
     function setMaxReserveThreshold(uint256 threshold) external;
+
+    function setReserveRatioWarningThreshold(uint256 threshold) external;
+
+    function setEmergencyDiscount(uint256 discount) external;
 
     function token0() external view returns (address);
 
@@ -97,6 +109,8 @@ interface IvPair {
     function pairBalance1() external view returns (uint256);
 
     function maxAllowListCount() external view returns (uint24);
+
+    function maxReserveRatio() external view returns (uint256);
 
     function getBalances() external view returns (uint256, uint256);
 
@@ -111,10 +125,13 @@ interface IvPair {
 
     function getTokens() external view returns (address, address);
 
-    function reservesBaseValue(address reserveAddress)
-        external
-        view
-        returns (uint256);
+    function reservesBaseValue(
+        address reserveAddress
+    ) external view returns (uint256);
 
     function reserves(address reserveAddress) external view returns (uint256);
+
+    function reservesBaseSum() external view returns (uint256);
+
+    function reserveRatioFactor() external pure returns (uint256);
 }

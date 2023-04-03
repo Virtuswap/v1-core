@@ -1,14 +1,16 @@
-import { task } from "hardhat/config"
-import * as path from "path"
-import * as replace from "replace-in-file"
+import { task } from 'hardhat/config';
+import * as path from 'path';
+import * as replace from 'replace-in-file';
 
 export default task(
-    "compile",
-    "Compiles the entire project, building all artifacts",
+    'compile',
+    'Compiles the entire project, building all artifacts',
     async (_taskArgs, hre, runSuper) => {
-        await runSuper(_taskArgs)
-        const vPairContractFactory = await hre.ethers.getContractFactory('vPair');
-        const init_hash = await hre.ethers.utils.keccak256(
+        await runSuper(_taskArgs);
+        const vPairContractFactory = await hre.ethers.getContractFactory(
+            'vPair'
+        );
+        const init_hash = hre.ethers.utils.keccak256(
             vPairContractFactory.bytecode
         );
         const path_to_pool_address = path.join(
@@ -22,6 +24,7 @@ export default task(
             to: `POOL_INIT_CODE_HASH =\n        ${init_hash};`,
         };
         if (replace.sync(options)[0].hasChanged) {
-            await runSuper(_taskArgs)
+            await runSuper(_taskArgs);
         }
-})
+    }
+);

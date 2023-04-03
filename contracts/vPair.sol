@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.2;
 
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
@@ -10,15 +11,16 @@ import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './interfaces/IvPairFactory.sol';
+import './interfaces/IvPoolManager.sol';
 import './interfaces/IvFlashSwapCallback.sol';
 import './libraries/vSwapLibrary.sol';
 import './vSwapERC20.sol';
 
-contract vPair is IvPair, vSwapERC20 {
+contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant BASE_FACTOR = 1000;
     uint24 internal constant MINIMUM_LIQUIDITY = BASE_FACTOR;
-    uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR;
-    uint256 internal constant RESERVE_RATIO_WHOLE = (10**3) * 100 * 1e18;
+    uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR * 100;
+    uint24 internal constant DELAY = 2;
 
     address public factory;
 
@@ -35,25 +37,23 @@ contract vPair is IvPair, vSwapERC20 {
     uint256 private _lastPairBalance0;
     uint256 private _lastPairBalance1;
 
-    uint256 public maxReserveRatio;
+    uint256 public override maxReserveRatio;
+    uint256 public reserveRatioWarningThreshold;
+    uint256 public emergencyDiscount;
 
     address[] public allowList;
-    mapping(address => bool) public allowListMap;
+    mapping(address => bool) public override allowListMap;
     uint24 public override maxAllowListCount;
 
     mapping(address => uint256) public override reservesBaseValue;
     mapping(address => uint256) public override reserves;
 
-    uint256 private unlocked = 1;
-    modifier lock() {
-        require(unlocked == 1, 'L');
-        unlocked = 0;
-        _;
-        unlocked = 1;
-    }
-
     function _onlyFactoryAdmin() internal view {
-        require(msg.sender == IvPairFactory(factory).admin(), 'OA');
+        require(
+            msg.sender == IvPairFactory(factory).admin() ||
+                msg.sender == factory,
+            'OA'
+        );
     }
 
     modifier onlyFactoryAdmin() {
@@ -61,8 +61,8 @@ contract vPair is IvPair, vSwapERC20 {
         _;
     }
 
-    modifier onlyForExchangeReserves() {
-        require(msg.sender == IvPairFactory(factory).exchangeReserves(), 'OER');
+    modifier onlyEmergencyAdmin() {
+        require(msg.sender == IvPairFactory(factory).emergencyAdmin(), 'OEA');
         _;
     }
 
@@ -88,10 +88,11 @@ contract vPair is IvPair, vSwapERC20 {
             maxAllowListCount,
             maxReserveRatio
         ) = IvSwapPoolDeployer(msg.sender).poolCreationDefaults();
+        reserveRatioWarningThreshold = 1900;
     }
 
     function _update(uint256 balance0, uint256 balance1) internal {
-        if (block.number > _lastBlockUpdated) {
+        if (block.number > _lastBlockUpdated + DELAY) {
             (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
             _lastBlockUpdated = block.number;
         }
@@ -137,7 +138,7 @@ contract vPair is IvPair, vSwapERC20 {
         address tokenOut,
         address to,
         bytes calldata data
-    ) external override lock returns (uint256 _amountIn) {
+    ) external override nonReentrant returns (uint256 _amountIn) {
         require(to > address(0) && to != token0 && to != token1, 'IT');
         require(tokenOut == token0 || tokenOut == token1, 'NNT');
         require(amountOut > 0, 'IAO');
@@ -199,21 +200,27 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 amountOut,
         address ikPair,
         address to,
+        uint256 incentivesLimitPct,
         bytes calldata data
     )
         external
         override
-        onlyForExchangeReserves
-        lock
-        returns (uint256 _amountIn)
+        nonReentrant
+        returns (address _leftoverToken, uint256 _leftoverAmount)
     {
+        require(
+            msg.sender == IvPairFactory(factory).exchangeReserves() ||
+                (msg.sender == IvPairFactory(factory).admin() &&
+                    calculateReserveRatio() >= reserveRatioWarningThreshold) ||
+                msg.sender == IvPairFactory(factory).emergencyAdmin(),
+            'OAER'
+        );
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPool(
-            ikPair,
-            address(this)
-        );
+        VirtualPoolModel memory vPool = IvPoolManager(
+            IvPairFactory(factory).vPoolManager()
+        ).getVirtualPool(ikPair, address(this));
 
         // validate ikPair with factory
         require(
@@ -221,19 +228,25 @@ contract vPair is IvPair, vSwapERC20 {
                 ikPair,
             'IIKP'
         );
-
         require(amountOut <= vPool.balance1, 'AOE');
         require(allowListMap[vPool.token1], 'TNW');
         require(vPool.token0 == token0 || vPool.token0 == token1, 'NNT');
 
         SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
-        uint256 requiredAmountIn = 0;
-
-        requiredAmountIn = vSwapLibrary.quote(
+        uint256 requiredAmountIn = vSwapLibrary.quote(
             amountOut,
             vPool.balance1,
             vPool.balance0
         );
+
+        if (
+            msg.sender == IvPairFactory(factory).admin() ||
+            msg.sender == IvPairFactory(factory).emergencyAdmin()
+        ) {
+            requiredAmountIn =
+                (requiredAmountIn * (BASE_FACTOR - emergencyDiscount)) /
+                BASE_FACTOR;
+        }
 
         if (data.length > 0)
             IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
@@ -243,41 +256,69 @@ contract vPair is IvPair, vSwapERC20 {
                 data
             );
 
-        _amountIn =
-            fetchBalance(vPool.token0) -
-            (vPool.token0 == token0 ? pairBalance0 : pairBalance1);
-
-        require(_amountIn > 0 && _amountIn >= requiredAmountIn, 'IIA');
-
-        // //update reserve balance in the equivalent of token0 value
-
-        uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
-        if (_reserveBaseValue > 0) {
-            // //re-calculate price of reserve asset in token0 for the whole pool blance
-            _reserveBaseValue = vSwapLibrary.quote(
-                _reserveBaseValue,
-                vPool.balance1,
-                vPool.balance0
+        {
+            // scope to avoid stack too deep errors
+            uint256 balanceDiff = fetchBalance(vPool.token0) -
+                (vPool.token0 == token0 ? pairBalance0 : pairBalance1);
+            // reverts if overflow occurs since solidity 0.8
+            // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0
+            // then it is reverted (requiredAmountIn always positive)
+            (_leftoverAmount, _leftoverToken) = (
+                Math.min(
+                    balanceDiff - requiredAmountIn,
+                    (balanceDiff * incentivesLimitPct) / 100
+                ),
+                vPool.token0
             );
+            if (_leftoverAmount > 0) {
+                SafeERC20.safeTransfer(
+                    IERC20(_leftoverToken),
+                    msg.sender,
+                    _leftoverAmount
+                );
+            }
+            IvPoolManager(IvPairFactory(factory).vPoolManager())
+                .updateVirtualPoolBalances(
+                    vPool,
+                    vPool.balance0 + balanceDiff - _leftoverAmount,
+                    vPool.balance1 - amountOut
+                );
         }
 
-        if (_reserveBaseValue > 0 && vPool.token0 == token1) {
-            //if tokenOut is not token0 we should quote it to token0 value
-            _reserveBaseValue = vSwapLibrary.quote(
-                _reserveBaseValue,
-                pairBalance1,
-                pairBalance0
-            );
-        }
+        {
+            // scope to avoid stack too deep errors
+            // //update reserve balance in the equivalent of token0 value
+            uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
+            if (_reserveBaseValue > 0) {
+                // //re-calculate price of reserve asset in token0 for the whole pool blance
+                _reserveBaseValue = vSwapLibrary.quote(
+                    _reserveBaseValue,
+                    vPool.balance1,
+                    vPool.balance0
+                );
+            }
 
-        reservesBaseValue[vPool.token1] = _reserveBaseValue;
+            if (_reserveBaseValue > 0 && vPool.token0 == token1) {
+                //if tokenOut is not token0 we should quote it to token0 value
+                _reserveBaseValue = vSwapLibrary.quote(
+                    _reserveBaseValue,
+                    pairBalance1,
+                    pairBalance0
+                );
+            }
+            reservesBaseValue[vPool.token1] = _reserveBaseValue;
+        }
 
         //update reserve balance
         reserves[vPool.token1] -= amountOut;
 
         _update(fetchBalance(token0), fetchBalance(token1));
 
-        emit ReserveSync(vPool.token1, reserves[vPool.token1]);
+        emit ReserveSync(
+            vPool.token1,
+            reserves[vPool.token1],
+            calculateReserveRatio()
+        );
         emit SwapReserve(
             msg.sender,
             vPool.token0,
@@ -294,18 +335,13 @@ contract vPair is IvPair, vSwapERC20 {
         address ikPair,
         address to,
         bytes calldata data
-    ) external override lock returns (uint256 amountIn) {
+    ) external override nonReentrant returns (uint256 amountIn) {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
-        VirtualPoolModel memory vPool = vSwapLibrary.getVirtualPoolBase(
-            token0,
-            token1,
-            pairBalance0,
-            pairBalance1,
-            vFee,
-            ikPair
-        );
+        VirtualPoolModel memory vPool = IvPoolManager(
+            IvPairFactory(factory).vPoolManager()
+        ).getVirtualPool(address(this), ikPair);
 
         // validate ikPair with factory
         require(
@@ -318,14 +354,20 @@ contract vPair is IvPair, vSwapERC20 {
         require(allowListMap[vPool.token0], 'TNW');
         require(vPool.token1 == token0 || vPool.token1 == token1, 'NNT');
 
-        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
-
         uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
             vPool.balance0,
             vPool.balance1,
             vFee
         );
+
+        require(
+            requiredAmountIn <=
+                vSwapLibrary.getMaxVirtualTradeAmountRtoN(vPool),
+            'TBPT'
+        ); // reserve amount goes beyond pool threshold
+
+        SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
 
         if (data.length > 0)
             IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
@@ -363,11 +405,20 @@ contract vPair is IvPair, vSwapERC20 {
         //update reserve balance
         reserves[vPool.token0] += amountIn;
 
-        require(calculateReserveRatio() < maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
-
         _update(fetchBalance(token0), fetchBalance(token1));
+        IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .updateVirtualPoolBalances(
+                vPool,
+                vPool.balance0 + amountIn,
+                vPool.balance1 - amountOut
+            );
 
-        emit ReserveSync(vPool.token0, reserves[vPool.token0]);
+        emit ReserveSync(
+            vPool.token0,
+            reserves[vPool.token0],
+            calculateReserveRatio()
+        );
+
         emit SwapReserve(
             msg.sender,
             vPool.token0,
@@ -385,24 +436,19 @@ contract vPair is IvPair, vSwapERC20 {
         override
         returns (uint256 rRatio)
     {
-        uint256 _balance0 = pairBalance0;
+        uint256 totalReserves = 0;
         for (uint256 i = 0; i < allowList.length; ++i) {
-            uint256 _rReserve = reservesBaseValue[allowList[i]];
-            if (_rReserve > 0) {
-                rRatio += (vSwapLibrary.percent(_rReserve, _balance0 * 2) *
-                    100);
-            }
+            totalReserves += reservesBaseValue[allowList[i]];
         }
 
-        rRatio *= RESERVE_RATIO_FACTOR;
+        rRatio = pairBalance0 > 0
+            ? (totalReserves * RESERVE_RATIO_FACTOR) / (2 * pairBalance0)
+            : 0;
     }
 
-    function mint(address to)
-        external
-        override
-        lock
-        returns (uint256 liquidity)
-    {
+    function mint(
+        address to
+    ) external override nonReentrant returns (uint256 liquidity) {
         (uint256 _pairBalance0, uint256 _pairBalance1) = (
             pairBalance0,
             pairBalance1
@@ -427,21 +473,23 @@ contract vPair is IvPair, vSwapERC20 {
         uint256 reserveRatio = calculateReserveRatio();
 
         liquidity =
-            liquidity -
-            ((liquidity * reserveRatio) / (RESERVE_RATIO_WHOLE + reserveRatio));
+            (liquidity * RESERVE_RATIO_FACTOR) /
+            (RESERVE_RATIO_FACTOR + reserveRatio);
 
         require(liquidity > 0, 'ILM');
 
         _mint(to, liquidity);
 
         _update(currentBalance0, currentBalance1);
-        emit Mint(msg.sender, amount0, amount1);
+        emit Mint(to, amount0, amount1, liquidity, totalSupply());
     }
 
-    function burn(address to)
+    function burn(
+        address to
+    )
         external
         override
-        lock
+        nonReentrant
         returns (uint256 amount0, uint256 amount1)
     {
         address _token0 = token0; // gas savings
@@ -488,15 +536,13 @@ contract vPair is IvPair, vSwapERC20 {
         balance1 = fetchBalance(_token1);
 
         _update(balance0, balance1);
-        emit Burn(msg.sender, amount0, amount1, to);
+        emit Burn(msg.sender, amount0, amount1, to, totalSupply());
     }
 
-    function setAllowList(address[] memory _allowList)
-        external
-        override
-        onlyFactoryAdmin
-    {
-        require(allowList.length < maxAllowListCount, 'MW');
+    function setAllowList(
+        address[] memory _allowList
+    ) external override onlyFactoryAdmin {
+        require(_allowList.length <= maxAllowListCount, 'MW');
 
         address[] memory _oldWL = allowList;
 
@@ -511,18 +557,10 @@ contract vPair is IvPair, vSwapERC20 {
         emit AllowListChanged(_allowList);
     }
 
-    function setFactory(address _factory) external onlyFactoryAdmin {
-        require(_factory > address(0) && _factory != factory, 'IFA');
-        factory = _factory;
-
-        emit FactoryChanged(_factory);
-    }
-
-    function setFee(uint24 _fee, uint24 _vFee)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setFee(
+        uint24 _fee,
+        uint24 _vFee
+    ) external override onlyFactoryAdmin {
         require(_fee > 0 && _vFee > 0 && _fee < 1000 && _vFee < 1000, 'IFC');
         fee = _fee;
         vFee = _vFee;
@@ -530,23 +568,43 @@ contract vPair is IvPair, vSwapERC20 {
         emit FeeChanged(_fee, _vFee);
     }
 
-    function setMaxReserveThreshold(uint256 threshold)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setMaxReserveThreshold(
+        uint256 threshold
+    ) external override onlyFactoryAdmin {
         require(threshold > 0, 'IRT');
         maxReserveRatio = threshold;
 
         emit ReserveThresholdChanged(threshold);
     }
 
-    function setMaxAllowListCount(uint24 _maxAllowListCount)
-        external
-        override
-        onlyFactoryAdmin
-    {
+    function setMaxAllowListCount(
+        uint24 _maxAllowListCount
+    ) external override onlyFactoryAdmin {
         maxAllowListCount = _maxAllowListCount;
         emit AllowListCountChanged(_maxAllowListCount);
+    }
+
+    function setReserveRatioWarningThreshold(
+        uint256 _reserveRatioWarningThreshold
+    ) external override onlyEmergencyAdmin {
+        reserveRatioWarningThreshold = _reserveRatioWarningThreshold;
+    }
+
+    function setEmergencyDiscount(
+        uint256 _emergencyDiscount
+    ) external override onlyEmergencyAdmin {
+        require(_emergencyDiscount <= BASE_FACTOR, 'IED');
+        emergencyDiscount = _emergencyDiscount;
+    }
+
+    function reservesBaseSum() external view override returns (uint256 sum) {
+        uint256 allowListLength = allowList.length;
+        for (uint256 i = 0; i < allowListLength; ++i) {
+            sum += reservesBaseValue[allowList[i]];
+        }
+    }
+
+    function reserveRatioFactor() external pure override returns (uint256) {
+        return RESERVE_RATIO_FACTOR;
     }
 }
