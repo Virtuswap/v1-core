@@ -51,11 +51,22 @@ const deployCore: DeployFunction = async function (
     );
 
     log('Setting vPoolManager for vPairFactory...');
-    await pairFactoryContract.setVPoolManagerAddress(vPoolManager.address);
+    if ((await pairFactoryContract.vPoolManager()) == vPoolManager.address) {
+        log('Already set');
+    } else {
+        await pairFactoryContract.setVPoolManagerAddress(vPoolManager.address);
+    }
     log('Setting vExchangeReserves for vPairFactory...');
-    await pairFactoryContract.setExchangeReservesAddress(
+    if (
+        (await pairFactoryContract.exchangeReserves()) ==
         vExchangeReserves.address
-    );
+    ) {
+        log('Already set');
+    } else {
+        await pairFactoryContract.setExchangeReservesAddress(
+            vExchangeReserves.address
+        );
+    }
     log('Done!');
 
     if (
