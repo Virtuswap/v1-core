@@ -25,6 +25,12 @@ const deployCore: DeployFunction = async function (
         log: true,
         waitConfirmations: networkConfig[network.name].blockConfirmations || 0,
     });
+    const vPoolManager = await deploy('vPoolManager', {
+        from: deployer,
+        log: true,
+        args: [vPairFactory.address],
+        waitConfirmations: networkConfig[network.name].blockConfirmations || 0,
+    });
     const vExchangeReserves = await deploy('vExchangeReserves', {
         from: deployer,
         log: true,
@@ -38,11 +44,26 @@ const deployCore: DeployFunction = async function (
         waitConfirmations: networkConfig[network.name].blockConfirmations || 0,
     });
     log('Core contracts deployed!');
+
+    const pairFactoryContract = await hre.ethers.getContractAt(
+        'vPairFactory',
+        vPairFactory.address
+    );
+
+    log('Setting vPoolManager for vPairFactory...');
+    await pairFactoryContract.setVPoolManagerAddress(vPoolManager.address);
+    log('Setting vExchangeReserves for vPairFactory...');
+    await pairFactoryContract.setExchangeReservesAddress(
+        vExchangeReserves.address
+    );
+    log('Done!');
+
     if (
         !developmentChains.includes(network.name) &&
         config.etherscan.apiKey.polygonMumbai
     ) {
-        await verify(vPairFactory.address);
+        await verify(vPairFactory.address, []);
+        await verify(vPoolManager.address, [vPairFactory.address]);
         await verify(vExchangeReserves.address, [vPairFactory.address]);
         await verify(vRouter.address, [vPairFactory.address, weth9Address]);
     }
