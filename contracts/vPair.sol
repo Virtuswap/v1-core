@@ -348,8 +348,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         );
 
         require(amountOut <= vPool.balance1, 'AOE');
-        require(allowListMap[vPool.token0], 'TNW');
-        require(vPool.token1 == token0 || vPool.token1 == token1, 'NNT');
 
         uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
