@@ -356,12 +356,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             vFee
         );
 
-        require(
-            requiredAmountIn <=
-                vSwapLibrary.getMaxVirtualTradeAmountRtoN(vPool),
-            'TBPT'
-        ); // reserve amount goes beyond pool threshold
-
         SafeERC20.safeTransfer(IERC20(vPool.token1), to, amountOut);
 
         if (data.length > 0)
@@ -401,6 +395,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         reserves[vPool.token0] += amountIn;
 
         _update(fetchBalance(token0), fetchBalance(token1));
+
+        uint256 reserveRatio = calculateReserveRatio();
+        require(reserveRatio <= maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
+
         IvPoolManager(IvPairFactory(factory).vPoolManager())
             .updateVirtualPoolBalances(
                 address(this),
@@ -409,11 +407,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 vPool.balance1 - amountOut
             );
 
-        emit ReserveSync(
-            vPool.token0,
-            reserves[vPool.token0],
-            calculateReserveRatio()
-        );
+        emit ReserveSync(vPool.token0, reserves[vPool.token0], reserveRatio);
 
         emit SwapReserve(
             msg.sender,
