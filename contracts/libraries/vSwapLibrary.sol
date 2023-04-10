@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '../types.sol';

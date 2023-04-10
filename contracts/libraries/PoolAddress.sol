@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
     bytes32 internal constant POOL_INIT_CODE_HASH =
-        0x849f3347f155545bf398f5662433f97564c0097038b014bdb80e829235154c16;
+        0x8c31296ac61b7d5a8c4843f9b5ddd285ce70e9ccd7c94adf8ae944d02386c6de;
 
     function orderAddresses(
         address tokenA,
