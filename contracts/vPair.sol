@@ -6,7 +6,6 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
 
 import './interfaces/IvPair.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
@@ -69,10 +68,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
     function fetchBalance(address token) internal view returns (uint256) {
         (bool success, bytes memory data) = token.staticcall(
-            abi.encodeWithSelector(
-                IERC20Minimal.balanceOf.selector,
-                address(this)
-            )
+            abi.encodeWithSignature('balanceOf(address)', address(this))
         );
         require(success && data.length >= 32);
         return abi.decode(data, (uint256));
