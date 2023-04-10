@@ -16,7 +16,8 @@ interface IvPoolManager {
     ) external view returns (VirtualPoolModel[] memory vPools);
 
     function updateVirtualPoolBalances(
-        VirtualPoolModel memory vPool,
+        address jkPair,
+        address ikPair,
         uint256 balance0,
         uint256 balance1
     ) external;

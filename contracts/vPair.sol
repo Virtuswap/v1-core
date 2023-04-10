@@ -279,7 +279,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             }
             IvPoolManager(IvPairFactory(factory).vPoolManager())
                 .updateVirtualPoolBalances(
-                    vPool,
+                    ikPair,
+                    address(this),
                     vPool.balance0 + balanceDiff - _leftoverAmount,
                     vPool.balance1 - amountOut
                 );
@@ -408,7 +409,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         _update(fetchBalance(token0), fetchBalance(token1));
         IvPoolManager(IvPairFactory(factory).vPoolManager())
             .updateVirtualPoolBalances(
-                vPool,
+                address(this),
+                ikPair,
                 vPool.balance0 + amountIn,
                 vPool.balance1 - amountOut
             );
