@@ -21,7 +21,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant RESERVE_RATIO_FACTOR = BASE_FACTOR * 100;
     uint24 internal constant DELAY = 2;
 
-    address public factory;
+    address public immutable factory;
 
     address public immutable override token0;
     address public immutable override token1;
