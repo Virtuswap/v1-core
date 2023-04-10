@@ -366,33 +366,36 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 data
             );
 
-        amountIn = fetchBalance(vPool.token0) - reserves[vPool.token0];
+        uint256 tokenInBalance = fetchBalance(vPool.token0);
+        amountIn = tokenInBalance - reserves[vPool.token0];
 
         require(amountIn > 0 && amountIn >= requiredAmountIn, 'IIA');
 
-        //update reserve balance in the equivalent of token0 value
-        uint256 _reserveBaseValue = reserves[vPool.token0] + amountIn;
+        {
+            //update reserve balance in the equivalent of token0 value
+            uint256 _reserveBaseValue = tokenInBalance;
 
-        //re-calculate price of reserve asset in token0 for the whole pool blance
-        _reserveBaseValue = vSwapLibrary.quote(
-            _reserveBaseValue,
-            vPool.balance0,
-            vPool.balance1
-        );
-
-        if (vPool.token1 == token1) {
-            //if tokenOut is not token0 we should quote it to token0 value
+            //re-calculate price of reserve asset in token0 for the whole pool blance
             _reserveBaseValue = vSwapLibrary.quote(
                 _reserveBaseValue,
-                pairBalance1,
-                pairBalance0
+                vPool.balance0,
+                vPool.balance1
             );
+
+            if (vPool.token1 == token1) {
+                //if tokenOut is not token0 we should quote it to token0 value
+                _reserveBaseValue = vSwapLibrary.quote(
+                    _reserveBaseValue,
+                    pairBalance1,
+                    pairBalance0
+                );
+            }
+
+            reservesBaseValue[vPool.token0] = _reserveBaseValue;
         }
 
-        reservesBaseValue[vPool.token0] = _reserveBaseValue;
-
         //update reserve balance
-        reserves[vPool.token0] += amountIn;
+        reserves[vPool.token0] = tokenInBalance;
 
         _update(fetchBalance(token0), fetchBalance(token1));
 
@@ -407,7 +410,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 vPool.balance1 - amountOut
             );
 
-        emit ReserveSync(vPool.token0, reserves[vPool.token0], reserveRatio);
+        emit ReserveSync(vPool.token0, tokenInBalance, reserveRatio);
 
         emit SwapReserve(
             msg.sender,
