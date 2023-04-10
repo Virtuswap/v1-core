@@ -430,7 +430,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         returns (uint256 rRatio)
     {
         uint256 totalReserves = 0;
-        for (uint256 i = 0; i < allowList.length; ++i) {
+        uint256 allowListLength = allowList.length;
+        for (uint256 i = 0; i < allowListLength; ++i) {
             totalReserves += reservesBaseValue[allowList[i]];
         }
 
