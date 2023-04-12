@@ -378,7 +378,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         amountIn = fetchBalance(vPool.token0) - reserves[vPool.token0];
 
-        require(amountIn > 0 && amountIn >= requiredAmountIn, 'IIA');
+        require(amountIn >= requiredAmountIn, 'IIA');
 
         //update reserve balance in the equivalent of token0 value
         uint256 _reserveBaseValue = reserves[vPool.token0] + amountIn;
