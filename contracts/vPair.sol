@@ -74,7 +74,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 address(this)
             )
         );
-        require(success && data.length >= 32);
+        require(success && data.length >= 32, 'FBF');
         return abi.decode(data, (uint256));
     }
 
