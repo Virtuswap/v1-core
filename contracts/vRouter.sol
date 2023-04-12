@@ -98,7 +98,11 @@ contract vRouter is IvRouter, Multicall {
             );
             // pay back with WETH9
             IWETH9(WETH9).deposit{value: requiredBackAmount}();
-            IWETH9(WETH9).transfer(msg.sender, requiredBackAmount);
+            SafeERC20.safeTransfer(
+                IERC20(WETH9),
+                msg.sender,
+                requiredBackAmount
+            );
 
             //send any ETH leftovers to caller
             (bool success, ) = decodedData.caller.call{
