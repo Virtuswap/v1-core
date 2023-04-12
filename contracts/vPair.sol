@@ -143,8 +143,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(tokenOut == token0 || tokenOut == token1, 'NNT');
         require(amountOut > 0, 'IAO');
 
-        SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
-
         address _tokenIn = tokenOut == token0 ? token1 : token0;
 
         (uint256 _balanceIn, uint256 _balanceOut) = vSwapLibrary.sortBalances(
@@ -155,6 +153,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         );
 
         require(amountOut < _balanceOut, 'AOE');
+
+        SafeERC20.safeTransfer(IERC20(tokenOut), to, amountOut);
 
         uint256 requiredAmountIn = vSwapLibrary.getAmountIn(
             amountOut,
