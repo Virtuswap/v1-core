@@ -215,7 +215,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 msg.sender == IvPairFactory(factory).emergencyAdmin(),
             'OAER'
         );
-        require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
         VirtualPoolModel memory vPool = IvPoolManager(
