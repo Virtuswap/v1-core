@@ -458,14 +458,14 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         uint256 amount0 = currentBalance0 - _pairBalance0;
         uint256 amount1 = currentBalance1 - _pairBalance1;
 
-        uint256 _totalSupply = totalSupply();
-        if (_totalSupply == 0) {
+        uint256 totalSupply_ = totalSupply();
+        if (totalSupply_ == 0) {
             liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
             _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
         } else {
             liquidity = Math.min(
-                (amount0 * _totalSupply) / _pairBalance0,
-                (amount1 * _totalSupply) / _pairBalance1
+                (amount0 * totalSupply_) / _pairBalance0,
+                (amount1 * totalSupply_) / _pairBalance1
             );
         }
 
@@ -498,9 +498,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         uint256 balance1 = fetchBalance(_token1);
         uint256 liquidity = fetchBalance(address(this));
 
-        uint256 _totalSupply = totalSupply();
-        amount0 = (balance0 * liquidity) / _totalSupply;
-        amount1 = (balance1 * liquidity) / _totalSupply;
+        uint256 totalSupply_ = totalSupply();
+        amount0 = (balance0 * liquidity) / totalSupply_;
+        amount1 = (balance1 * liquidity) / totalSupply_;
 
         require(amount0 > 0 && amount1 > 0, 'ILB');
 
@@ -517,7 +517,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
                 if (reserveBalance > 0) {
                     uint256 reserveAmountOut = (reserveBalance * liquidity) /
-                        _totalSupply;
+                        totalSupply_;
 
                     SafeERC20.safeTransfer(IERC20(_wlI), to, reserveAmountOut);
 
@@ -525,7 +525,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
                     reservesBaseValue[_wlI] =
                         reserveBaseValuewlI -
-                        ((reserveBaseValuewlI * liquidity) / _totalSupply);
+                        ((reserveBaseValuewlI * liquidity) / totalSupply_);
 
                     reserves[_wlI] = reserveBalance - reserveAmountOut;
                 }
