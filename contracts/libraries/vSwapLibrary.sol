@@ -90,15 +90,6 @@ library vSwapLibrary {
             : (pairBalance1, pairBalance0);
     }
 
-    function getVirtualPoolBase(
-        address jkToken0,
-        address jkToken1,
-        uint256 jkBalance0,
-        uint256 jkBalance1,
-        uint24 jkvFee,
-        address ikPair
-    ) internal view returns (VirtualPoolModel memory vPool) {}
-
     function getVirtualPool(
         address jkPair,
         address ikPair
