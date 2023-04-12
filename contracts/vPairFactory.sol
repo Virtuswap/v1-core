@@ -111,10 +111,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     }
 
     function acceptAdmin() external override {
-        require(
-            msg.sender != address(0) && msg.sender == pendingAdmin,
-            'Only for pending admin'
-        );
+        require(msg.sender == pendingAdmin, 'Only for pending admin');
         admin = pendingAdmin;
         pendingAdmin = address(0);
         emit FactoryNewAdmin(admin);
@@ -129,7 +126,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
     function acceptEmergencyAdmin() external override {
         require(
-            msg.sender != address(0) && msg.sender == pendingEmergencyAdmin,
+            msg.sender == pendingEmergencyAdmin,
             'Only for pending emergency admin'
         );
         emergencyAdmin = pendingEmergencyAdmin;
