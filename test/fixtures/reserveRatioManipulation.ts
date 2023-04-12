@@ -75,12 +75,17 @@ export async function reserveRatioManipulation() {
         vPoolManagerInstance.address
     );
 
-    await vPairFactoryInstance.setDefaultAllowList([
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-    ]);
+    await vPairFactoryInstance.setDefaultAllowList(
+        [tokenA.address, tokenB.address, tokenC.address, tokenD.address].sort(
+            (a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            }
+        )
+    );
 
     const vRouterContractFactory = await ethers.getContractFactory('vRouter');
     const vRouterInstance = await vRouterContractFactory.deploy(
@@ -147,7 +152,15 @@ export async function reserveRatioManipulation() {
     // whitelist token C
     await abPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
     //whitelist token C
-    await abPool.setAllowList([tokenC.address, tokenD.address]);
+    await abPool.setAllowList(
+        [tokenC.address, tokenD.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
 
     //pool 2
     const acAddress = await vPairFactoryInstance.getPair(
@@ -157,7 +170,15 @@ export async function reserveRatioManipulation() {
     const acPool = VPair__factory.connect(acAddress, owner);
 
     //whitelist token B
-    await acPool.setAllowList([tokenB.address, tokenD.address]);
+    await acPool.setAllowList(
+        [tokenB.address, tokenD.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
     await acPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
 
     //pool 3
@@ -168,7 +189,15 @@ export async function reserveRatioManipulation() {
     const bcPool = VPair__factory.connect(acAddress, owner);
 
     //whitelist token A
-    await bcPool.setAllowList([tokenA.address, tokenD.address]);
+    await bcPool.setAllowList(
+        [tokenA.address, tokenD.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
     await bcPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
 
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);

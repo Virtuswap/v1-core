@@ -1042,7 +1042,18 @@ describe('vRouter: getVirtualPools', () => {
         ) {
             const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
             const pool = VPair__factory.connect(pairAddr, fixture.owner);
-            await pool.setAllowList(allowList);
+            await pool.setMaxAllowListCount(8);
+            await pool.setAllowList(
+                allowList.sort((a, b) => {
+                    if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                        return -1;
+                    else if (
+                        ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b))
+                    )
+                        return 0;
+                    else return 1;
+                })
+            );
         }
     });
 
@@ -1122,11 +1133,15 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
 
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-        await vPairFactoryInstance.setDefaultAllowList([
-            tokenA.address,
-            tokenB.address,
-            tokenC.address,
-        ]);
+        await vPairFactoryInstance.setDefaultAllowList(
+            [tokenA.address, tokenB.address, tokenC.address].sort((a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            })
+        );
 
         const futureTs = (await time.latest()) + 1000000;
 

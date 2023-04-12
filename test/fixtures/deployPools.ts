@@ -102,16 +102,17 @@ export async function deployPools() {
         vPoolManagerInstance.address
     );
 
-    await vPairFactoryInstance.setDefaultAllowList([
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-    ]);
+    await vPairFactoryInstance.setDefaultAllowList(
+        [tokenA.address, tokenB.address, tokenC.address, tokenD.address].sort(
+            (a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            }
+        )
+    );
 
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);

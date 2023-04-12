@@ -146,6 +146,16 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function setDefaultAllowList(
         address[] calldata _defaultAllowList
     ) external override onlyAdmin {
+        require(
+            _defaultAllowList.length <= 2 ** 24 - 1,
+            'allow list is too long'
+        );
+        for (uint i = 1; i < _defaultAllowList.length; ++i) {
+            require(
+                _defaultAllowList[i] > _defaultAllowList[i - 1],
+                'allow list must be unique and sorted'
+            );
+        }
         defaultAllowList = _defaultAllowList;
         emit DefaultAllowListChanged(_defaultAllowList);
     }

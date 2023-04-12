@@ -61,7 +61,7 @@ describe('vPair1', () => {
 
     it('Should have 4 tokens in allowList', async () => {
         const allowListCount = await fixture.abPool.maxAllowListCount();
-        expect(allowListCount).to.be.equal(8);
+        expect(allowListCount).to.be.equal(4);
     });
 
     it('Should swap native A to B on pool A/B', async () => {
@@ -244,7 +244,7 @@ describe('vPair1', () => {
         const abPool = fixture.abPool;
         const owner = fixture.owner;
 
-        await abPool.setAllowList(accounts.slice(1, 4), {
+        await abPool.setAllowList(accounts.slice(1, 4).sort(), {
             from: owner.address,
         });
         const response1 = await abPool.allowListMap(accounts[1]);
@@ -260,7 +260,8 @@ describe('vPair1', () => {
         const abPool = fixture.abPool;
         const owner = fixture.owner;
 
-        await abPool.setAllowList(accounts.slice(1, 5));
+        await abPool.setMaxAllowListCount(8);
+        await abPool.setAllowList(accounts.slice(1, 5).sort());
 
         let response1 = await abPool.allowListMap(accounts[1]);
         let response2 = await abPool.allowListMap(accounts[2]);
@@ -280,7 +281,7 @@ describe('vPair1', () => {
         expect(response7).to.be.false;
         expect(response8).to.be.false;
 
-        await abPool.setAllowList(accounts.slice(5, 9), {
+        await abPool.setAllowList(accounts.slice(5, 9).sort(), {
             from: owner.address,
         });
 
@@ -364,7 +365,7 @@ describe('vPair1', () => {
         let reservesAfter0 = reservesAfter._balance0;
         let reservesAfter1 = reservesAfter._balance1;
 
-        expect(reservesAfter0).to.equal(1377); // 598 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter0).to.equal(1380); // 598 = MINIUMUM LOCKED LIQUIDITY
         expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
     });
 

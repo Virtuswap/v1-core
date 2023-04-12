@@ -543,6 +543,12 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         address[] memory _allowList
     ) external override onlyFactoryAdmin {
         require(_allowList.length <= maxAllowListCount, 'MW');
+        for (uint i = 1; i < _allowList.length; ++i) {
+            require(
+                _allowList[i] > _allowList[i - 1],
+                'allow list must be unique and sorted'
+            );
+        }
 
         address[] memory _oldWL = allowList;
 
@@ -587,6 +593,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     function setReserveRatioWarningThreshold(
         uint256 _reserveRatioWarningThreshold
     ) external override onlyEmergencyAdmin {
+        require(_reserveRatioWarningThreshold <= maxReserveRatio, 'IRWT');
         reserveRatioWarningThreshold = _reserveRatioWarningThreshold;
     }
 
