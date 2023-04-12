@@ -16,6 +16,8 @@ interface IvExchangeReserves is IvFlashSwapCallback {
         uint leftOverAmount
     );
 
+    event NewIncentivesLimit(uint256 newLimit);
+
     function exchange(
         address jkPair1,
         address ikPair1,

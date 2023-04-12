@@ -52,6 +52,12 @@ interface IvPair {
 
     event AllowListCountChanged(uint24 _maxAllowListCount);
 
+    event EmergencyDiscountChanged(uint256 _newEmergencyDiscount);
+
+    event ReserveRatioWarningThresholdChanged(
+        uint256 _newReserveRatioWarningThreshold
+    );
+
     function fee() external view returns (uint24);
 
     function vFee() external view returns (uint24);

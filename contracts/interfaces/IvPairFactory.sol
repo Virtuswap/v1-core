@@ -23,6 +23,8 @@ interface IvPairFactory {
 
     event ExchangeReserveAddressChanged(address newExchangeReserve);
 
+    event FactoryVPoolManagerChanged(address newVPoolManager);
+
     function createPair(
         address tokenA,
         address tokenB

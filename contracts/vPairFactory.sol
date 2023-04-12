@@ -107,6 +107,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
         );
         vPoolManager = _vPoolManager;
+        emit FactoryVPoolManagerChanged(_vPoolManager);
     }
 
     function setPendingAdmin(

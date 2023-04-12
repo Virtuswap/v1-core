@@ -579,7 +579,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     ) external override onlyFactoryAdmin {
         require(threshold > 0, 'IRT');
         maxReserveRatio = threshold;
-
         emit ReserveThresholdChanged(threshold);
     }
 
@@ -595,6 +594,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     ) external override onlyEmergencyAdmin {
         require(_reserveRatioWarningThreshold <= maxReserveRatio, 'IRWT');
         reserveRatioWarningThreshold = _reserveRatioWarningThreshold;
+        emit ReserveRatioWarningThresholdChanged(_reserveRatioWarningThreshold);
     }
 
     function setEmergencyDiscount(
@@ -602,6 +602,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     ) external override onlyEmergencyAdmin {
         require(_emergencyDiscount <= BASE_FACTOR, 'IED');
         emergencyDiscount = _emergencyDiscount;
+        emit EmergencyDiscountChanged(_emergencyDiscount);
     }
 
     function reservesBaseSum() external view override returns (uint256 sum) {

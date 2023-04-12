@@ -23,6 +23,7 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
         require(msg.sender == IvPairFactory(factory).admin(), 'Admin only');
         require(newLimit <= 100, 'Invalid limit');
         incentivesLimitPct = newLimit;
+        emit NewIncentivesLimit(newLimit);
     }
 
     function vFlashSwapCallback(
