@@ -10,7 +10,7 @@ import './libraries/PoolAddress.sol';
 import './types.sol';
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
-    mapping(address => mapping(address => address)) public pairs;
+    mapping(address => mapping(address => address)) public override pairs;
     address[] public override allPairs;
 
     address public override admin;
@@ -37,13 +37,6 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     constructor() {
         admin = msg.sender;
         emergencyAdmin = msg.sender;
-    }
-
-    function getPair(
-        address tokenA,
-        address tokenB
-    ) external view override returns (address) {
-        return pairs[tokenA][tokenB];
     }
 
     function createPair(

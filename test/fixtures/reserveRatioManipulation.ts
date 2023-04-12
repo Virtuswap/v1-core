@@ -142,7 +142,7 @@ export async function reserveRatioManipulation() {
     //whitelist tokens in pools
 
     //pool 1
-    const abAddress = await vPairFactoryInstance.getPair(
+    const abAddress = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenB.address
     );
@@ -163,7 +163,7 @@ export async function reserveRatioManipulation() {
     );
 
     //pool 2
-    const acAddress = await vPairFactoryInstance.getPair(
+    const acAddress = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenC.address
     );
@@ -182,7 +182,7 @@ export async function reserveRatioManipulation() {
     await acPool.setMaxReserveThreshold(ethers.utils.parseEther('100000'));
 
     //pool 3
-    const bcAddress = await vPairFactoryInstance.getPair(
+    const bcAddress = await vPairFactoryInstance.pairs(
         tokenB.address,
         tokenC.address
     );

@@ -224,7 +224,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         // validate ikPair with factory
         require(
-            IvPairFactory(factory).getPair(vPool.token1, vPool.commonToken) ==
+            IvPairFactory(factory).pairs(vPool.token1, vPool.commonToken) ==
                 ikPair,
             'IIKP'
         );
@@ -345,7 +345,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         // validate ikPair with factory
         require(
-            IvPairFactory(factory).getPair(vPool.token0, vPool.commonToken) ==
+            IvPairFactory(factory).pairs(vPool.token0, vPool.commonToken) ==
                 ikPair,
             'IIKP'
         );

@@ -149,12 +149,12 @@ describe('vPair1', () => {
 
         let aAmountOut = ethers.utils.parseEther('300');
 
-        let jkAddress = await vPairFactoryInstance.getPair(
+        let jkAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
 
-        let ikAddress = await vPairFactoryInstance.getPair(
+        let ikAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
@@ -404,12 +404,12 @@ describe('vPair1', () => {
 
         let aAmountOut = ethers.utils.parseEther('50000');
 
-        let jkAddress = await vPairFactoryInstance.getPair(
+        let jkAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
 
-        let ikAddress = await vPairFactoryInstance.getPair(
+        let ikAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
@@ -438,12 +438,12 @@ describe('vPair1', () => {
         await bcPool.setAllowList([tokenD.address]);
         // tokenA is not in the allow list anymore
 
-        let jkAddress = await vPairFactoryInstance.getPair(
+        let jkAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
 
-        let ikAddress = await vPairFactoryInstance.getPair(
+        let ikAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
@@ -506,12 +506,12 @@ describe('vPair2', () => {
 
         let aAmountOut = ethers.utils.parseEther('100');
 
-        let jkAddress = await vPairFactoryInstance.getPair(
+        let jkAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
 
-        let ikAddress = await vPairFactoryInstance.getPair(
+        let ikAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
@@ -665,12 +665,12 @@ describe('vPair reentrancy guard', () => {
 
         let aAmountOut = ethers.utils.parseEther('10');
 
-        let jkAddress = await vPairFactoryInstance.getPair(
+        let jkAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
 
-        let ikAddress = await vPairFactoryInstance.getPair(
+        let ikAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
@@ -705,12 +705,12 @@ describe('vPair reentrancy guard', () => {
 
         let aAmountOut = ethers.utils.parseEther('10');
 
-        let jkAddress = await vPairFactoryInstance.getPair(
+        let jkAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
 
-        let ikAddress = await vPairFactoryInstance.getPair(
+        let ikAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );

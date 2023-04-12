@@ -1166,11 +1166,11 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             futureTs
         );
 
-        const addr1 = await vPairFactoryInstance.getPair(
+        const addr1 = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenB.address
         );
-        const addr2 = await vPairFactoryInstance.getPair(
+        const addr2 = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );

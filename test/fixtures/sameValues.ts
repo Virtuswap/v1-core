@@ -161,7 +161,7 @@ export async function sameValues() {
     //whitelist tokens in pools
 
     //pool 1
-    const abAddress = await vPairFactoryInstance.getPair(
+    const abAddress = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenB.address
     );
@@ -181,7 +181,7 @@ export async function sameValues() {
     );
 
     //pool 2
-    const acAddress = await vPairFactoryInstance.getPair(
+    const acAddress = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenC.address
     );
@@ -200,7 +200,7 @@ export async function sameValues() {
     await acPool.setMaxReserveThreshold(2000);
 
     //pool 3
-    const bcAddress = await vPairFactoryInstance.getPair(
+    const bcAddress = await vPairFactoryInstance.pairs(
         tokenB.address,
         tokenC.address
     );
@@ -219,7 +219,7 @@ export async function sameValues() {
     await bcPool.setMaxReserveThreshold(2000);
 
     // pool 4
-    const bdAddress = await vPairFactoryInstance.getPair(
+    const bdAddress = await vPairFactoryInstance.pairs(
         tokenB.address,
         tokenD.address
     );

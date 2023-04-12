@@ -54,7 +54,7 @@ contract vPoolManager is IvPoolManager {
                 jk0 != token0 &&
                 jk1 != token0 &&
                 IvPair(jkPair).allowListMap(token0) &&
-                IvPairFactory(pairFactory).getPair(
+                IvPairFactory(pairFactory).pairs(
                     token0,
                     jk0 == token1 ? jk1 : jk0
                 ) !=
@@ -74,7 +74,7 @@ contract vPoolManager is IvPoolManager {
                 jk1 != token0 &&
                 IvPair(jkPair).allowListMap(token0)
             ) {
-                ikPair = IvPairFactory(pairFactory).getPair(
+                ikPair = IvPairFactory(pairFactory).pairs(
                     token0,
                     jk0 == token1 ? jk1 : jk0
                 );
@@ -92,12 +92,12 @@ contract vPoolManager is IvPoolManager {
     ) external override {
         require(
             msg.sender ==
-                IvPairFactory(pairFactory).getPair(
+                IvPairFactory(pairFactory).pairs(
                     vPool.commonToken,
                     vPool.token0
                 ) ||
                 msg.sender ==
-                IvPairFactory(pairFactory).getPair(
+                IvPairFactory(pairFactory).pairs(
                     vPool.commonToken,
                     vPool.token1
                 ),

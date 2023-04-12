@@ -51,12 +51,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );
@@ -128,12 +128,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );
@@ -227,12 +227,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );
@@ -326,12 +326,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );

@@ -3,7 +3,7 @@ pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import "@openzeppelin/contracts/utils/Multicall.sol";
+import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './types.sol';
 import './interfaces/IvPair.sol';
@@ -79,12 +79,12 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
         address _jkToken1;
         (_jkToken0, _jkToken1) = IvPair(jkPair1).getTokens();
         require(
-            IvPairFactory(factory).getPair(_jkToken0, _jkToken1) != address(0),
+            IvPairFactory(factory).pairs(_jkToken0, _jkToken1) != address(0),
             'IJKP1'
         );
         (_jkToken0, _jkToken1) = IvPair(jkPair2).getTokens();
         require(
-            IvPairFactory(factory).getPair(_jkToken0, _jkToken1) != address(0),
+            IvPairFactory(factory).pairs(_jkToken0, _jkToken1) != address(0),
             'IJKP2'
         );
 

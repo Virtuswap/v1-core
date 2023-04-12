@@ -104,12 +104,12 @@ describe('Reserve Ratio 1', () => {
         const owner = fixture.owner;
         const vRouterInstance = fixture.vRouterInstance;
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenC.address,
             tokenB.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
@@ -154,12 +154,12 @@ describe('Reserve Ratio 1', () => {
         const owner = fixture.owner;
         const vRouterInstance = fixture.vRouterInstance;
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenC.address,
             tokenA.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
@@ -196,12 +196,12 @@ describe('Reserve Ratio 1', () => {
     });
 
     // it("Should update price after a 50% drop in price of C in pool A/B", async () => {
-    //   const ikPair = await vPairFactoryInstance.getPair(
+    //   const ikPair = await vPairFactoryInstance.pairs(
     //     tokenC.address,
     //     tokenB.address
     //   );
 
-    //   const jkPair = await vPairFactoryInstance.getPair(
+    //   const jkPair = await vPairFactoryInstance.pairs(
     //     tokenB.address,
     //     tokenA.address
     //   );
@@ -306,12 +306,12 @@ describe('Reserve Ratio 1', () => {
 
     //   let amountOutA = web3.utils.toWei("1", "ether");
 
-    //   const ikPair2 = await vPairFactoryInstance.getPair(
+    //   const ikPair2 = await vPairFactoryInstance.pairs(
     //     tokenC.address,
     //     tokenB.address
     //   );
 
-    //   const jkPair2 = await vPairFactoryInstance.getPair(
+    //   const jkPair2 = await vPairFactoryInstance.pairs(
     //     tokenB.address,
     //     tokenA.address
     //   );
@@ -357,12 +357,12 @@ describe('Reserve Ratio 1', () => {
     // });
 
     // it("Should increase reserveRatio and reservesBaseValue of D after adding D to pool A/B", async () => {
-    //   const ikPair = await vPairFactoryInstance.getPair(
+    //   const ikPair = await vPairFactoryInstance.pairs(
     //     tokenD.address,
     //     tokenB.address
     //   );
 
-    //   const jkPair = await vPairFactoryInstance.getPair(
+    //   const jkPair = await vPairFactoryInstance.pairs(
     //     tokenB.address,
     //     tokenA.address
     //   );
@@ -418,7 +418,7 @@ describe('Reserve Ratio 1', () => {
     //     const vRouterInstance = fixture.vRouterInstance;
     //     const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-    //     const jkPair = await vPairFactoryInstance.getPair(
+    //     const jkPair = await vPairFactoryInstance.pairs(
     //       tokenB.address,
     //       tokenA.address
     //     );
@@ -458,12 +458,12 @@ describe('Reserve Ratio 1', () => {
         const vRouterInstance = fixture.vRouterInstance;
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenC.address,
             tokenB.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
@@ -507,7 +507,7 @@ describe('Reserve Ratio 1', () => {
         const vRouterInstance = fixture.vRouterInstance;
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-        const poolAddress = await vPairFactoryInstance.getPair(
+        const poolAddress = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenA.address
         );
@@ -569,12 +569,12 @@ describe('Reserve Ratio 2', () => {
         const vRouterInstance = fixture.vRouterInstance;
 
         let amountCIn = ethers.utils.parseEther('500000');
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenC.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenB.address
         );
@@ -622,12 +622,12 @@ describe('Reserve Ratio 2', () => {
         const vRouterInstance = fixture.vRouterInstance;
 
         let amountDIn = ethers.utils.parseEther('500000');
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenD.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenB.address
         );
@@ -671,12 +671,12 @@ describe('Reserve Ratio 2', () => {
         const vRouterInstance = fixture.vRouterInstance;
 
         let amountCIn = ethers.utils.parseEther('300000');
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenB.address
         );
@@ -724,12 +724,12 @@ describe('Reserve Ratio 2', () => {
         const vRouterInstance = fixture.vRouterInstance;
 
         let amountAIn = ethers.utils.parseEther('1000000');
-        const ikPair = await vPairFactoryInstance.getPair(
+        const ikPair = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenB.address
         );
 
-        const jkPair = await vPairFactoryInstance.getPair(
+        const jkPair = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenD.address
         );

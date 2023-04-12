@@ -30,7 +30,7 @@ interface IvPairFactory {
         address tokenB
     ) external returns (address);
 
-    function getPair(
+    function pairs(
         address tokenA,
         address tokenB
     ) external view returns (address);

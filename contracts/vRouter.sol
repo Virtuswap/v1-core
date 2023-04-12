@@ -4,7 +4,7 @@ pragma solidity 0.8.2;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import "@openzeppelin/contracts/utils/Multicall.sol";
+import '@openzeppelin/contracts/utils/Multicall.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import './types.sol';
@@ -256,7 +256,7 @@ contract vRouter is IvRouter, Multicall {
         uint256 amountAMin,
         uint256 amountBMin
     ) internal returns (uint256 amountA, uint256 amountB, address pairAddress) {
-        pairAddress = IvPairFactory(factory).getPair(tokenA, tokenB);
+        pairAddress = IvPairFactory(factory).pairs(tokenA, tokenB);
         // create the pair if it doesn't exist yet
         if (pairAddress == address(0))
             pairAddress = IvPairFactory(factory).createPair(tokenA, tokenB);
