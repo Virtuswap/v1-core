@@ -140,44 +140,62 @@ library vSwapLibrary {
         // never reverts if vPool is valid and balances <= 10^32
         MaxTradeAmountParams memory params;
 
-        params.f = uint256(vPool.fee);
-        params.b0 = IvPair(vPool.jkPair).pairBalance0();
-        params.b1 = IvPair(vPool.jkPair).pairBalance1();
-        params.vb0 = vPool.balance0;
-        params.vb1 = vPool.balance1;
-        params.R = IvPair(vPool.jkPair).reserveRatioFactor();
-        params.F = uint256(PRICE_FEE_FACTOR);
-        params.T = IvPair(vPool.jkPair).maxReserveRatio();
-        params.r = IvPair(vPool.jkPair).reserves(vPool.token0);
-        params.s =
+        params.fee = uint256(vPool.fee);
+        params.balance0 = IvPair(vPool.jkPair).pairBalance0();
+        params.balance1 = IvPair(vPool.jkPair).pairBalance1();
+        params.vBalance0 = vPool.balance0;
+        params.vBalance1 = vPool.balance1;
+        params.reserveRatioFactor = IvPair(vPool.jkPair).reserveRatioFactor();
+        params.priceFeeFactor = uint256(PRICE_FEE_FACTOR);
+        params.maxReserveRatio = IvPair(vPool.jkPair).maxReserveRatio();
+        params.reserves = IvPair(vPool.jkPair).reserves(vPool.token0);
+        params.reservesBaseValueSum =
             IvPair(vPool.jkPair).reservesBaseSum() -
             IvPair(vPool.jkPair).reservesBaseValue(vPool.token0);
 
         if (IvPair(vPool.jkPair).token0() == vPool.token1) {
             // all calculations fit in uint256
             unchecked {
-                uint256 a = params.vb1 * params.R * params.f;
-                int256 b = int256(params.vb0) *
+                uint256 a = params.vBalance1 *
+                    params.reserveRatioFactor *
+                    params.fee;
+                int256 b = int256(params.vBalance0) *
                     (-2 *
-                        int256(params.b0 * params.f * params.T) +
                         int256(
-                            params.vb1 *
+                            params.balance0 *
+                                params.fee *
+                                params.maxReserveRatio
+                        ) +
+                        int256(
+                            params.vBalance1 *
                                 (2 *
-                                    params.f *
-                                    params.T +
-                                    params.F *
-                                    params.R) +
-                                params.f *
-                                params.R *
-                                params.s
+                                    params.fee *
+                                    params.maxReserveRatio +
+                                    params.priceFeeFactor *
+                                    params.reserveRatioFactor) +
+                                params.fee *
+                                params.reserveRatioFactor *
+                                params.reservesBaseValueSum
                         )) +
-                    int256(params.f * params.r * params.R * params.vb1);
-                uint256 c1 = params.F * params.vb0;
-                int256 c2 = 2 *
-                    int256(params.b0 * params.T * params.vb0) -
                     int256(
-                        params.R *
-                            (params.r * params.vb1 + params.s * params.vb0)
+                        params.fee *
+                            params.reserves *
+                            params.reserveRatioFactor *
+                            params.vBalance1
+                    );
+                uint256 c1 = params.priceFeeFactor * params.vBalance0;
+                int256 c2 = 2 *
+                    int256(
+                        params.balance0 *
+                            params.maxReserveRatio *
+                            params.vBalance0
+                    ) -
+                    int256(
+                        params.reserveRatioFactor *
+                            (params.reserves *
+                                params.vBalance1 +
+                                params.reservesBaseValueSum *
+                                params.vBalance0)
                     );
 
                 (bool negativeB, uint256 ub) = (
@@ -189,7 +207,7 @@ library vSwapLibrary {
                 );
 
                 // initial approximation: maxAmountIn always <= vb0
-                maxAmountIn = params.vb0;
+                maxAmountIn = params.vBalance0;
                 // 2 * a * x + b <= 5 * 10^75 < 2^256
                 uint256 temp = (
                     negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
@@ -293,11 +311,17 @@ library vSwapLibrary {
             unchecked {
                 maxAmountIn =
                     Math.mulDiv(
-                        params.b1 * params.vb0,
-                        2 * params.b0 * params.T - params.R * params.s,
-                        params.b0 * params.R * params.vb1
+                        params.balance1 * params.vBalance0,
+                        2 *
+                            params.balance0 *
+                            params.maxReserveRatio -
+                            params.reserveRatioFactor *
+                            params.reservesBaseValueSum,
+                        params.balance0 *
+                            params.reserveRatioFactor *
+                            params.vBalance1
                     ) -
-                    params.r;
+                    params.reserves;
             }
         }
     }

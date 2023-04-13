@@ -3,16 +3,16 @@
 pragma solidity 0.8.2;
 
 struct MaxTradeAmountParams {
-    uint256 f;
-    uint256 b0;
-    uint256 b1;
-    uint256 vb0;
-    uint256 vb1;
-    uint256 R;
-    uint256 F;
-    uint256 T;
-    uint256 r;
-    uint256 s;
+    uint256 fee;
+    uint256 balance0;
+    uint256 balance1;
+    uint256 vBalance0;
+    uint256 vBalance1;
+    uint256 reserveRatioFactor;
+    uint256 priceFeeFactor;
+    uint256 maxReserveRatio;
+    uint256 reserves;
+    uint256 reservesBaseValueSum;
 }
 
 struct VirtualPoolModel {
