@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './types.sol';
+import './libraries/PoolAddress.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvExchangeReserves.sol';
 import './interfaces/IvPairFactory.sol';
@@ -37,7 +38,11 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             (ExchangeReserveCallbackParams)
         );
 
-        require(msg.sender == decodedData.jkPair1, 'IC');
+        (address jk0, address jk1) = IvPair(decodedData.jkPair1).getTokens();
+        require(
+            msg.sender == PoolAddress.computeAddress(factory, jk0, jk1),
+            'IC'
+        );
 
         (address _leftoverToken, uint256 _leftoverAmount) = IvPair(
             decodedData.jkPair2
