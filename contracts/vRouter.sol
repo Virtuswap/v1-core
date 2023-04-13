@@ -133,6 +133,10 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        require(
+            tokenIn == WETH9 || msg.value == 0,
+            'VSWAP: ETHER VALUE SHOULD BE ZERO'
+        );
         getPair(tokenIn, tokenOut).swapNative(
             amountOut,
             tokenOut,
@@ -160,6 +164,10 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        require(
+            tokenIn == WETH9 || msg.value == 0,
+            'VSWAP: ETHER VALUE SHOULD BE ZERO'
+        );
         uint256 amountOut = getAmountOut(tokenIn, tokenOut, amountIn);
         require(amountOut >= minAmountOut, 'VSWAP: INSUFFICIENT_OUTPUT_AMOUNT');
 
@@ -191,6 +199,13 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        {
+            (address ik0, address ik1) = IvPair(ikPair).getTokens();
+            require(
+                (ik0 == commonToken ? ik1 : ik0) == WETH9 || msg.value == 0,
+                'VSWAP: ETHER VALUE SHOULD BE ZERO'
+            );
+        }
         address jkAddress = getPairAddress(tokenOut, commonToken);
 
         IvPair(jkAddress).swapReserveToNative(
@@ -221,6 +236,13 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        {
+            (address ik0, address ik1) = IvPair(ikPair).getTokens();
+            require(
+                (ik0 == commonToken ? ik1 : ik0) == WETH9 || msg.value == 0,
+                'VSWAP: ETHER VALUE SHOULD BE ZERO'
+            );
+        }
         address jkAddress = getPairAddress(tokenOut, commonToken);
         uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
 
