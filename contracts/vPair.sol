@@ -556,8 +556,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         //set new allowList
         allowList = _allowList;
+        address token0_ = token0;
+        address token1_ = token1;
         for (uint256 i = 0; i < _allowList.length; ++i)
-            allowListMap[_allowList[i]] = true;
+            if (_allowList[i] != token0_ && _allowList[i] != token1_)
+                allowListMap[_allowList[i]] = true;
 
         emit AllowListChanged(_allowList);
     }
