@@ -28,8 +28,8 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
     }
 
     function vFlashSwapCallback(
-        address tokenIn,
-        address tokenOut,
+        address,
+        address,
         uint256 requiredBackAmount,
         bytes calldata data
     ) external override {
