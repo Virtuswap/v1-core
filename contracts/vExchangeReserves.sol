@@ -80,16 +80,16 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
         address ikPair2,
         uint256 flashAmountOut
     ) external override {
-        address _jkToken0;
-        address _jkToken1;
-        (_jkToken0, _jkToken1) = IvPair(jkPair1).getTokens();
+        (address _jkToken0, address _jkToken1) = IvPair(jkPair1).getTokens();
         require(
-            IvPairFactory(factory).pairs(_jkToken0, _jkToken1) != address(0),
+            PoolAddress.computeAddress(factory, _jkToken0, _jkToken1) ==
+                jkPair1,
             'IJKP1'
         );
         (_jkToken0, _jkToken1) = IvPair(jkPair2).getTokens();
         require(
-            IvPairFactory(factory).pairs(_jkToken0, _jkToken1) != address(0),
+            PoolAddress.computeAddress(factory, _jkToken0, _jkToken1) ==
+                jkPair2,
             'IJKP2'
         );
 
