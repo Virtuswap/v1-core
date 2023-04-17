@@ -134,6 +134,40 @@ library vSwapLibrary {
         vPool.ikPair = ikPair;
     }
 
+    /** @dev The function is used to calculate maximum virtual trade amount for
+     * swapReserveToNative. The maximum amount that can be traded is such that
+     * after the swap reserveRatio will be equal to maxReserveRatio:
+     *
+     * (reserveBaseValueSum + newReserveBaseValue(vPool.token0)) * reserveRatioFactor / (2 * balance0) = maxReserveRatio,
+     * where balance0 is the balance of token0 after the swap (i.e. oldBalance0 + amountOut),
+     *       reserveBaseValueSum is SUM(reserveBaseValue[i]) without reserveBaseValue(vPool.token0)
+     *       newReserveBaseValue(vPool.token0) is reserveBaseValue(vPool.token0) after the swap
+     *
+     * amountOut can be expressed through amountIn:
+     * amountOut = (amountIn * fee * vBalance1) / (amountIn * fee + vBalance0 * priceFeeFactor)
+     *
+     * reserveBaseValue(vPool.token0) can be expessed as:
+     * if vPool.token1 == token0:
+     *     reserveBaseValue(vPool.token0) = reserves[vPool.token0] * vBalance1 / vBalance0
+     * else:
+     *     reserveBaseValue(vPool.token0) = (reserves[vPool.token0] * vBalance1 * balance0) / (vBalance0 * balance1)
+     *
+     * Given all that we have two equations for finding maxAmountIn:
+     * if vPool.token1 == token0:
+     *     Ax^2 + Bx + C = 0,
+     *     where A = fee * reserveRatioFactor * vBalance1,
+     *           B = vBalance0 * (-2 * balance0 * fee * maxReserveRatio + vBalance1 *
+     *              (2 * fee * maxReserveRatio + priceFeeFactor * reserveRatioFactor) +
+     *              fee * reserveRatioFactor * reservesBaseValueSum) +
+     *              fee * reserves * reserveRatioFactor * vBalance1,
+     *           C = -priceFeeFactor * balance0 * (2 * balance0 * maxReserveRatio * vBalance0 -
+     *              reserveRatioFactor * (reserves * vBalance1 + reservesBaseValueSum * vBalance0));
+     * if vPool.token1 == token1:
+     *     x = balance1 * vBalance0 * (2 * balance0 * maxReserveRatio - reserveRatioFactor * reservesBaseValueSum) /
+     *          (balance0 * reserveRatioFactor * vBalance1)
+     *
+     * In the first case, we solve quadratic equation using Newton method.
+     */
     function getMaxVirtualTradeAmountRtoN(
         VirtualPoolModel memory vPool
     ) internal view returns (uint256 maxAmountIn) {
@@ -183,6 +217,7 @@ library vSwapLibrary {
                             params.reserveRatioFactor *
                             params.vBalance1
                     );
+                // we split C into c1 * c2 to fit in uint256
                 uint256 c1 = params.priceFeeFactor * params.vBalance0;
                 int256 c2 = 2 *
                     int256(
