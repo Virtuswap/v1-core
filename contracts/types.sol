@@ -43,7 +43,6 @@ struct ExchangeReserveCallbackParams {
 }
 
 struct SwapCallbackData {
-    address caller;
     uint256 tokenInMax;
     uint ETHValue;
     address jkPool;
