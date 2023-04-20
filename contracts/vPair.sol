@@ -27,8 +27,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
     uint112 public override pairBalance0;
     uint112 public override pairBalance1;
-    uint24 public override fee;
-    uint24 public override vFee;
+    uint16 public override fee;
+    uint16 public override vFee;
 
     uint32 private _lastBlockUpdated;
     uint112 private _lastPairBalance0;
@@ -566,8 +566,8 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     }
 
     function setFee(
-        uint24 _fee,
-        uint24 _vFee
+        uint16 _fee,
+        uint16 _vFee
     ) external override onlyFactoryAdmin {
         require(_fee > 0 && _vFee > 0 && _fee < 1000 && _vFee < 1000, 'IFC');
         fee = _fee;

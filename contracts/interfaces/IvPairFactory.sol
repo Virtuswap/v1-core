@@ -8,8 +8,8 @@ interface IvPairFactory {
         address factory,
         address token0,
         address token1,
-        uint24 fee,
-        uint24 vFee,
+        uint16 fee,
+        uint16 vFee,
         uint256 maxReserveRatio
     );
 

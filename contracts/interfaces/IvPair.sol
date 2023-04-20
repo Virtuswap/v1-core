@@ -46,7 +46,7 @@ interface IvPair {
 
     event ReserveSync(address asset, uint256 balance, uint256 rRatio);
 
-    event FeeChanged(uint24 fee, uint24 vFee);
+    event FeeChanged(uint16 fee, uint16 vFee);
 
     event ReserveThresholdChanged(uint256 newThreshold);
 
@@ -58,11 +58,11 @@ interface IvPair {
         uint256 _newReserveRatioWarningThreshold
     );
 
-    function fee() external view returns (uint24);
+    function fee() external view returns (uint16);
 
-    function vFee() external view returns (uint24);
+    function vFee() external view returns (uint16);
 
-    function setFee(uint24 _fee, uint24 _vFee) external;
+    function setFee(uint16 _fee, uint16 _vFee) external;
 
     function swapNative(
         uint256 amountOut,
