@@ -105,14 +105,14 @@ contract vRouter is IvRouter, Multicall {
             );
 
             //send any ETH leftovers to caller
-            (bool success, ) = decodedData.caller.call{
+            (bool success, ) = tx.origin.call{
                 value: address(this).balance
             }('');
             require(success, 'VSWAP: TRANSFER FAILED');
         } else {
             SafeERC20.safeTransferFrom(
                 IERC20(tokenIn),
-                decodedData.caller,
+                tx.origin,
                 msg.sender,
                 requiredBackAmount
             );
@@ -143,7 +143,6 @@ contract vRouter is IvRouter, Multicall {
             tokenOut == WETH9 ? address(this) : to,
             abi.encode(
                 SwapCallbackData({
-                    caller: msg.sender,
                     tokenInMax: maxAmountIn,
                     ETHValue: address(this).balance,
                     jkPool: address(0)
@@ -177,7 +176,6 @@ contract vRouter is IvRouter, Multicall {
             tokenOut == WETH9 ? address(this) : to,
             abi.encode(
                 SwapCallbackData({
-                    caller: msg.sender,
                     tokenInMax: amountIn,
                     ETHValue: address(this).balance,
                     jkPool: address(0)
@@ -214,7 +212,6 @@ contract vRouter is IvRouter, Multicall {
             tokenOut == WETH9 ? address(this) : to,
             abi.encode(
                 SwapCallbackData({
-                    caller: msg.sender,
                     tokenInMax: maxAmountIn,
                     ETHValue: address(this).balance,
                     jkPool: jkAddress
@@ -257,7 +254,6 @@ contract vRouter is IvRouter, Multicall {
             tokenOut == WETH9 ? address(this) : to,
             abi.encode(
                 SwapCallbackData({
-                    caller: msg.sender,
                     tokenInMax: amountIn,
                     ETHValue: address(this).balance,
                     jkPool: jkAddress

@@ -249,7 +249,8 @@ library vSwapLibrary {
                 );
                 uint256 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
@@ -263,7 +264,8 @@ library vSwapLibrary {
                 );
                 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
@@ -277,7 +279,8 @@ library vSwapLibrary {
                 );
                 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
@@ -291,7 +294,8 @@ library vSwapLibrary {
                 );
                 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
@@ -305,7 +309,8 @@ library vSwapLibrary {
                 );
                 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
@@ -319,7 +324,8 @@ library vSwapLibrary {
                 );
                 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
@@ -333,7 +339,8 @@ library vSwapLibrary {
                 );
                 derivative = temp + a * maxAmountIn;
                 if (negativeC) {
-                    maxAmountIn +=
+                    maxAmountIn =
+                        maxAmountIn +
                         Math.mulDiv(c1, uc2, derivative) -
                         Math.mulDiv(maxAmountIn, temp, derivative);
                 } else {
