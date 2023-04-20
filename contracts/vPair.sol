@@ -34,6 +34,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint112 private _lastPairBalance0;
     uint112 private _lastPairBalance1;
 
+    uint256 public override reservesBaseValueSum;
     uint256 public override maxReserveRatio;
     uint256 public reserveRatioWarningThreshold;
     uint256 public emergencyDiscount;
@@ -308,6 +309,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                     pairBalance0
                 );
             }
+            unchecked {
+                reservesBaseValueSum += _reserveBaseValue;
+                reservesBaseValueSum -= reservesBaseValue[vPool.token1];
+            }
             reservesBaseValue[vPool.token1] = _reserveBaseValue;
         }
 
@@ -378,11 +383,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         {
             //update reserve balance in the equivalent of token0 value
-            uint256 _reserveBaseValue = tokenInBalance;
-
             //re-calculate price of reserve asset in token0 for the whole pool blance
-            _reserveBaseValue = vSwapLibrary.quote(
-                _reserveBaseValue,
+            uint256 _reserveBaseValue = vSwapLibrary.quote(
+                tokenInBalance,
                 vPool.balance0,
                 vPool.balance1
             );
@@ -396,6 +399,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 );
             }
 
+            unchecked {
+                reservesBaseValueSum += _reserveBaseValue;
+                reservesBaseValueSum -= reservesBaseValue[vPool.token0];
+            }
             reservesBaseValue[vPool.token0] = _reserveBaseValue;
         }
 
@@ -434,14 +441,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         override
         returns (uint256 rRatio)
     {
-        uint256 totalReserves = 0;
-        uint256 allowListLength = allowList.length;
-        for (uint256 i = 0; i < allowListLength; ++i) {
-            totalReserves += reservesBaseValue[allowList[i]];
-        }
-
+        uint256 _pairBalance0 = pairBalance0;
         rRatio = pairBalance0 > 0
-            ? (totalReserves * RESERVE_RATIO_FACTOR) / (2 * pairBalance0)
+            ? (reservesBaseValueSum * RESERVE_RATIO_FACTOR) /
+                (_pairBalance0 << 1)
             : 0;
     }
 
@@ -550,7 +553,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         }
 
         address[] memory _oldWL = allowList;
-
         for (uint256 i = 0; i < _oldWL.length; ++i)
             allowListMap[_oldWL[i]] = false;
 
@@ -558,9 +560,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         allowList = _allowList;
         address token0_ = token0;
         address token1_ = token1;
+        uint256 newReservesBaseValueSum;
         for (uint256 i = 0; i < _allowList.length; ++i)
-            if (_allowList[i] != token0_ && _allowList[i] != token1_)
+            if (_allowList[i] != token0_ && _allowList[i] != token1_) {
                 allowListMap[_allowList[i]] = true;
+                newReservesBaseValueSum += reservesBaseValue[_allowList[i]];
+            }
+        reservesBaseValueSum = newReservesBaseValueSum;
 
         emit AllowListChanged(_allowList);
     }
@@ -605,13 +611,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(_emergencyDiscount <= BASE_FACTOR, 'IED');
         emergencyDiscount = _emergencyDiscount;
         emit EmergencyDiscountChanged(_emergencyDiscount);
-    }
-
-    function reservesBaseSum() external view override returns (uint256 sum) {
-        uint256 allowListLength = allowList.length;
-        for (uint256 i = 0; i < allowListLength; ++i) {
-            sum += reservesBaseValue[allowList[i]];
-        }
     }
 
     function reserveRatioFactor() external pure override returns (uint256) {

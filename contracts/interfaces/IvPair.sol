@@ -137,7 +137,7 @@ interface IvPair {
 
     function reserves(address reserveAddress) external view returns (uint256);
 
-    function reservesBaseSum() external view returns (uint256);
+    function reservesBaseValueSum() external view returns (uint256);
 
     function reserveRatioFactor() external pure returns (uint256);
 }

@@ -184,7 +184,7 @@ library vSwapLibrary {
         params.maxReserveRatio = IvPair(vPool.jkPair).maxReserveRatio();
         params.reserves = IvPair(vPool.jkPair).reserves(vPool.token0);
         params.reservesBaseValueSum =
-            IvPair(vPool.jkPair).reservesBaseSum() -
+            IvPair(vPool.jkPair).reservesBaseValueSum() -
             IvPair(vPool.jkPair).reservesBaseValue(vPool.token0);
 
         if (IvPair(vPool.jkPair).token0() == vPool.token1) {
