@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import '../types.sol';
 
@@ -16,7 +16,8 @@ interface IvPoolManager {
     ) external view returns (VirtualPoolModel[] memory vPools);
 
     function updateVirtualPoolBalances(
-        VirtualPoolModel memory vPool,
+        address jkPair,
+        address ikPair,
         uint256 balance0,
         uint256 balance1
     ) external;
