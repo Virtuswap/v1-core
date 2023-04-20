@@ -42,7 +42,7 @@ interface IvPair {
 
     event AllowListChanged(address[] tokens);
 
-    event Sync(uint256 balance0, uint256 balance1);
+    event Sync(uint112 balance0, uint112 balance1);
 
     event ReserveSync(address asset, uint256 balance, uint256 rRatio);
 
@@ -110,23 +110,23 @@ interface IvPair {
 
     function token1() external view returns (address);
 
-    function pairBalance0() external view returns (uint256);
+    function pairBalance0() external view returns (uint112);
 
-    function pairBalance1() external view returns (uint256);
+    function pairBalance1() external view returns (uint112);
 
     function maxAllowListCount() external view returns (uint24);
 
     function maxReserveRatio() external view returns (uint256);
 
-    function getBalances() external view returns (uint256, uint256);
+    function getBalances() external view returns (uint112, uint112);
 
     function getLastBalances()
         external
         view
         returns (
-            uint256 _lastBalance0,
-            uint256 _lastBalance1,
-            uint256 _blockNumber
+            uint112 _lastBalance0,
+            uint112 _lastBalance1,
+            uint32 _blockNumber
         );
 
     function getTokens() external view returns (address, address);

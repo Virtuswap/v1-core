@@ -22,19 +22,17 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint24 internal constant DELAY = 2;
 
     address public immutable factory;
-
     address public immutable override token0;
     address public immutable override token1;
 
+    uint112 public override pairBalance0;
+    uint112 public override pairBalance1;
     uint24 public override fee;
     uint24 public override vFee;
 
-    uint256 public override pairBalance0;
-    uint256 public override pairBalance1;
-
-    uint256 private _lastBlockUpdated;
-    uint256 private _lastPairBalance0;
-    uint256 private _lastPairBalance1;
+    uint32 private _lastBlockUpdated;
+    uint112 private _lastPairBalance0;
+    uint112 private _lastPairBalance1;
 
     uint256 public override maxReserveRatio;
     uint256 public reserveRatioWarningThreshold;
@@ -87,10 +85,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         reserveRatioWarningThreshold = 1900;
     }
 
-    function _update(uint256 balance0, uint256 balance1) internal {
+    function _update(uint112 balance0, uint112 balance1) internal {
         if (block.number > _lastBlockUpdated + DELAY) {
             (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
-            _lastBlockUpdated = block.number;
+            _lastBlockUpdated = uint32(block.number);
         }
 
         (pairBalance0, pairBalance1) = (balance0, balance1);
@@ -103,9 +101,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         view
         override
         returns (
-            uint256 _lastBalance0,
-            uint256 _lastBalance1,
-            uint256 _blockNumber
+            uint112 _lastBalance0,
+            uint112 _lastBalance1,
+            uint32 _blockNumber
         )
     {
         return (_lastPairBalance0, _lastPairBalance1, _lastBlockUpdated);
@@ -115,7 +113,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         external
         view
         override
-        returns (uint256 _balance0, uint256 _balance1)
+        returns (uint112 _balance0, uint112 _balance1)
     {
         return (pairBalance0, pairBalance1);
     }
@@ -177,8 +175,16 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             bool _isTokenIn0 = _tokenIn == token0;
 
             _update(
-                _isTokenIn0 ? _balanceIn + _amountIn : _balanceOut - amountOut,
-                _isTokenIn0 ? _balanceOut - amountOut : _balanceIn + _amountIn
+                uint112(
+                    _isTokenIn0
+                        ? _balanceIn + _amountIn
+                        : _balanceOut - amountOut
+                ),
+                uint112(
+                    _isTokenIn0
+                        ? _balanceOut - amountOut
+                        : _balanceIn + _amountIn
+                )
             );
         }
 
@@ -308,7 +314,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         //update reserve balance
         reserves[vPool.token1] -= amountOut;
 
-        _update(fetchBalance(token0), fetchBalance(token1));
+        _update(uint112(fetchBalance(token0)), uint112(fetchBalance(token1)));
 
         emit ReserveSync(
             vPool.token1,
@@ -396,7 +402,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         //update reserve balance
         reserves[vPool.token0] = tokenInBalance;
 
-        _update(fetchBalance(token0), fetchBalance(token1));
+        _update(uint112(fetchBalance(token0)), uint112(fetchBalance(token1)));
 
         uint256 reserveRatio = calculateReserveRatio();
         require(reserveRatio <= maxReserveRatio, 'TBPT'); // reserve amount goes beyond pool threshold
@@ -473,7 +479,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         _mint(to, liquidity);
 
-        _update(currentBalance0, currentBalance1);
+        _update(uint112(currentBalance0), uint112(currentBalance1));
         emit Mint(to, amount0, amount1, liquidity, totalSupply());
     }
 
@@ -528,7 +534,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         balance0 = fetchBalance(_token0);
         balance1 = fetchBalance(_token1);
 
-        _update(balance0, balance1);
+        _update(uint112(balance0), uint112(balance1));
         emit Burn(msg.sender, amount0, amount1, to, totalSupply());
     }
 

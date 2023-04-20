@@ -11,9 +11,9 @@ import './interfaces/IvPoolManager.sol';
 
 contract vPoolManager is IvPoolManager {
     struct VBalancesWithBlock {
-        uint128 balance0;
-        uint128 balance1;
-        uint256 blockLastUpdated;
+        uint112 balance0;
+        uint112 balance1;
+        uint32 blockLastUpdated;
     }
 
     mapping(address => mapping(address => VBalancesWithBlock)) vPoolsBalancesCache;
@@ -102,9 +102,9 @@ contract vPoolManager is IvPoolManager {
             'Only pools'
         );
         vPoolsBalancesCache[jkPair][ikPair] = VBalancesWithBlock(
-            uint128(balance0),
-            uint128(balance1),
-            block.number
+            uint112(balance0),
+            uint112(balance1),
+            uint32(block.number)
         );
     }
 

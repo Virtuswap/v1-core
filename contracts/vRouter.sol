@@ -105,9 +105,7 @@ contract vRouter is IvRouter, Multicall {
             );
 
             //send any ETH leftovers to caller
-            (bool success, ) = tx.origin.call{
-                value: address(this).balance
-            }('');
+            (bool success, ) = tx.origin.call{value: address(this).balance}('');
             require(success, 'VSWAP: TRANSFER FAILED');
         } else {
             SafeERC20.safeTransferFrom(
