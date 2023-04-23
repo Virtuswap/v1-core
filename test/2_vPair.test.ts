@@ -197,7 +197,7 @@ describe('vPair1', () => {
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
         const vRouterInstance = fixture.vRouterInstance;
 
-        await vPairFactoryInstance.setExchangeReservesAddress(owner.address);
+        //await vPairFactoryInstance.setExchangeReservesAddress(owner.address);
 
         let amountOut = await abPool.reserves(tokenC.address);
 
@@ -365,7 +365,7 @@ describe('vPair1', () => {
         let reservesAfter0 = reservesAfter._balance0;
         let reservesAfter1 = reservesAfter._balance1;
 
-        expect(reservesAfter0).to.equal(1380); // 598 = MINIUMUM LOCKED LIQUIDITY
+        expect(reservesAfter0).to.equal(1405); // 598 = MINIUMUM LOCKED LIQUIDITY
         expect(reservesAfter1).to.equal(1734); // 1733 = MINIUMUM LOCKED LIQUIDITY
     });
 
@@ -502,7 +502,7 @@ describe('vPair2', () => {
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
         const vRouterInstance = fixture.vRouterInstance;
 
-        await vPairFactoryInstance.setExchangeReservesAddress(owner.address);
+        //await vPairFactoryInstance.setExchangeReservesAddress(owner.address);
 
         let aAmountOut = ethers.utils.parseEther('100');
 

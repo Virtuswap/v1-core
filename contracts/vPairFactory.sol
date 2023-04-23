@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import './vPair.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvPairFactory.sol';
+import './interfaces/IvExchangeReserves.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './libraries/PoolAddress.sol';
 import './types.sol';
@@ -87,6 +88,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             _exchangeReserves > address(0),
             'VSWAP:INVALID_EXCHANGE_RESERVE_ADDRESS'
         );
+        require(
+            IvExchangeReserves(_exchangeReserves).factory() == address(this),
+            'VSWAP: INVALID_EXCHANGE_RESERVES'
+        );
         exchangeReserves = _exchangeReserves;
 
         emit ExchangeReserveAddressChanged(_exchangeReserves);
@@ -98,6 +103,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         require(
             _vPoolManager > address(0),
             'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
+        );
+        require(
+            IvPoolManager(_vPoolManager).pairFactory() == address(this),
+            'VSWAP: INVALID_VPOOL_MANAGER'
         );
         vPoolManager = _vPoolManager;
         emit FactoryVPoolManagerChanged(_vPoolManager);

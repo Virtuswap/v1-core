@@ -5,6 +5,8 @@ pragma solidity 0.8.18;
 import '../types.sol';
 
 interface IvPoolManager {
+    function pairFactory() external view returns (address);
+
     function getVirtualPool(
         address jkPair,
         address ikPair

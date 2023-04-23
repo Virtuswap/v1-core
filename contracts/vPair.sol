@@ -262,9 +262,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             // scope to avoid stack too deep errors
             uint256 balanceDiff = fetchBalance(vPool.token0) -
                 (vPool.token0 == token0 ? pairBalance0 : pairBalance1);
-            // reverts if overflow occurs since solidity 0.8
-            // so if fetchBalance(vPool.token0) - pairBalance - requiredAmountIn < 0
-            // then it is reverted (requiredAmountIn always positive)
+            require(balanceDiff >= requiredAmountIn, 'IBD');
             (_leftoverAmount, _leftoverToken) = (
                 Math.min(
                     balanceDiff - requiredAmountIn,

@@ -18,6 +18,8 @@ interface IvExchangeReserves is IvFlashSwapCallback {
 
     event NewIncentivesLimit(uint256 newLimit);
 
+    function factory() external view returns (address);
+
     function exchange(
         address jkPair1,
         address ikPair1,
