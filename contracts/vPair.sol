@@ -230,7 +230,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 ikPair,
             'IIKP'
         );
-        require(amountOut <= vPool.balance1, 'AOE');
+        require(
+            amountOut <= vPool.balance1 && amountOut <= reserves[vPool.token1],
+            'AOE'
+        );
         require(allowListMap[vPool.token1], 'TNW');
         require(vPool.token0 == token0 || vPool.token0 == token1, 'NNT');
 
