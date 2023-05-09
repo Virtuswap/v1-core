@@ -170,8 +170,18 @@ library vSwapLibrary {
      */
     function getMaxVirtualTradeAmountRtoN(
         VirtualPoolModel memory vPool
-    ) internal view returns (uint256 maxAmountIn) {
-        // never reverts if vPool is valid and balances <= 10^32
+    ) internal view returns (uint256) {
+        // The function works if and only if the following constraints are
+        // satisfied:
+        //      1. all balances are positive and less than or equal to 10^32
+        //      2. reserves are non-negative and less than or equal to 10^32
+        //      3. 0 < vBalance1 <= balance0 (or balance1 depending on trade)
+        //      4. priceFeeFactor == 10^3
+        //      5. reserveRatioFactor == 10^5
+        //      6. fee <= priceFeeFactor
+        //      7. 0 < maxReserveRatio <= reserveRatioFactor
+        //      8. reserveBaseValueSum <= 2 * balance0 * maxReserveRatio (see
+        //          reserve ratio formula in vPair.calculateReserveRatio())
         MaxTradeAmountParams memory params;
 
         params.fee = uint256(vPool.fee);
@@ -187,12 +197,55 @@ library vSwapLibrary {
             IvPair(vPool.jkPair).reservesBaseValueSum() -
             IvPair(vPool.jkPair).reservesBaseValue(vPool.token0);
 
+        require(
+            params.balance0 > 0 && params.balance0 <= 10 ** 32,
+            'invalid balance0'
+        );
+        require(
+            params.balance1 > 0 && params.balance1 <= 10 ** 32,
+            'invalid balance1'
+        );
+        require(
+            params.vBalance0 > 0 && params.vBalance0 <= 10 ** 32,
+            'invalid vBalance0'
+        );
+        require(
+            params.vBalance1 > 0 && params.vBalance1 <= 10 ** 32,
+            'invalid vBalance1'
+        );
+        require(params.priceFeeFactor == 10 ** 3, 'invalid priceFeeFactor');
+        require(
+            params.reserveRatioFactor == 10 ** 5,
+            'invalid reserveRatioFactor'
+        );
+        require(params.fee <= params.priceFeeFactor, 'invalid priceFeeFactor');
+        require(
+            params.maxReserveRatio > 0 &&
+                params.maxReserveRatio <= params.reserveRatioFactor,
+            'invalid maxReserveRatio'
+        );
+
+        // reserves are full, the answer is 0
+        if (
+            params.reservesBaseValueSum >
+            2 * params.balance0 * params.maxReserveRatio
+        ) return 0;
+
         if (IvPair(vPool.jkPair).token0() == vPool.token1) {
-            // all calculations fit in uint256
+            require(params.vBalance1 <= params.balance0, 'invalid vBalance1');
             unchecked {
+                // a = R * f * v1 <= 10^5 * 10^3 * v1 = 10^8 * v1 <= 10^40
                 uint256 a = params.vBalance1 *
                     params.reserveRatioFactor *
                     params.fee;
+                // b = v0 * (-2 * b0 * f * M + v1 * (2 * f * M + R * F) + f * R * s) + f * r * R * v1 <=
+                //  <= v0 * (-2 * b0 * f * M + b0 * (2 * f * M + 10^8) + 10^8 * s) + 10^8 * r * v1 =
+                //   = v0 * (10^8 * b0 + 10^8 * s) + 10^8 * r * v1 =
+                //   = 10^8 * (v0 * (b0 + s) + r * v1) <=
+                //  <= 10^8 * (v0 * (b0 + 2 * b0 * M) + r * v1) <=
+                //  <= 10^8 * (v0 * (b0 + 2 * 10^5 * b0) + r * v1) =
+                //   = 10^8 * (v0 * b0 * (2 * 10^5 + 1) + r * v1) <=
+                //  <= 10^8 * (10^64 * 2 * 10^5 + 10^64) <= 2 * 10^76
                 int256 b = int256(params.vBalance0) *
                     (-2 *
                         int256(
@@ -218,7 +271,19 @@ library vSwapLibrary {
                             params.vBalance1
                     );
                 // we split C into c1 * c2 to fit in uint256
+                // c1 = F * v0 = 10^3 * v0 <= 10^35
                 uint256 c1 = params.priceFeeFactor * params.vBalance0;
+                // c2 = 2 * b0 * M * v0 - R * (r * v1 + s * v0) <=
+                //   <= [r and s can be zero] <=
+                //   <= 2 * 10^5 * b0 * v0 - 0 <= 2 * 10^69
+                //
+                // -c2 = R * (r * v1 + s * v0) - 2 * b0 * M * v0 <=
+                //    <= 10^5 * (r * v1 + 2 * b0 * M * v0) - 2 * b0 * M * v0 =
+                //     = 10^5 * r * v1 + 2 * b0 * M * v0 * (10^5 - 1) <=
+                //    <= 10^5 * 10^32 * 10^32 + 2 * 10^32 * 10^5 * 10^32 * 10^5 <=
+                //    <= 10^69 + 2 * 10^74 <= 2 * 10^74
+                //
+                // |c2| <= 2 * 10^74
                 int256 c2 = 2 *
                     int256(
                         params.balance0 *
@@ -233,125 +298,228 @@ library vSwapLibrary {
                                 params.vBalance0)
                     );
 
-                (bool negativeB, uint256 ub) = (
-                    b < 0 ? (true, uint256(-b)) : (false, uint256(b))
-                );
-
                 (bool negativeC, uint256 uc2) = (
                     c2 < 0 ? (false, uint256(-c2)) : (true, uint256(c2))
                 );
 
+                // according to Newton's method:
+                // x_{n+1} = x_n - f(x_n) / f'(x_n) =
+                //         = x_n - (Ax_n^2 + Bx_n + c1 * c2) / (2Ax_n + B) =
+                //         = (2Ax_n^2 + Bx_n - Ax_n^2 - Bx_n - c1 * c2) / (2Ax_n + B) =
+                //         = (Ax_n^2 - c1 * c2) / (2Ax_n + B) =
+                //         = Ax_n^2 / (2Ax_n + B) - c1 * c2 / (2Ax_n + B)
                 // initial approximation: maxAmountIn always <= vb0
-                maxAmountIn = params.vBalance0;
-                // 2 * a * x + b <= 5 * 10^75 < 2^256
-                uint256 temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
-                );
-                uint256 derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
+                int256 maxAmountIn = int256(params.vBalance0);
+                // derivative = 2 * a * x + b =
+                //    = 2 * R * f * v1 * x + v0 * (-2 * b0 * f * M + v1 * (2 * f * M + R * F) + f * R * s) + f * r * R * v1 <=
+                //   <= 2 * 10^40 * 10^32 + 2 * 10^76 <= 2 * 10^76
+                int256 derivative = int256(2 * a) * maxAmountIn + b;
 
-                temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                (bool negativeDerivative, uint256 uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
                 );
-                derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
 
-                temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                // maxAmountIn * maxAmountIn <= vb0 * vb0 <= 10^64
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
                 );
-                derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
 
-                temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
-                );
-                derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
 
-                temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
-                );
-                derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
+                derivative = int256(2 * a) * maxAmountIn + b;
 
-                temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                (negativeDerivative, uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
                 );
-                derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
 
-                temp = (
-                    negativeB ? (a * maxAmountIn - ub) : (a * maxAmountIn + ub)
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
                 );
-                derivative = temp + a * maxAmountIn;
-                if (negativeC) {
-                    maxAmountIn =
-                        maxAmountIn +
-                        Math.mulDiv(c1, uc2, derivative) -
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                } else {
-                    maxAmountIn -=
-                        Math.mulDiv(c1, uc2, derivative) +
-                        Math.mulDiv(maxAmountIn, temp, derivative);
-                }
+
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
+
+                derivative = int256(2 * a) * maxAmountIn + b;
+
+                (negativeDerivative, uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
+                );
+
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                );
+
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
+
+                derivative = int256(2 * a) * maxAmountIn + b;
+
+                (negativeDerivative, uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
+                );
+
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                );
+
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
+
+                derivative = int256(2 * a) * maxAmountIn + b;
+
+                (negativeDerivative, uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
+                );
+
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                );
+
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
+
+                derivative = int256(2 * a) * maxAmountIn + b;
+
+                (negativeDerivative, uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
+                );
+
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                );
+
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
+
+                derivative = int256(2 * a) * maxAmountIn + b;
+
+                (negativeDerivative, uDerivative) = (
+                    derivative < 0
+                        ? (true, uint256(-derivative))
+                        : (false, uint256(derivative))
+                );
+
+                maxAmountIn = (
+                    negativeC
+                        ? int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
+                        : int256(
+                            Math.mulDiv(
+                                a,
+                                uint256(maxAmountIn * maxAmountIn),
+                                uDerivative
+                            )
+                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                );
+
+                if (negativeDerivative) maxAmountIn = -maxAmountIn;
+
+                assert(maxAmountIn >= 0);
+                return uint256(maxAmountIn);
             }
         } else {
             unchecked {
-                maxAmountIn =
+                require(
+                    params.vBalance1 <= params.balance1,
+                    'invalid vBalance1'
+                );
+                return
                     Math.mulDiv(
                         params.balance1 * params.vBalance0,
                         2 *
@@ -362,8 +530,7 @@ library vSwapLibrary {
                         params.balance0 *
                             params.reserveRatioFactor *
                             params.vBalance1
-                    ) -
-                    params.reserves;
+                    ) - params.reserves;
             }
         }
     }
