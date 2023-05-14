@@ -178,7 +178,7 @@ library vSwapLibrary {
         //      3. 0 < vBalance1 <= balance0 (or balance1 depending on trade)
         //      4. priceFeeFactor == 10^3
         //      5. reserveRatioFactor == 10^5
-        //      6. fee <= priceFeeFactor
+        //      6. 0 < fee <= priceFeeFactor
         //      7. 0 < maxReserveRatio <= reserveRatioFactor
         //      8. reserveBaseValueSum <= 2 * balance0 * maxReserveRatio (see
         //          reserve ratio formula in vPair.calculateReserveRatio())
@@ -218,7 +218,10 @@ library vSwapLibrary {
             params.reserveRatioFactor == 10 ** 5,
             'invalid reserveRatioFactor'
         );
-        require(params.fee <= params.priceFeeFactor, 'invalid priceFeeFactor');
+        require(
+            params.fee > 0 && params.fee <= params.priceFeeFactor,
+            'invalid fee'
+        );
         require(
             params.maxReserveRatio > 0 &&
                 params.maxReserveRatio <= params.reserveRatioFactor,
@@ -234,45 +237,38 @@ library vSwapLibrary {
         if (IvPair(vPool.jkPair).token0() == vPool.token1) {
             require(params.vBalance1 <= params.balance0, 'invalid vBalance1');
             unchecked {
-                // a = R * f * v1 <= 10^5 * 10^3 * v1 = 10^8 * v1 <= 10^40
-                uint256 a = params.vBalance1 *
-                    params.reserveRatioFactor *
-                    params.fee;
-                // b = v0 * (-2 * b0 * f * M + v1 * (2 * f * M + R * F) + f * R * s) + f * r * R * v1 <=
-                //  <= v0 * (-2 * b0 * f * M + b0 * (2 * f * M + 10^8) + 10^8 * s) + 10^8 * r * v1 =
-                //   = v0 * (10^8 * b0 + 10^8 * s) + 10^8 * r * v1 =
-                //   = 10^8 * (v0 * (b0 + s) + r * v1) <=
-                //  <= 10^8 * (v0 * (b0 + 2 * b0 * M) + r * v1) <=
-                //  <= 10^8 * (v0 * (b0 + 2 * 10^5 * b0) + r * v1) =
-                //   = 10^8 * (v0 * b0 * (2 * 10^5 + 1) + r * v1) <=
-                //  <= 10^8 * (10^64 * 2 * 10^5 + 10^64) <= 2 * 10^76
+                // a = R * v1 <= 10^5 * v1 = 10^5 * v1 <= 10^37
+                uint256 a = params.vBalance1 * params.reserveRatioFactor;
+                // b = v0 * (-2 * b0 * M + v1 * (2 * M + R * F / f) + R * s) + r * R * v1 <=
+                //  <= v0 * (-2 * b0 * M + b0 * (2 * M + 10^8) + 10^5 * s) + 10^5 * r * v1 =
+                //   = v0 * (10^8 * b0 + 10^5 * s) + 10^5 * r * v1 =
+                //   = 10^5 * (v0 * (10^3 * b0 + s) + r * v1) <=
+                //  <= 10^5 * (v0 * (10^3 * b0 + 2 * b0 * M) + r * v1) <=
+                //  <= 10^5 * (v0 * (10^3 * b0 + 2 * 10^5 * b0) + r * v1) =
+                //   = 10^5 * (v0 * b0 * (2 * 10^5 + 10^3) + r * v1) <=
+                //  <= 10^5 * (10^64 * 2 * 10^5 + 10^64) <= 2 * 10^74
                 int256 b = int256(params.vBalance0) *
                     (-2 *
-                        int256(
-                            params.balance0 *
-                                params.fee *
-                                params.maxReserveRatio
-                        ) +
+                        int256(params.balance0 * params.maxReserveRatio) +
                         int256(
                             params.vBalance1 *
                                 (2 *
-                                    params.fee *
                                     params.maxReserveRatio +
-                                    params.priceFeeFactor *
-                                    params.reserveRatioFactor) +
-                                params.fee *
+                                    (params.priceFeeFactor *
+                                        params.reserveRatioFactor) /
+                                    params.fee) +
                                 params.reserveRatioFactor *
                                 params.reservesBaseValueSum
                         )) +
                     int256(
-                        params.fee *
-                            params.reserves *
+                        params.reserves *
                             params.reserveRatioFactor *
                             params.vBalance1
                     );
                 // we split C into c1 * c2 to fit in uint256
-                // c1 = F * v0 = 10^3 * v0 <= 10^35
-                uint256 c1 = params.priceFeeFactor * params.vBalance0;
+                // c1 = F * v0 / f <= 10^3 * v0 <= 10^35
+                uint256 c1 = (params.priceFeeFactor * params.vBalance0) /
+                    params.fee;
                 // c2 = 2 * b0 * M * v0 - R * (r * v1 + s * v0) <=
                 //   <= [r and s can be zero] <=
                 //   <= 2 * 10^5 * b0 * v0 - 0 <= 2 * 10^69

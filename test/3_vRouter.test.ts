@@ -2,6 +2,7 @@ import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { deployPools } from './fixtures/deployPools';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 
 import {
     VRouter__factory,
@@ -1325,7 +1326,6 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
 
-    /*
     it('Swap maximum twice', async () => {
         const pools = await deployPoolsWithAmounts(
             '9000000000000',
@@ -1353,6 +1353,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             (await time.latest()) + 100000
         );
 
+        await mine();
         amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
             pools.abPool.address,
             pools.bcPool.address
@@ -1404,6 +1405,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             (await time.latest()) + 100000
         );
 
+        await mine();
         amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
             pools.abPool.address,
             pools.bcPool.address
@@ -1425,5 +1427,4 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
-*/
 });
