@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
+import '@openzeppelin/contracts/utils/math/SafeCast.sol';
 import '../types.sol';
 import '../interfaces/IvPair.sol';
 
@@ -320,20 +321,20 @@ library vSwapLibrary {
                 // maxAmountIn * maxAmountIn <= vb0 * vb0 <= 10^64
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
@@ -348,20 +349,20 @@ library vSwapLibrary {
 
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
@@ -376,20 +377,20 @@ library vSwapLibrary {
 
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
@@ -404,20 +405,20 @@ library vSwapLibrary {
 
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
@@ -432,20 +433,20 @@ library vSwapLibrary {
 
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
@@ -460,20 +461,20 @@ library vSwapLibrary {
 
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
@@ -488,20 +489,20 @@ library vSwapLibrary {
 
                 maxAmountIn = (
                     negativeC
-                        ? int256(
+                        ? SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) + int256(Math.mulDiv(c1, uc2, uDerivative))
-                        : int256(
+                        ) + SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
+                        : SafeCast.toInt256(
                             Math.mulDiv(
                                 a,
                                 uint256(maxAmountIn * maxAmountIn),
                                 uDerivative
                             )
-                        ) - int256(Math.mulDiv(c1, uc2, uDerivative))
+                        ) - SafeCast.toInt256(Math.mulDiv(c1, uc2, uDerivative))
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
