@@ -235,6 +235,7 @@ library vSwapLibrary {
             2 * params.balance0 * params.maxReserveRatio
         ) return 0;
 
+        int256 maxAmountIn;
         if (IvPair(vPool.jkPair).token0() == vPool.token1) {
             require(params.vBalance1 <= params.balance0, 'invalid vBalance1');
             unchecked {
@@ -306,7 +307,7 @@ library vSwapLibrary {
                 //         = (Ax_n^2 - c1 * c2) / (2Ax_n + B) =
                 //         = Ax_n^2 / (2Ax_n + B) - c1 * c2 / (2Ax_n + B)
                 // initial approximation: maxAmountIn always <= vb0
-                int256 maxAmountIn = int256(params.vBalance0);
+                maxAmountIn = int256(params.vBalance0);
                 // derivative = 2 * a * x + b =
                 //    = 2 * R * f * v1 * x + v0 * (-2 * b0 * f * M + v1 * (2 * f * M + R * F) + f * R * s) + f * r * R * v1 <=
                 //   <= 2 * 10^40 * 10^32 + 2 * 10^76 <= 2 * 10^76
@@ -506,9 +507,6 @@ library vSwapLibrary {
                 );
 
                 if (negativeDerivative) maxAmountIn = -maxAmountIn;
-
-                assert(maxAmountIn >= 0);
-                return uint256(maxAmountIn);
             }
         } else {
             unchecked {
@@ -516,19 +514,24 @@ library vSwapLibrary {
                     params.vBalance1 <= params.balance1,
                     'invalid vBalance1'
                 );
-                return
-                    Math.mulDiv(
-                        params.balance1 * params.vBalance0,
-                        2 *
+                maxAmountIn =
+                    SafeCast.toInt256(
+                        Math.mulDiv(
+                            params.balance1 * params.vBalance0,
+                            2 *
+                                params.balance0 *
+                                params.maxReserveRatio -
+                                params.reserveRatioFactor *
+                                params.reservesBaseValueSum,
                             params.balance0 *
-                            params.maxReserveRatio -
-                            params.reserveRatioFactor *
-                            params.reservesBaseValueSum,
-                        params.balance0 *
-                            params.reserveRatioFactor *
-                            params.vBalance1
-                    ) - params.reserves;
+                                params.reserveRatioFactor *
+                                params.vBalance1
+                        )
+                    ) -
+                    SafeCast.toInt256(params.reserves);
             }
         }
+        assert(maxAmountIn >= 0);
+        return uint256(maxAmountIn);
     }
 }
