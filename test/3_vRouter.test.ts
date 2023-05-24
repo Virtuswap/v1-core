@@ -2,6 +2,7 @@ import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { deployPools } from './fixtures/deployPools';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 
 import {
     VRouter__factory,
@@ -1042,7 +1043,18 @@ describe('vRouter: getVirtualPools', () => {
         ) {
             const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
             const pool = VPair__factory.connect(pairAddr, fixture.owner);
-            await pool.setAllowList(allowList);
+            await pool.setMaxAllowListCount(8);
+            await pool.setAllowList(
+                allowList.sort((a, b) => {
+                    if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                        return -1;
+                    else if (
+                        ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b))
+                    )
+                        return 0;
+                    else return 1;
+                })
+            );
         }
     });
 
@@ -1122,11 +1134,15 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
 
         const vPairFactoryInstance = fixture.vPairFactoryInstance;
 
-        await vPairFactoryInstance.setDefaultAllowList([
-            tokenA.address,
-            tokenB.address,
-            tokenC.address,
-        ]);
+        await vPairFactoryInstance.setDefaultAllowList(
+            [tokenA.address, tokenB.address, tokenC.address].sort((a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            })
+        );
 
         const futureTs = (await time.latest()) + 1000000;
 
@@ -1151,11 +1167,11 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             futureTs
         );
 
-        const addr1 = await vPairFactoryInstance.getPair(
+        const addr1 = await vPairFactoryInstance.pairs(
             tokenA.address,
             tokenB.address
         );
-        const addr2 = await vPairFactoryInstance.getPair(
+        const addr2 = await vPairFactoryInstance.pairs(
             tokenB.address,
             tokenC.address
         );
@@ -1310,7 +1326,6 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
 
-    /*
     it('Swap maximum twice', async () => {
         const pools = await deployPoolsWithAmounts(
             '9000000000000',
@@ -1338,6 +1353,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             (await time.latest()) + 100000
         );
 
+        await mine();
         amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
             pools.abPool.address,
             pools.bcPool.address
@@ -1389,6 +1405,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             (await time.latest()) + 100000
         );
 
+        await mine();
         amountIn = await vRouterInstance.getMaxVirtualTradeAmountRtoN(
             pools.abPool.address,
             pools.bcPool.address
@@ -1410,5 +1427,4 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         expect(await pools.abPool.calculateReserveRatio()).to.be.below('2001');
         expect(await pools.abPool.calculateReserveRatio()).to.be.above('1998');
     });
-*/
 });

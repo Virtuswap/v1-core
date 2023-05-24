@@ -75,16 +75,17 @@ export async function sameValues() {
         vPoolManagerInstance.address
     );
 
-    await vPairFactoryInstance.setDefaultAllowList([
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-    ]);
+    await vPairFactoryInstance.setDefaultAllowList(
+        [tokenA.address, tokenB.address, tokenC.address, tokenD.address].sort(
+            (a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            }
+        )
+    );
 
     const vRouterContractFactory = await ethers.getContractFactory('vRouter');
     const vRouterInstance = await vRouterContractFactory.deploy(
@@ -160,7 +161,7 @@ export async function sameValues() {
     //whitelist tokens in pools
 
     //pool 1
-    const abAddress = await vPairFactoryInstance.getPair(
+    const abAddress = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenB.address
     );
@@ -169,39 +170,71 @@ export async function sameValues() {
 
     await abPool.setMaxReserveThreshold(2000);
     //whitelist token C
-    await abPool.setAllowList([tokenC.address, tokenD.address]);
+    await abPool.setAllowList(
+        [tokenC.address, tokenD.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
 
     //pool 2
-    const acAddress = await vPairFactoryInstance.getPair(
+    const acAddress = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenC.address
     );
     const acPool = VPair__factory.connect(acAddress, owner);
 
     //whitelist token B
-    await acPool.setAllowList([tokenB.address, tokenD.address]);
+    await acPool.setAllowList(
+        [tokenB.address, tokenD.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
     await acPool.setMaxReserveThreshold(2000);
 
     //pool 3
-    const bcAddress = await vPairFactoryInstance.getPair(
+    const bcAddress = await vPairFactoryInstance.pairs(
         tokenB.address,
         tokenC.address
     );
     const bcPool = VPair__factory.connect(bcAddress, owner);
 
     //whitelist token A
-    await bcPool.setAllowList([tokenA.address, tokenD.address]);
+    await bcPool.setAllowList(
+        [tokenA.address, tokenD.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
     await bcPool.setMaxReserveThreshold(2000);
 
     // pool 4
-    const bdAddress = await vPairFactoryInstance.getPair(
+    const bdAddress = await vPairFactoryInstance.pairs(
         tokenB.address,
         tokenD.address
     );
     const bdPool = VPair__factory.connect(bdAddress, owner);
 
     //whitelist token A
-    await bdPool.setAllowList([tokenA.address, tokenC.address]);
+    await bdPool.setAllowList(
+        [tokenA.address, tokenC.address].sort((a, b) => {
+            if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                return -1;
+            else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                return 0;
+            else return 1;
+        })
+    );
     await bdPool.setMaxReserveThreshold(2000);
 
     // console.log("pool3: B/C: " + reserve0Pool3 + "/" + reserve1Pool3);

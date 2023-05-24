@@ -1,20 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import './types.sol';
 import './libraries/vSwapLibrary.sol';
+import './libraries/PoolAddress.sol';
 import './interfaces/IvPairFactory.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvPoolManager.sol';
 
 contract vPoolManager is IvPoolManager {
-    struct VirtualPoolWithBlock {
-        VirtualPoolModel vPool;
-        uint256 blockLastUpdated;
+    struct VBalancesWithBlock {
+        uint112 balance0;
+        uint112 balance1;
+        uint32 blockLastUpdated;
     }
 
-    mapping(address => mapping(address => VirtualPoolWithBlock)) vPoolsCache;
+    mapping(address => mapping(address => VBalancesWithBlock)) vPoolsBalancesCache;
 
     address public immutable pairFactory;
 
@@ -26,14 +28,16 @@ contract vPoolManager is IvPoolManager {
         address jkPair,
         address ikPair
     ) public view override returns (VirtualPoolModel memory vPool) {
-        VirtualPoolWithBlock memory vPoolWithBlock = vPoolsCache[jkPair][
-            ikPair
-        ];
-        if (block.number == vPoolWithBlock.blockLastUpdated) {
-            vPool = vPoolWithBlock.vPool;
+        VBalancesWithBlock memory vBalancesWithBlock = vPoolsBalancesCache[
+            jkPair
+        ][ikPair];
+        vPool = vSwapLibrary.getVirtualPool(jkPair, ikPair);
+        if (block.number == vBalancesWithBlock.blockLastUpdated) {
+            (vPool.balance0, vPool.balance1) = (
+                vBalancesWithBlock.balance0,
+                vBalancesWithBlock.balance1
+            );
             _reduceBalances(vPool);
-        } else {
-            vPool = vSwapLibrary.getVirtualPool(jkPair, ikPair);
         }
     }
 
@@ -54,7 +58,7 @@ contract vPoolManager is IvPoolManager {
                 jk0 != token0 &&
                 jk1 != token0 &&
                 IvPair(jkPair).allowListMap(token0) &&
-                IvPairFactory(pairFactory).getPair(
+                IvPairFactory(pairFactory).pairs(
                     token0,
                     jk0 == token1 ? jk1 : jk0
                 ) !=
@@ -74,7 +78,7 @@ contract vPoolManager is IvPoolManager {
                 jk1 != token0 &&
                 IvPair(jkPair).allowListMap(token0)
             ) {
-                ikPair = IvPairFactory(pairFactory).getPair(
+                ikPair = IvPairFactory(pairFactory).pairs(
                     token0,
                     jk0 == token1 ? jk1 : jk0
                 );
@@ -86,28 +90,21 @@ contract vPoolManager is IvPoolManager {
     }
 
     function updateVirtualPoolBalances(
-        VirtualPoolModel memory vPool,
+        address jkPair,
+        address ikPair,
         uint256 balance0,
         uint256 balance1
     ) external override {
+        (address token0, address token1) = IvPair(msg.sender).getTokens();
         require(
             msg.sender ==
-                IvPairFactory(pairFactory).getPair(
-                    vPool.commonToken,
-                    vPool.token0
-                ) ||
-                msg.sender ==
-                IvPairFactory(pairFactory).getPair(
-                    vPool.commonToken,
-                    vPool.token1
-                ),
+                PoolAddress.computeAddress(pairFactory, token0, token1),
             'Only pools'
         );
-        vPool.balance0 = balance0;
-        vPool.balance1 = balance1;
-        vPoolsCache[vPool.jkPair][vPool.ikPair] = VirtualPoolWithBlock(
-            vPool,
-            block.number
+        vPoolsBalancesCache[jkPair][ikPair] = VBalancesWithBlock(
+            uint112(balance0),
+            uint112(balance1),
+            uint32(block.number)
         );
     }
 
@@ -115,28 +112,14 @@ contract vPoolManager is IvPoolManager {
         (uint256 ikBalance0, uint256 ikBalance1) = IvPair(vPool.ikPair)
             .getBalances();
 
-        if (
-            vPool.token0 == IvPair(vPool.ikPair).token1() &&
-            ikBalance0 != ikBalance1
-        ) {
-            // swap
-            ikBalance0 ^= ikBalance1;
-            ikBalance1 ^= ikBalance0;
-            ikBalance0 ^= ikBalance1;
-        }
+        if (vPool.token0 == IvPair(vPool.ikPair).token1())
+            (ikBalance0, ikBalance1) = (ikBalance1, ikBalance0);
 
         (uint256 jkBalance0, uint256 jkBalance1) = IvPair(vPool.jkPair)
             .getBalances();
 
-        if (
-            vPool.token1 == IvPair(vPool.jkPair).token1() &&
-            jkBalance0 != jkBalance1
-        ) {
-            // swap
-            jkBalance0 ^= jkBalance1;
-            jkBalance1 ^= jkBalance0;
-            jkBalance0 ^= jkBalance1;
-        }
+        if (vPool.token1 == IvPair(vPool.jkPair).token1())
+            (jkBalance0, jkBalance1) = (jkBalance1, jkBalance0);
 
         // Make sure vPool balances are less or equal than real pool balances
         if (vPool.balance0 >= ikBalance0) {

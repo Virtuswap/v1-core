@@ -102,16 +102,17 @@ export async function deployPools() {
         vPoolManagerInstance.address
     );
 
-    await vPairFactoryInstance.setDefaultAllowList([
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-        tokenA.address,
-        tokenB.address,
-        tokenC.address,
-        tokenD.address,
-    ]);
+    await vPairFactoryInstance.setDefaultAllowList(
+        [tokenA.address, tokenB.address, tokenC.address, tokenD.address].sort(
+            (a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            }
+        )
+    );
 
     await tokenA.approve(vRouterInstance.address, issueAmount);
     await tokenB.approve(vRouterInstance.address, issueAmount);
@@ -197,7 +198,7 @@ export async function deployPools() {
     // whitelist tokens in pools
 
     // pool 1
-    const address1 = await vPairFactoryInstance.getPair(
+    const address1 = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenB.address
     );
@@ -216,7 +217,7 @@ export async function deployPools() {
     console.log('pool1: A/B: ' + pool1Reserve0 + '/' + pool1Reserve1);
 
     // pool 2
-    const address2 = await vPairFactoryInstance.getPair(
+    const address2 = await vPairFactoryInstance.pairs(
         tokenA.address,
         tokenC.address
     );
@@ -235,7 +236,7 @@ export async function deployPools() {
     console.log('pool2: A/C: ' + pool2Reserve0 + '/' + pool2Reserve1);
 
     // pool 3
-    const address3 = await vPairFactoryInstance.getPair(
+    const address3 = await vPairFactoryInstance.pairs(
         tokenB.address,
         tokenC.address
     );
@@ -254,7 +255,7 @@ export async function deployPools() {
     console.log('pool3: B/C: ' + pool3Reserve0 + '/' + pool3Reserve1);
 
     // pool 4
-    const address4 = await vPairFactoryInstance.getPair(
+    const address4 = await vPairFactoryInstance.pairs(
         tokenD.address,
         tokenB.address
     );
@@ -272,7 +273,7 @@ export async function deployPools() {
 
     console.log('pool4: B/D: ' + pool4Reserve0 + '/' + pool4Reserve1);
 
-    const address5 = await vPairFactoryInstance.getPair(
+    const address5 = await vPairFactoryInstance.pairs(
         WETH9Instance.address,
         tokenB.address
     );

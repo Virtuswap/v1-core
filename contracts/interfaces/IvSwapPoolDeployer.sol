@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 /// @title An interface for a contract that is capable of deploying Uniswap V3 Pools
 /// @notice A contract that constructs a pool must implement this to pass arguments to the pool
@@ -21,8 +21,8 @@ interface IvSwapPoolDeployer {
             address factory,
             address token0,
             address token1,
-            uint24 fee,
-            uint24 vFee,
+            uint16 fee,
+            uint16 vFee,
             uint24 maxAllowListCount,
             uint256 maxReserveRatio
         );

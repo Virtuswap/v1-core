@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import './IvFlashSwapCallback.sol';
 
@@ -15,6 +15,10 @@ interface IvExchangeReserves is IvFlashSwapCallback {
         address leftOverToken,
         uint leftOverAmount
     );
+
+    event NewIncentivesLimit(uint256 newLimit);
+
+    function factory() external view returns (address);
 
     function exchange(
         address jkPair1,

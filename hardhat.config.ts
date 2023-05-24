@@ -11,11 +11,11 @@ const config: HardhatUserConfig = {
         disambiguatePaths: false,
     },
     solidity: {
-        version: '0.8.2',
+        version: '0.8.18',
         settings: {
             optimizer: {
                 enabled: true,
-                runs: 800,
+                runs: 1733,
             },
 
             metadata: {
