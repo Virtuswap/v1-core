@@ -20,10 +20,15 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP1: Buying A and paying 300 B in pool AB');
         console.log('===========================================');
 
-        await fixture.acPool.setAllowList([
-            fixture.tokenB.address,
-            fixture.tokenD.address,
-        ]);
+        await fixture.acPool.setAllowList(
+            [fixture.tokenB.address, fixture.tokenD.address].sort((a, b) => {
+                if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
+                    return -1;
+                else if (ethers.BigNumber.from(a).eq(ethers.BigNumber.from(b)))
+                    return 0;
+                else return 1;
+            })
+        );
 
         let amountIn = ethers.utils.parseEther('300');
         let amountOut = await fixture.vRouterInstance.getAmountOut(
@@ -46,12 +51,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );
@@ -123,12 +128,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );
@@ -222,12 +227,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );
@@ -321,12 +326,12 @@ describe('ExchangeReserves manipulation scenarios', () => {
         console.log('STEP2: send 1B to pool AC');
         console.log('===========================================');
 
-        const ikPair = await fixture.vPairFactoryInstance.getPair(
+        const ikPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenB.address,
             fixture.tokenA.address
         );
 
-        const jkPair = await fixture.vPairFactoryInstance.getPair(
+        const jkPair = await fixture.vPairFactoryInstance.pairs(
             fixture.tokenA.address,
             fixture.tokenC.address
         );

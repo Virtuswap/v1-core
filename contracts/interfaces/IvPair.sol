@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import '../types.sol';
 
@@ -42,21 +42,27 @@ interface IvPair {
 
     event AllowListChanged(address[] tokens);
 
-    event Sync(uint256 balance0, uint256 balance1);
+    event Sync(uint112 balance0, uint112 balance1);
 
     event ReserveSync(address asset, uint256 balance, uint256 rRatio);
 
-    event FeeChanged(uint24 fee, uint24 vFee);
+    event FeeChanged(uint16 fee, uint16 vFee);
 
     event ReserveThresholdChanged(uint256 newThreshold);
 
     event AllowListCountChanged(uint24 _maxAllowListCount);
 
-    function fee() external view returns (uint24);
+    event EmergencyDiscountChanged(uint256 _newEmergencyDiscount);
 
-    function vFee() external view returns (uint24);
+    event ReserveRatioWarningThresholdChanged(
+        uint256 _newReserveRatioWarningThreshold
+    );
 
-    function setFee(uint24 _fee, uint24 _vFee) external;
+    function fee() external view returns (uint16);
+
+    function vFee() external view returns (uint16);
+
+    function setFee(uint16 _fee, uint16 _vFee) external;
 
     function swapNative(
         uint256 amountOut,
@@ -104,23 +110,23 @@ interface IvPair {
 
     function token1() external view returns (address);
 
-    function pairBalance0() external view returns (uint256);
+    function pairBalance0() external view returns (uint112);
 
-    function pairBalance1() external view returns (uint256);
+    function pairBalance1() external view returns (uint112);
 
     function maxAllowListCount() external view returns (uint24);
 
     function maxReserveRatio() external view returns (uint256);
 
-    function getBalances() external view returns (uint256, uint256);
+    function getBalances() external view returns (uint112, uint112);
 
     function getLastBalances()
         external
         view
         returns (
-            uint256 _lastBalance0,
-            uint256 _lastBalance1,
-            uint256 _blockNumber
+            uint112 _lastBalance0,
+            uint112 _lastBalance1,
+            uint32 _blockNumber
         );
 
     function getTokens() external view returns (address, address);
@@ -131,7 +137,7 @@ interface IvPair {
 
     function reserves(address reserveAddress) external view returns (uint256);
 
-    function reservesBaseSum() external view returns (uint256);
+    function reservesBaseValueSum() external view returns (uint256);
 
     function reserveRatioFactor() external pure returns (uint256);
 }

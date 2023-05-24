@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import "@openzeppelin/contracts/utils/Multicall.sol";
+import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './types.sol';
+import './libraries/PoolAddress.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvExchangeReserves.sol';
 import './interfaces/IvPairFactory.sol';
@@ -23,11 +24,12 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
         require(msg.sender == IvPairFactory(factory).admin(), 'Admin only');
         require(newLimit <= 100, 'Invalid limit');
         incentivesLimitPct = newLimit;
+        emit NewIncentivesLimit(newLimit);
     }
 
     function vFlashSwapCallback(
-        address tokenIn,
-        address tokenOut,
+        address,
+        address,
         uint256 requiredBackAmount,
         bytes calldata data
     ) external override {
@@ -36,7 +38,11 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
             (ExchangeReserveCallbackParams)
         );
 
-        require(msg.sender == decodedData.jkPair1, 'IC');
+        (address jk0, address jk1) = IvPair(decodedData.jkPair1).getTokens();
+        require(
+            msg.sender == PoolAddress.computeAddress(factory, jk0, jk1),
+            'IC'
+        );
 
         (address _leftoverToken, uint256 _leftoverAmount) = IvPair(
             decodedData.jkPair2
@@ -74,16 +80,16 @@ contract vExchangeReserves is IvExchangeReserves, Multicall {
         address ikPair2,
         uint256 flashAmountOut
     ) external override {
-        address _jkToken0;
-        address _jkToken1;
-        (_jkToken0, _jkToken1) = IvPair(jkPair1).getTokens();
+        (address _jkToken0, address _jkToken1) = IvPair(jkPair1).getTokens();
         require(
-            IvPairFactory(factory).getPair(_jkToken0, _jkToken1) != address(0),
+            PoolAddress.computeAddress(factory, _jkToken0, _jkToken1) ==
+                jkPair1,
             'IJKP1'
         );
         (_jkToken0, _jkToken1) = IvPair(jkPair2).getTokens();
         require(
-            IvPairFactory(factory).getPair(_jkToken0, _jkToken1) != address(0),
+            PoolAddress.computeAddress(factory, _jkToken0, _jkToken1) ==
+                jkPair2,
             'IJKP2'
         );
 

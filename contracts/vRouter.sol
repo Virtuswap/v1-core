@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import "@openzeppelin/contracts/utils/Multicall.sol";
+import '@openzeppelin/contracts/utils/Multicall.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import './types.sol';
@@ -98,7 +98,11 @@ contract vRouter is IvRouter, Multicall {
             );
             // pay back with WETH9
             IWETH9(WETH9).deposit{value: requiredBackAmount}();
-            IWETH9(WETH9).transfer(msg.sender, requiredBackAmount);
+            SafeERC20.safeTransfer(
+                IERC20(WETH9),
+                msg.sender,
+                requiredBackAmount
+            );
 
             //send any ETH leftovers to caller
             (bool success, ) = decodedData.caller.call{
@@ -129,6 +133,10 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        require(
+            tokenIn == WETH9 || msg.value == 0,
+            'VSWAP: ETHER VALUE SHOULD BE ZERO'
+        );
         getPair(tokenIn, tokenOut).swapNative(
             amountOut,
             tokenOut,
@@ -156,6 +164,10 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        require(
+            tokenIn == WETH9 || msg.value == 0,
+            'VSWAP: ETHER VALUE SHOULD BE ZERO'
+        );
         uint256 amountOut = getAmountOut(tokenIn, tokenOut, amountIn);
         require(amountOut >= minAmountOut, 'VSWAP: INSUFFICIENT_OUTPUT_AMOUNT');
 
@@ -187,6 +199,13 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        {
+            (address ik0, address ik1) = IvPair(ikPair).getTokens();
+            require(
+                (ik0 == commonToken ? ik1 : ik0) == WETH9 || msg.value == 0,
+                'VSWAP: ETHER VALUE SHOULD BE ZERO'
+            );
+        }
         address jkAddress = getPairAddress(tokenOut, commonToken);
 
         IvPair(jkAddress).swapReserveToNative(
@@ -217,6 +236,13 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        {
+            (address ik0, address ik1) = IvPair(ikPair).getTokens();
+            require(
+                (ik0 == commonToken ? ik1 : ik0) == WETH9 || msg.value == 0,
+                'VSWAP: ETHER VALUE SHOULD BE ZERO'
+            );
+        }
         address jkAddress = getPairAddress(tokenOut, commonToken);
         uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
 
@@ -252,7 +278,7 @@ contract vRouter is IvRouter, Multicall {
         uint256 amountAMin,
         uint256 amountBMin
     ) internal returns (uint256 amountA, uint256 amountB, address pairAddress) {
-        pairAddress = IvPairFactory(factory).getPair(tokenA, tokenB);
+        pairAddress = IvPairFactory(factory).pairs(tokenA, tokenB);
         // create the pair if it doesn't exist yet
         if (pairAddress == address(0))
             pairAddress = IvPairFactory(factory).createPair(tokenA, tokenB);

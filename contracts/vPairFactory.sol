@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.2;
+pragma solidity 0.8.18;
 
 import './vPair.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/IvPairFactory.sol';
+import './interfaces/IvExchangeReserves.sol';
 import './interfaces/IvSwapPoolDeployer.sol';
 import './libraries/PoolAddress.sol';
 import './types.sol';
 
 contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
-    mapping(address => mapping(address => address)) public pairs;
+    mapping(address => mapping(address => address)) public override pairs;
     address[] public override allPairs;
 
     address public override admin;
@@ -37,13 +38,6 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     constructor() {
         admin = msg.sender;
         emergencyAdmin = msg.sender;
-    }
-
-    function getPair(
-        address tokenA,
-        address tokenB
-    ) external view override returns (address) {
-        return pairs[tokenA][tokenB];
     }
 
     function createPair(
@@ -94,6 +88,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             _exchangeReserves > address(0),
             'VSWAP:INVALID_EXCHANGE_RESERVE_ADDRESS'
         );
+        require(
+            IvExchangeReserves(_exchangeReserves).factory() == address(this),
+            'VSWAP: INVALID_EXCHANGE_RESERVES'
+        );
         exchangeReserves = _exchangeReserves;
 
         emit ExchangeReserveAddressChanged(_exchangeReserves);
@@ -106,7 +104,12 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             _vPoolManager > address(0),
             'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
         );
+        require(
+            IvPoolManager(_vPoolManager).pairFactory() == address(this),
+            'VSWAP: INVALID_VPOOL_MANAGER'
+        );
         vPoolManager = _vPoolManager;
+        emit FactoryVPoolManagerChanged(_vPoolManager);
     }
 
     function setPendingAdmin(
@@ -117,10 +120,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     }
 
     function acceptAdmin() external override {
-        require(
-            msg.sender != address(0) && msg.sender == pendingAdmin,
-            'Only for pending admin'
-        );
+        require(msg.sender == pendingAdmin, 'Only for pending admin');
         admin = pendingAdmin;
         pendingAdmin = address(0);
         emit FactoryNewAdmin(admin);
@@ -135,7 +135,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
     function acceptEmergencyAdmin() external override {
         require(
-            msg.sender != address(0) && msg.sender == pendingEmergencyAdmin,
+            msg.sender == pendingEmergencyAdmin,
             'Only for pending emergency admin'
         );
         emergencyAdmin = pendingEmergencyAdmin;
@@ -146,6 +146,16 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function setDefaultAllowList(
         address[] calldata _defaultAllowList
     ) external override onlyAdmin {
+        require(
+            _defaultAllowList.length <= 2 ** 24 - 1,
+            'allow list is too long'
+        );
+        for (uint i = 1; i < _defaultAllowList.length; ++i) {
+            require(
+                _defaultAllowList[i] > _defaultAllowList[i - 1],
+                'allow list must be unique and sorted'
+            );
+        }
         defaultAllowList = _defaultAllowList;
         emit DefaultAllowListChanged(_defaultAllowList);
     }
