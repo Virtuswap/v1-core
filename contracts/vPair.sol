@@ -37,7 +37,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 public override maxReserveRatio;
     uint256 public reserveRatioWarningThreshold;
     uint256 public emergencyDiscount;
-    uint256 public delay;
+    uint256 public blocksDelay;
 
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
@@ -84,11 +84,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             maxReserveRatio
         ) = IvSwapPoolDeployer(msg.sender).poolCreationDefaults();
         reserveRatioWarningThreshold = 1900;
-        delay = 2;
+        blocksDelay = 2;
     }
 
     function _update(uint112 balance0, uint112 balance1) internal {
-        if (block.number > _lastBlockUpdated + delay) {
+        if (block.number > _lastBlockUpdated + blocksDelay) {
             (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
             _lastBlockUpdated = uint32(block.number);
         }
@@ -615,9 +615,14 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit EmergencyDiscountChanged(_emergencyDiscount);
     }
 
-    function setDelay(uint256 _newDelay) external override onlyEmergencyAdmin {
-        delay = _newDelay;
-        emit DelayChanged(_newDelay);
+    function setBlocksDelay(uint256 _newBlocksDelay) external override {
+        require(
+            msg.sender == IvPairFactory(factory).emergencyAdmin() ||
+                msg.sender == IvPairFactory(factory).admin(),
+            'OAS'
+        );
+        blocksDelay = _newBlocksDelay;
+        emit BlocksDelayChanged(_newBlocksDelay);
     }
 
     function reserveRatioFactor() external pure override returns (uint256) {

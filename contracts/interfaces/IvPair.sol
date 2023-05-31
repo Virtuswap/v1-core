@@ -54,7 +54,7 @@ interface IvPair {
 
     event EmergencyDiscountChanged(uint256 _newEmergencyDiscount);
 
-    event DelayChanged(uint256 _newDelay);
+    event BlocksDelayChanged(uint256 _newBlocksDelay);
 
     event ReserveRatioWarningThresholdChanged(
         uint256 _newReserveRatioWarningThreshold
@@ -108,7 +108,7 @@ interface IvPair {
 
     function setEmergencyDiscount(uint256 discount) external;
 
-    function setDelay(uint256 _newDelay) external;
+    function setBlocksDelay(uint256 _newBlocksDelay) external;
 
     function token0() external view returns (address);
 
