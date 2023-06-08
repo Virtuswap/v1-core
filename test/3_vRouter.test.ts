@@ -236,8 +236,7 @@ describe('vRouter 1', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapExactOutput(
-            tokenC.address,
-            tokenA.address,
+            [tokenC.address, tokenA.address],
             amountOut,
             amountIn,
             owner.address,
@@ -272,11 +271,10 @@ describe('vRouter 1', () => {
 
         let multiData = [];
 
-        let str = await VRouter__factory.getInterface(
+        let str = VRouter__factory.getInterface(
             VRouter__factory.abi
         ).encodeFunctionData('swapExactOutput', [
-            tokenA.address,
-            tokenC.address,
+            [tokenA.address, tokenC.address],
             amountOut,
             amountIn,
             owner.address,
@@ -313,8 +311,7 @@ describe('vRouter 1', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapExactInput(
-            tokenC.address,
-            tokenA.address,
+            [tokenC.address, tokenA.address],
             amountIn,
             amountOut,
             owner.address,
@@ -347,11 +344,10 @@ describe('vRouter 1', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        let str = await VRouter__factory.getInterface(
+        let str = VRouter__factory.getInterface(
             VRouter__factory.abi
         ).encodeFunctionData('swapExactInput', [
-            tokenA.address,
-            tokenC.address,
+            [tokenA.address, tokenC.address],
             amountIn,
             amountOut,
             owner.address,
@@ -550,11 +546,10 @@ describe('vRouter 1', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
         let multiData = [];
 
-        let str = await VRouter__factory.getInterface(
+        let str = VRouter__factory.getInterface(
             VRouter__factory.abi
         ).encodeFunctionData('swapExactOutput', [
-            tokenC.address,
-            tokenA.address,
+            [tokenC.address, tokenA.address],
             _amountOut,
             realAmountIn,
             owner.address,
@@ -563,7 +558,7 @@ describe('vRouter 1', () => {
 
         multiData.push(str);
 
-        str = await VRouter__factory.getInterface(
+        str = VRouter__factory.getInterface(
             VRouter__factory.abi
         ).encodeFunctionData('swapReserveExactOutput', [
             tokenA.address,
@@ -935,8 +930,7 @@ describe('vRouter 2', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapExactOutput(
-            WETH9,
-            tokenB.address,
+            [WETH9, tokenB.address],
             amountOut,
             amountIn,
             owner.address,
@@ -973,8 +967,7 @@ describe('vRouter 2', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapExactOutput(
-            tokenB.address,
-            WETH9,
+            [tokenB.address, WETH9],
             amountOut,
             amountIn,
             owner.address,
