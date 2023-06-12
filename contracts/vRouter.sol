@@ -128,7 +128,7 @@ contract vRouter is IvRouter, Multicall {
     function getAmountsIn(
         address[] memory path,
         uint256 amountOut
-    ) internal view returns (uint[] memory amountsIn) {
+    ) public view returns (uint[] memory amountsIn) {
         amountsIn = new uint[](path.length);
         amountsIn[amountsIn.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; --i) {
@@ -139,7 +139,7 @@ contract vRouter is IvRouter, Multicall {
     function getAmountsOut(
         address[] memory path,
         uint256 amountIn
-    ) internal view returns (uint[] memory amountsOut) {
+    ) public view returns (uint[] memory amountsOut) {
         amountsOut = new uint[](path.length);
         amountsOut[0] = amountIn;
         for (uint i = 1; i < amountsOut.length; ++i) {
