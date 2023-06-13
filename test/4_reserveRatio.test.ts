@@ -78,8 +78,8 @@ describe('Reserve Ratio 1', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapReserveExactOutput(
-            tokenA.address,
             tokenB.address,
+            tokenA.address,
             acPool.address,
             amountOut,
             amountIn,
@@ -178,8 +178,8 @@ describe('Reserve Ratio 1', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await vRouterInstance.swapReserveExactOutput(
-            tokenA.address,
             tokenB.address,
+            tokenA.address,
             ikPair,
             amountOut,
             amountIn,
