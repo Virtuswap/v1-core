@@ -57,68 +57,6 @@ contract vRouter is IvRouter, Multicall {
         return IvPair(getPairAddress(tokenA, tokenB));
     }
 
-    function vFlashSwapCallback(
-        address tokenIn,
-        address tokenOut,
-        uint256 requiredBackAmount,
-        bytes calldata data
-    ) external override {
-        SwapCallbackData memory decodedData = abi.decode(
-            data,
-            (SwapCallbackData)
-        );
-
-        if (decodedData.jkPool > address(0)) {
-            //validate JK pool
-            (address jkToken0, address jkToken1) = IvPair(decodedData.jkPool)
-                .getTokens();
-
-            require(
-                msg.sender ==
-                    PoolAddress.computeAddress(factory, jkToken0, jkToken1),
-                'VSWAP:INVALID_CALLBACK_VPOOL'
-            );
-        } else
-            require(
-                msg.sender ==
-                    PoolAddress.computeAddress(factory, tokenIn, tokenOut),
-                'VSWAP:INVALID_CALLBACK_POOL'
-            );
-
-        //validate amount to pay back dont exceeds
-        require(
-            requiredBackAmount <= decodedData.tokenInMax,
-            'VSWAP:REQUIRED_AMOUNT_EXCEEDS'
-        );
-        // handle payment
-        if (tokenIn == WETH9 && decodedData.ETHValue > 0) {
-            require(
-                decodedData.ETHValue >= requiredBackAmount,
-                'VSWAP:INSUFFICIENT_ETH_INPUT_AMOUNT'
-            );
-            // pay back with WETH9
-            IWETH9(WETH9).deposit{value: requiredBackAmount}();
-            SafeERC20.safeTransfer(
-                IERC20(WETH9),
-                msg.sender,
-                requiredBackAmount
-            );
-
-            //send any ETH leftovers to caller
-            (bool success, ) = decodedData.caller.call{
-                value: address(this).balance
-            }('');
-            require(success, 'VSWAP: TRANSFER FAILED');
-        } else {
-            SafeERC20.safeTransferFrom(
-                IERC20(tokenIn),
-                decodedData.caller,
-                msg.sender,
-                requiredBackAmount
-            );
-        }
-    }
-
     function unwrapTransferETH(address to, uint256 amount) internal {
         IWETH9(WETH9).withdraw(amount);
         (bool success, ) = to.call{value: amount}('');
@@ -166,6 +104,7 @@ contract vRouter is IvRouter, Multicall {
         uint[] memory amountsIn = getAmountsIn(path, amountOut);
         require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
 
+        transferInput(path[0], amountsIn[0], getPairAddress(path[0], path[1]));
         swap(path, amountsIn, to);
     }
 
@@ -186,6 +125,7 @@ contract vRouter is IvRouter, Multicall {
             'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
         );
 
+        transferInput(path[0], amountsOut[0], getPairAddress(path[0], path[1]));
         swap(path, amountsOut, to);
     }
 
@@ -194,30 +134,6 @@ contract vRouter is IvRouter, Multicall {
         uint[] memory amounts,
         address to
     ) internal {
-        if (path[0] == WETH9) {
-            require(
-                address(this).balance >= amounts[0],
-                'VSWAP: INSUFFICIENT_ETH_INPUT_AMOUNT'
-            );
-            IWETH9(WETH9).deposit{value: amounts[0]}();
-            SafeERC20.safeTransfer(
-                IERC20(WETH9),
-                getPairAddress(path[0], path[1]),
-                amounts[0]
-            );
-            (bool success, ) = msg.sender.call{value: address(this).balance}(
-                ''
-            );
-            require(success, 'VSWAP: TRANSFER FAILED');
-        } else {
-            SafeERC20.safeTransferFrom(
-                IERC20(path[0]),
-                msg.sender,
-                getPairAddress(path[0], path[1]),
-                amounts[0]
-            );
-        }
-
         for (uint i = 0; i < path.length - 1; ++i) {
             getPair(path[i], path[i + 1]).swapNative(
                 amounts[i + 1],
@@ -243,32 +159,17 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
-        {
-            (address ik0, address ik1) = IvPair(ikPair).getTokens();
-            require(
-                (ik0 == commonToken ? ik1 : ik0) == WETH9 || msg.value == 0,
-                'VSWAP: ETHER VALUE SHOULD BE ZERO'
-            );
-        }
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-
-        IvPair(jkAddress).swapReserveToNative(
-            amountOut,
-            ikPair,
-            tokenOut == WETH9 ? address(this) : to,
-            abi.encode(
-                SwapCallbackData({
-                    caller: msg.sender,
-                    tokenInMax: maxAmountIn,
-                    ETHValue: address(this).balance,
-                    jkPool: jkAddress
-                })
-            )
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        require(
+            tokenIn == WETH9 || msg.value == 0,
+            'VSWAP: ETHER VALUE SHOULD BE ZERO'
         );
-
-        if (tokenOut == WETH9) {
-            unwrapTransferETH(to, amountOut);
-        }
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
+        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
+        transferInput(tokenIn, amountIn, jkAddress);
+        swapReserve(tokenOut, amountOut, jkAddress, ikPair, to);
     }
 
     function swapReserveExactInput(
@@ -280,37 +181,64 @@ contract vRouter is IvRouter, Multicall {
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
-        {
-            (address ik0, address ik1) = IvPair(ikPair).getTokens();
-            require(
-                (ik0 == commonToken ? ik1 : ik0) == WETH9 || msg.value == 0,
-                'VSWAP: ETHER VALUE SHOULD BE ZERO'
-            );
-        }
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        require(
+            tokenIn == WETH9 || msg.value == 0,
+            'VSWAP: ETHER VALUE SHOULD BE ZERO'
+        );
         address jkAddress = getPairAddress(tokenOut, commonToken);
         uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
-
         require(
             amountOut >= minAmountOut,
             'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
         );
+        transferInput(tokenIn, amountIn, jkAddress);
+        swapReserve(tokenOut, amountOut, jkAddress, ikPair, to);
+    }
 
+    function swapReserve(
+        address tokenOut,
+        uint amountOut,
+        address jkAddress,
+        address ikAddress,
+        address to
+    ) internal {
         IvPair(jkAddress).swapReserveToNative(
             amountOut,
-            ikPair,
+            ikAddress,
             tokenOut == WETH9 ? address(this) : to,
-            abi.encode(
-                SwapCallbackData({
-                    caller: msg.sender,
-                    tokenInMax: amountIn,
-                    ETHValue: address(this).balance,
-                    jkPool: jkAddress
-                })
-            )
+            new bytes(0)
         );
 
         if (tokenOut == WETH9) {
             unwrapTransferETH(to, amountOut);
+        }
+    }
+
+    function transferInput(
+        address tokenIn,
+        uint amountIn,
+        address pair
+    ) internal {
+        if (tokenIn == WETH9) {
+            require(
+                address(this).balance >= amountIn,
+                'VSWAP: INSUFFICIENT_ETH_INPUT_AMOUNT'
+            );
+            IWETH9(WETH9).deposit{value: amountIn}();
+            SafeERC20.safeTransfer(IERC20(WETH9), pair, amountIn);
+            (bool success, ) = msg.sender.call{value: address(this).balance}(
+                ''
+            );
+            require(success, 'VSWAP: TRANSFER FAILED');
+        } else {
+            SafeERC20.safeTransferFrom(
+                IERC20(tokenIn),
+                msg.sender,
+                pair,
+                amountIn
+            );
         }
     }
 
@@ -447,7 +375,7 @@ contract vRouter is IvRouter, Multicall {
         address jkPair,
         address ikPair,
         uint256 amountOut
-    ) external view override returns (uint256 amountIn) {
+    ) public view override returns (uint256 amountIn) {
         VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
 
         amountIn = vSwapLibrary.getAmountIn(

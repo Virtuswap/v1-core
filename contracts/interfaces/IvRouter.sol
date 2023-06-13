@@ -2,9 +2,8 @@
 
 pragma solidity 0.8.18;
 import '../types.sol';
-import './IvFlashSwapCallback.sol';
 
-interface IvRouter is IvFlashSwapCallback {
+interface IvRouter {
     event RouterFactoryChanged(address newFactoryAddress);
 
     function changeFactory(address _factory) external;
