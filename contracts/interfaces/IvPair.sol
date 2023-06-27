@@ -42,7 +42,12 @@ interface IvPair {
 
     event AllowListChanged(address[] tokens);
 
-    event Sync(uint112 balance0, uint112 balance1);
+    event Sync(
+        uint112 balance0,
+        uint112 balance1,
+        uint112 _lastPairBalance0,
+        uint112 _lastPairBalance1
+    );
 
     event ReserveSync(address asset, uint256 balance, uint256 rRatio);
 

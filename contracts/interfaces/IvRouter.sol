@@ -2,9 +2,8 @@
 
 pragma solidity 0.8.18;
 import '../types.sol';
-import './IvFlashSwapCallback.sol';
 
-interface IvRouter is IvFlashSwapCallback {
+interface IvRouter {
     event RouterFactoryChanged(address newFactoryAddress);
 
     function changeFactory(address _factory) external;
@@ -14,8 +13,7 @@ interface IvRouter is IvFlashSwapCallback {
     function WETH9() external view returns (address);
 
     function swapExactOutput(
-        address tokenIn,
-        address tokenOut,
+        address[] memory path,
         uint256 amountOut,
         uint256 maxAmountIn,
         address to,
@@ -23,8 +21,7 @@ interface IvRouter is IvFlashSwapCallback {
     ) external payable;
 
     function swapExactInput(
-        address tokenIn,
-        address tokenOut,
+        address[] memory path,
         uint256 amountIn,
         uint256 minAmountOut,
         address to,
