@@ -39,8 +39,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
         await fixture.vRouterInstance.swapExactOutput(
-            fixture.tokenB.address,
-            fixture.tokenA.address,
+            [fixture.tokenB.address, fixture.tokenA.address],
             amountOut,
             amountIn,
             fixture.owner.address,
@@ -116,8 +115,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
         await fixture.vRouterInstance.swapExactOutput(
-            fixture.tokenA.address,
-            fixture.tokenB.address,
+            [fixture.tokenA.address, fixture.tokenB.address],
             amountOut,
             amountIn,
             fixture.owner.address,
@@ -215,8 +213,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
         await fixture.vRouterInstance.swapExactOutput(
-            fixture.tokenC.address,
-            fixture.tokenA.address,
+            [fixture.tokenC.address, fixture.tokenA.address],
             amountOut,
             amountIn,
             fixture.owner.address,
@@ -314,8 +311,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
         await fixture.vRouterInstance.swapExactOutput(
-            fixture.tokenA.address,
-            fixture.tokenC.address,
+            [fixture.tokenA.address, fixture.tokenC.address],
             amountOut,
             amountIn,
             fixture.owner.address,
