@@ -82,7 +82,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             maxReserveRatio
         ) = IvSwapPoolDeployer(msg.sender).poolCreationDefaults();
         reserveRatioWarningThreshold = 1900;
-        blocksDelay = 2;
+        blocksDelay = 40;
     }
 
     function _update(uint112 balance0, uint112 balance1) internal {
