@@ -132,7 +132,10 @@ library vSwapLibrary {
         vPool.token1 = vPoolTokens.jk0;
         vPool.commonToken = vPoolTokens.ik1;
 
-        require(IvPair(jkPair).allowListMap(vPool.token0), 'NA');
+        require(
+            IvPair(jkPair).allowListMap(vPool.token0),
+            'VSWAP: NOT_ALLOWED'
+        );
 
         vPool.fee = IvPair(jkPair).vFee();
 
