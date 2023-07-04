@@ -17,6 +17,10 @@ describe('vRouter 1', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
     });
 
     it('Should quote A to B', async () => {
@@ -1170,6 +1174,9 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         );
         const abPool = VPair__factory.connect(addr1, fixture.owner);
         const bcPool = VPair__factory.connect(addr2, fixture.owner);
+
+        await abPool.setBlocksDelay(0);
+        await bcPool.setBlocksDelay(0);
 
         return { abPool, bcPool };
     };
