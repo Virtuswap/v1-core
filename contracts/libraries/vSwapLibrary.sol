@@ -98,7 +98,7 @@ library vSwapLibrary {
         require(
             block.number >=
                 IvPair(ikPair).lastSwapBlock() + IvPair(ikPair).blocksDelay(),
-            'IKB'
+            'VSWAP: LOCKED_VPOOL'
         );
 
         (address jk0, address jk1) = IvPair(jkPair).getTokens();
