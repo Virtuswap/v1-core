@@ -95,6 +95,12 @@ library vSwapLibrary {
         address jkPair,
         address ikPair
     ) internal view returns (VirtualPoolModel memory vPool) {
+        require(
+            block.number >=
+                IvPair(ikPair).lastSwapBlock() + IvPair(ikPair).blocksDelay(),
+            'IKB'
+        );
+
         (address jk0, address jk1) = IvPair(jkPair).getTokens();
         (address ik0, address ik1) = IvPair(ikPair).getTokens();
 
@@ -111,8 +117,7 @@ library vSwapLibrary {
             'VSWAP: INVALID_VPOOL'
         );
 
-        (uint256 ikBalance0, uint256 ikBalance1, ) = IvPair(ikPair)
-            .getLastBalances();
+        (uint256 ikBalance0, uint256 ikBalance1) = IvPair(ikPair).getBalances();
 
         (uint256 jkBalance0, uint256 jkBalance1) = IvPair(jkPair).getBalances();
 

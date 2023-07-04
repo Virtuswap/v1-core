@@ -29,15 +29,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint16 public override fee;
     uint16 public override vFee;
 
-    uint32 private _lastBlockUpdated;
-    uint112 private _lastPairBalance0;
-    uint112 private _lastPairBalance1;
+    uint128 public override lastSwapBlock;
+    uint128 public override blocksDelay;
 
     uint256 public override reservesBaseValueSum;
     uint256 public override maxReserveRatio;
     uint256 public reserveRatioWarningThreshold;
     uint256 public emergencyDiscount;
-    uint256 public blocksDelay;
 
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
@@ -88,27 +86,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     }
 
     function _update(uint112 balance0, uint112 balance1) internal {
-        if (block.number > _lastBlockUpdated + blocksDelay) {
-            (_lastPairBalance0, _lastPairBalance1) = (balance0, balance1);
-            _lastBlockUpdated = uint32(block.number);
-        }
+        lastSwapBlock = uint128(block.number);
 
         (pairBalance0, pairBalance1) = (balance0, balance1);
 
-        emit Sync(balance0, balance1, _lastPairBalance0, _lastPairBalance1);
-    }
-
-    function getLastBalances()
-        external
-        view
-        override
-        returns (
-            uint112 _lastBalance0,
-            uint112 _lastBalance1,
-            uint32 _blockNumber
-        )
-    {
-        return (_lastPairBalance0, _lastPairBalance1, _lastBlockUpdated);
+        emit Sync(balance0, balance1);
     }
 
     function getBalances()
@@ -615,7 +597,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit EmergencyDiscountChanged(_emergencyDiscount);
     }
 
-    function setBlocksDelay(uint256 _newBlocksDelay) external override {
+    function setBlocksDelay(uint128 _newBlocksDelay) external override {
         require(
             msg.sender == IvPairFactory(factory).emergencyAdmin() ||
                 msg.sender == IvPairFactory(factory).admin(),
