@@ -557,6 +557,9 @@ describe('Reserve Ratio 2', () => {
         await fixture.vPairFactoryInstance.setExchangeReservesAddress(
             fixture.exchangeReserveInstance.address
         );
+        // TODO
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
     });
 
     it('Exchange 500000 C to B in pool AB', async () => {

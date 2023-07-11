@@ -57,6 +57,10 @@ describe('vPair1', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
     });
 
     it('Should have 4 tokens in allowList', async () => {
