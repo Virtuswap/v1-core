@@ -63,7 +63,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         _;
     }
 
-    modifier opened() {
+    modifier isOpen() {
         require(!closed, 'C');
         _;
     }
@@ -122,7 +122,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         address tokenOut,
         address to,
         bytes calldata data
-    ) external override nonReentrant opened returns (uint256 _amountIn) {
+    ) external override nonReentrant isOpen returns (uint256 _amountIn) {
         require(to > address(0) && to != token0 && to != token1, 'IT');
         require(tokenOut == token0 || tokenOut == token1, 'NNT');
         require(amountOut > 0, 'IAO');
@@ -198,7 +198,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         external
         override
         nonReentrant
-        opened
+        isOpen
         returns (address _leftoverToken, uint256 _leftoverAmount)
     {
         require(
@@ -333,7 +333,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         address ikPair,
         address to,
         bytes calldata data
-    ) external override nonReentrant opened returns (uint256 amountIn) {
+    ) external override nonReentrant isOpen returns (uint256 amountIn) {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
@@ -441,7 +441,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
     function mint(
         address to
-    ) external override nonReentrant opened returns (uint256 liquidity) {
+    ) external override nonReentrant isOpen returns (uint256 liquidity) {
         (uint256 _pairBalance0, uint256 _pairBalance1) = (
             pairBalance0,
             pairBalance1
