@@ -110,6 +110,8 @@ interface IvPair {
 
     function setBlocksDelay(uint128 _newBlocksDelay) external;
 
+    function emergencyToggle() external;
+
     function token0() external view returns (address);
 
     function token1() external view returns (address);

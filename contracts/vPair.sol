@@ -40,6 +40,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
     uint24 public override maxAllowListCount;
+    bool public closed;
 
     mapping(address => uint256) public override reservesBaseValue;
     mapping(address => uint256) public override reserves;
@@ -59,6 +60,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
     modifier onlyEmergencyAdmin() {
         require(msg.sender == IvPairFactory(factory).emergencyAdmin(), 'OEA');
+        _;
+    }
+
+    modifier isOpen() {
+        require(!closed, 'C');
         _;
     }
 
@@ -116,7 +122,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         address tokenOut,
         address to,
         bytes calldata data
-    ) external override nonReentrant returns (uint256 _amountIn) {
+    ) external override nonReentrant isOpen returns (uint256 _amountIn) {
         require(to > address(0) && to != token0 && to != token1, 'IT');
         require(tokenOut == token0 || tokenOut == token1, 'NNT');
         require(amountOut > 0, 'IAO');
@@ -192,6 +198,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         external
         override
         nonReentrant
+        isOpen
         returns (address _leftoverToken, uint256 _leftoverAmount)
     {
         require(
@@ -326,7 +333,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         address ikPair,
         address to,
         bytes calldata data
-    ) external override nonReentrant returns (uint256 amountIn) {
+    ) external override nonReentrant isOpen returns (uint256 amountIn) {
         require(amountOut > 0, 'IAO');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
@@ -434,7 +441,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
     function mint(
         address to
-    ) external override nonReentrant returns (uint256 liquidity) {
+    ) external override nonReentrant isOpen returns (uint256 liquidity) {
         (uint256 _pairBalance0, uint256 _pairBalance1) = (
             pairBalance0,
             pairBalance1
@@ -525,9 +532,13 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         emit Burn(msg.sender, amount0, amount1, to, totalSupply());
     }
 
-    function setAllowList(
-        address[] memory _allowList
-    ) external override onlyFactoryAdmin {
+    function setAllowList(address[] memory _allowList) external override {
+        require(
+            msg.sender == factory ||
+                msg.sender == IvPairFactory(factory).admin() ||
+                msg.sender == IvPairFactory(factory).emergencyAdmin(),
+            'OA'
+        );
         require(_allowList.length <= maxAllowListCount, 'MW');
         for (uint i = 1; i < _allowList.length; ++i) {
             require(
@@ -595,6 +606,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(_emergencyDiscount <= BASE_FACTOR, 'IED');
         emergencyDiscount = _emergencyDiscount;
         emit EmergencyDiscountChanged(_emergencyDiscount);
+    }
+
+    function emergencyToggle() external override onlyEmergencyAdmin {
+        closed = !closed;
     }
 
     function setBlocksDelay(uint128 _newBlocksDelay) external override {
