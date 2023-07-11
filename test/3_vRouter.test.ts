@@ -1041,6 +1041,7 @@ describe('vRouter: getVirtualPools', () => {
             const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
             const pool = VPair__factory.connect(pairAddr, fixture.owner);
             await pool.setMaxAllowListCount(8);
+            await pool.setBlocksDelay(0);
             await pool.setAllowList(
                 allowList.sort((a, b) => {
                     if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))

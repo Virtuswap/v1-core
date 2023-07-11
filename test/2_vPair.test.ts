@@ -454,7 +454,7 @@ describe('vPair1', () => {
 
         await expect(
             vRouterInstance.getVirtualPool(jkAddress, ikAddress)
-        ).to.revertedWith('NA');
+        ).to.revertedWith('VSWAP: NOT_ALLOWED');
     });
 
     it('Should not swap native if address is 0', async () => {
@@ -493,6 +493,10 @@ describe('vPair2', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
     });
 
     it('Swap native to reserve -> should deduct reserve ratio correctly', async () => {
@@ -626,6 +630,10 @@ describe('vPair reentrancy guard', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
         const exploiterFactory = await ethers.getContractFactory(
             'ReentrancyExploiter'
         );
