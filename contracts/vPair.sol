@@ -272,15 +272,15 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         {
             // scope to avoid stack too deep errors
             // //update reserve balance in the equivalent of token0 value
-            uint256 _reserveBaseValue = reserves[vPool.token1] - amountOut;
-            if (_reserveBaseValue > 0) {
-                // //re-calculate price of reserve asset in token0 for the whole pool balance
-                _reserveBaseValue = vSwapLibrary.quote(
-                    _reserveBaseValue,
+            uint256 reserveTokenBalance = fetchBalance(vPool.token1);
+            // //re-calculate price of reserve asset in token0 for the whole pool balance
+            uint256 _reserveBaseValue = reserveTokenBalance > 0
+                ? vSwapLibrary.quote(
+                    reserveTokenBalance,
                     vPool.balance1,
                     vPool.balance0
-                );
-            }
+                )
+                : 0;
 
             if (_reserveBaseValue > 0 && vPool.token0 == token1) {
                 //if tokenOut is not token0 we should quote it to token0 value
@@ -295,10 +295,9 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 reservesBaseValueSum -= reservesBaseValue[vPool.token1];
             }
             reservesBaseValue[vPool.token1] = _reserveBaseValue;
+            //update reserve balance
+            reserves[vPool.token1] = reserveTokenBalance;
         }
-
-        //update reserve balance
-        reserves[vPool.token1] -= amountOut;
 
         _update(uint112(fetchBalance(token0)), uint112(fetchBalance(token1)));
 
