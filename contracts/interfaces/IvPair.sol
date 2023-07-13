@@ -86,6 +86,11 @@ interface IvPair {
         bytes calldata data
     ) external returns (address _token, uint256 _leftovers);
 
+    function liquidateReserve(
+        address reserveToken,
+        address nativePool
+    ) external;
+
     function mint(address to) external returns (uint256 liquidity);
 
     function burn(

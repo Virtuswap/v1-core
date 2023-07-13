@@ -318,6 +318,59 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         );
     }
 
+    function liquidateReserve(
+        address reserveToken,
+        address nativePool
+    ) external override nonReentrant isOpen {
+        require(
+            (msg.sender == IvPairFactory(factory).admin() &&
+                calculateReserveRatio() >= reserveRatioWarningThreshold) ||
+                msg.sender == IvPairFactory(factory).emergencyAdmin(),
+            'OA'
+        );
+        require(allowListMap[reserveToken], 'TNW');
+
+        (address nativeToken0, address nativeToken1) = IvPair(nativePool)
+            .getTokens();
+        (uint256 nativeBalance0, uint256 nativeBalance1) = IvPair(nativePool)
+            .getBalances();
+        if (nativeToken0 != reserveToken) {
+            (nativeToken0, nativeToken1) = (nativeToken1, nativeToken0);
+            (nativeBalance0, nativeBalance1) = (nativeBalance1, nativeBalance0);
+        }
+        uint256 reserveAmount = reserves[reserveToken];
+
+        require(
+            (nativeToken1 == token0 || nativeToken1 == token1) &&
+                IvPairFactory(factory).pairs(reserveToken, nativeToken1) ==
+                nativePool,
+            'INP'
+        );
+
+        unchecked {
+            reservesBaseValueSum -= reservesBaseValue[reserveToken];
+        }
+        reservesBaseValue[reserveToken] = 0;
+        reserves[reserveToken] = 0;
+
+        SafeERC20.safeTransfer(IERC20(reserveToken), nativePool, reserveAmount);
+        IvPair(nativePool).swapNative(
+            vSwapLibrary.getAmountOut(
+                reserveAmount,
+                nativeBalance0,
+                nativeBalance1,
+                IvPair(nativePool).fee()
+            ),
+            nativeToken1,
+            address(this),
+            new bytes(0)
+        );
+
+        _update(uint112(fetchBalance(token0)), uint112(fetchBalance(token1)));
+
+        emit ReserveSync(reserveToken, 0, calculateReserveRatio());
+    }
+
     function swapReserveToNative(
         uint256 amountOut,
         address ikPair,
