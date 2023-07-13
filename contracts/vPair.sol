@@ -58,7 +58,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     }
 
     modifier onlyEmergencyAdmin() {
-        require(msg.sender == IvPairFactory(factory).emergencyAdmin(), 'OEA');
+        require(msg.sender == IvPairFactory(factory).emergencyAdmin(), 'OE');
         _;
     }
 
@@ -205,7 +205,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 (msg.sender == IvPairFactory(factory).admin() &&
                     calculateReserveRatio() >= reserveRatioWarningThreshold) ||
                 msg.sender == IvPairFactory(factory).emergencyAdmin(),
-            'OAER'
+            'OA'
         );
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
@@ -476,7 +476,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         returns (uint256 rRatio)
     {
         uint256 _pairBalance0 = pairBalance0;
-        rRatio = pairBalance0 > 0
+        rRatio = _pairBalance0 > 0
             ? (reservesBaseValueSum * RESERVE_RATIO_FACTOR) /
                 (_pairBalance0 << 1)
             : 0;
@@ -651,7 +651,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(
             msg.sender == IvPairFactory(factory).emergencyAdmin() ||
                 msg.sender == IvPairFactory(factory).admin(),
-            'OAS'
+            'OA'
         );
         blocksDelay = _newBlocksDelay;
         emit BlocksDelayChanged(_newBlocksDelay);

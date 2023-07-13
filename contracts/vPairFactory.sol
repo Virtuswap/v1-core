@@ -44,16 +44,16 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
         address tokenA,
         address tokenB
     ) external override returns (address pair) {
-        require(tokenA != tokenB, 'VSWAP: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, 'IA');
 
         (address token0, address token1) = PoolAddress.orderAddresses(
             tokenA,
             tokenB
         );
 
-        require(token0 != address(0), 'VSWAP: ZERO_ADDRESS');
+        require(token0 != address(0), 'ZA');
 
-        require(pairs[token0][token1] == address(0), 'VSWAP: PAIR_EXISTS');
+        require(pairs[token0][token1] == address(0), 'PE');
 
         poolCreationDefaults = PoolCreationDefaults({
             factory: address(this),
@@ -84,13 +84,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function setExchangeReservesAddress(
         address _exchangeReserves
     ) external override onlyAdmin {
-        require(
-            _exchangeReserves > address(0),
-            'VSWAP:INVALID_EXCHANGE_RESERVE_ADDRESS'
-        );
+        require(_exchangeReserves > address(0), 'IERA');
         require(
             IvExchangeReserves(_exchangeReserves).factory() == address(this),
-            'VSWAP: INVALID_EXCHANGE_RESERVES'
+            'IER'
         );
         exchangeReserves = _exchangeReserves;
 
@@ -100,13 +97,10 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function setVPoolManagerAddress(
         address _vPoolManager
     ) external override onlyAdmin {
-        require(
-            _vPoolManager > address(0),
-            'VSWAP:INVALID_VPOOL_MANAGER_ADDRESS'
-        );
+        require(_vPoolManager > address(0), 'IVPMA');
         require(
             IvPoolManager(_vPoolManager).pairFactory() == address(this),
-            'VSWAP: INVALID_VPOOL_MANAGER'
+            'IVPM'
         );
         vPoolManager = _vPoolManager;
         emit FactoryVPoolManagerChanged(_vPoolManager);
@@ -120,7 +114,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     }
 
     function acceptAdmin() external override {
-        require(msg.sender == pendingAdmin, 'Only for pending admin');
+        require(msg.sender == pendingAdmin, 'OPA');
         admin = pendingAdmin;
         pendingAdmin = address(0);
         emit FactoryNewAdmin(admin);
@@ -134,10 +128,7 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     }
 
     function acceptEmergencyAdmin() external override {
-        require(
-            msg.sender == pendingEmergencyAdmin,
-            'Only for pending emergency admin'
-        );
+        require(msg.sender == pendingEmergencyAdmin, 'OPA');
         emergencyAdmin = pendingEmergencyAdmin;
         pendingEmergencyAdmin = address(0);
         emit FactoryNewEmergencyAdmin(emergencyAdmin);
@@ -146,15 +137,9 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function setDefaultAllowList(
         address[] calldata _defaultAllowList
     ) external override onlyAdmin {
-        require(
-            _defaultAllowList.length <= 2 ** 24 - 1,
-            'allow list is too long'
-        );
+        require(_defaultAllowList.length <= 2 ** 24 - 1, 'ATL');
         for (uint i = 1; i < _defaultAllowList.length; ++i) {
-            require(
-                _defaultAllowList[i] > _defaultAllowList[i - 1],
-                'allow list must be unique and sorted'
-            );
+            require(_defaultAllowList[i] > _defaultAllowList[i - 1], 'ALU');
         }
         defaultAllowList = _defaultAllowList;
         emit DefaultAllowListChanged(_defaultAllowList);
