@@ -191,6 +191,66 @@ describe('vPair1', () => {
         let amountOut = await abPool.reserves(tokenC.address);
     });
 
+    it('Should liquidate reserve C on pool A/B to pool A/C', async () => {
+        const abPool = fixture.abPool;
+        const acPool = fixture.acPool;
+        const tokenA = fixture.tokenA;
+        const tokenC = fixture.tokenC;
+
+        let tokenCReserveBefore = await abPool.reserves(tokenC.address);
+        let tokenCRbvBefore = await abPool.reservesBaseValue(tokenC.address);
+        let reserveRatioBefore = await abPool.calculateReserveRatio();
+        let tokenCInACBefore = await tokenC.balanceOf(acPool.address);
+        let tokenAInACBefore = await tokenA.balanceOf(acPool.address);
+        expect(tokenCReserveBefore).to.be.above('0');
+        expect(tokenCRbvBefore).to.be.above('0');
+        await abPool.liquidateReserve(tokenC.address, acPool.address, {gasLimit: 1000000});
+        let reserveRatioAfter = await abPool.calculateReserveRatio();
+        let tokenCInACAfter = await tokenC.balanceOf(acPool.address);
+        let tokenAInACAfter = await tokenA.balanceOf(acPool.address);
+        let tokenCRbvAfter = await abPool.reservesBaseValue(tokenC.address);
+        let tokenCReserveAfter = await abPool.reserves(tokenC.address);
+
+        expect(tokenCInACBefore).to.be.lessThan(tokenCInACAfter);
+        expect(tokenAInACBefore).to.be.above(tokenAInACAfter);
+        expect(reserveRatioAfter).to.lessThan(reserveRatioBefore);
+        expect(tokenCReserveAfter).to.be.equal('0');
+        expect(tokenCRbvAfter).to.be.equal('0');
+
+        // return back reserves for future tests
+        const owner = fixture.owner;
+        const tokenB = fixture.tokenB;
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        const vRouterInstance = fixture.vRouterInstance;
+
+        let aAmountOut = ethers.utils.parseEther('300');
+
+        let jkAddress = await vPairFactoryInstance.pairs(
+            tokenB.address,
+            tokenA.address
+        );
+
+        let ikAddress = await vPairFactoryInstance.pairs(
+            tokenB.address,
+            tokenC.address
+        );
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            jkAddress,
+            ikAddress,
+            aAmountOut
+        );
+
+        await tokenC.transfer(abPool.address, amountIn);
+
+        await abPool.swapReserveToNative(
+            aAmountOut,
+            ikAddress,
+            owner.address,
+            []
+        );
+    });
+
     it('Should swap native-to-reserve A to C on pool A/B', async () => {
         const abPool = fixture.abPool;
         const bcPool = fixture.bcPool;
