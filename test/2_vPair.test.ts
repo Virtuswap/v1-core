@@ -34,7 +34,7 @@ describe('vPairFactory', () => {
         assert((await vPairFactoryInstance.admin()) == owner.address);
         await expect(
             vPairFactoryInstance.connect(accounts[0]).acceptAdmin()
-        ).to.revertedWith('Only for pending admin');
+        ).to.revertedWith('OPA');
     });
 
     it('Should change admin', async () => {
