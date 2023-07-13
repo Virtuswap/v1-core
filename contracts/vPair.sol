@@ -35,7 +35,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     uint256 public override reservesBaseValueSum;
     uint256 public override maxReserveRatio;
     uint256 public reserveRatioWarningThreshold;
-    uint256 public emergencyDiscount;
 
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
@@ -233,15 +232,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             vPool.balance1,
             vPool.balance0
         );
-
-        if (
-            msg.sender == IvPairFactory(factory).admin() ||
-            msg.sender == IvPairFactory(factory).emergencyAdmin()
-        ) {
-            requiredAmountIn =
-                (requiredAmountIn * (BASE_FACTOR - emergencyDiscount)) /
-                BASE_FACTOR;
-        }
 
         if (data.length > 0)
             IvFlashSwapCallback(msg.sender).vFlashSwapCallback(
@@ -598,14 +588,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(_reserveRatioWarningThreshold <= maxReserveRatio, 'IRWT');
         reserveRatioWarningThreshold = _reserveRatioWarningThreshold;
         emit ReserveRatioWarningThresholdChanged(_reserveRatioWarningThreshold);
-    }
-
-    function setEmergencyDiscount(
-        uint256 _emergencyDiscount
-    ) external override onlyEmergencyAdmin {
-        require(_emergencyDiscount <= BASE_FACTOR, 'IED');
-        emergencyDiscount = _emergencyDiscount;
-        emit EmergencyDiscountChanged(_emergencyDiscount);
     }
 
     function emergencyToggle() external override onlyEmergencyAdmin {
