@@ -200,13 +200,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         isOpen
         returns (address _leftoverToken, uint256 _leftoverAmount)
     {
-        require(
-            msg.sender == IvPairFactory(factory).exchangeReserves() ||
-                (msg.sender == IvPairFactory(factory).admin() &&
-                    calculateReserveRatio() >= reserveRatioWarningThreshold) ||
-                msg.sender == IvPairFactory(factory).emergencyAdmin(),
-            'OA'
-        );
+        require(msg.sender == IvPairFactory(factory).exchangeReserves(), 'OA');
         require(to > address(0) && to != token0 && to != token1, 'IT');
 
         VirtualPoolModel memory vPool = IvPoolManager(
@@ -320,7 +314,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
     function liquidateReserve(
         address reserveToken,
         address nativePool
-    ) external override nonReentrant isOpen {
+    ) external override nonReentrant {
         require(
             (msg.sender == IvPairFactory(factory).admin() &&
                 calculateReserveRatio() >= reserveRatioWarningThreshold) ||
