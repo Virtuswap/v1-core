@@ -89,44 +89,245 @@ contract vRouter is IvRouter, Multicall {
         }
     }
 
-    function swapExactOutput(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        require(
-            path[0] == WETH9 || msg.value == 0,
-            'VSWAP: ETHER VALUE SHOULD BE ZERO'
-        );
-
-        uint[] memory amountsIn = getAmountsIn(path, amountOut);
-        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
-
-        transferInput(path[0], amountsIn[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsIn, to);
-    }
-
-    function swapExactInput(
+    function swapExactETHForTokens(
         address[] memory path,
         uint256 amountIn,
         uint256 minAmountOut,
         address to,
         uint256 deadline
     ) external payable override notAfter(deadline) {
+        require(path[0] == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
+        uint[] memory amountsOut = getAmountsOut(path, amountIn);
         require(
-            path[0] == WETH9 || msg.value == 0,
-            'VSWAP: ETHER VALUE SHOULD BE ZERO'
+            amountsOut[amountsOut.length - 1] >= minAmountOut,
+            'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
+        );
+        transferETHInput(amountsOut[0], getPairAddress(path[0], path[1]));
+        swap(path, amountsOut, to);
+    }
+
+    function swapExactTokensForETH(
+        address[] memory path,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        require(
+            path[path.length - 1] == WETH9,
+            'VSWAP: OUTPUT TOKEN MUST BE WETH9'
         );
         uint[] memory amountsOut = getAmountsOut(path, amountIn);
         require(
             amountsOut[amountsOut.length - 1] >= minAmountOut,
             'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
         );
+        transferInput(path[0], amountsOut[0], getPairAddress(path[0], path[1]));
+        swap(path, amountsOut, address(this));
+        unwrapTransferETH(to, amountsOut[amountsOut.length - 1]);
+    }
 
+    function swapETHForExactTokens(
+        address[] memory path,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external payable override notAfter(deadline) {
+        require(path[0] == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
+        uint[] memory amountsIn = getAmountsIn(path, amountOut);
+        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
+        transferETHInput(amountsIn[0], getPairAddress(path[0], path[1]));
+        swap(path, amountsIn, to);
+    }
+
+    function swapTokensForExactETH(
+        address[] memory path,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        require(
+            path[path.length - 1] == WETH9,
+            'VSWAP: OUTPUT TOKEN MUST BE WETH9'
+        );
+        uint[] memory amountsIn = getAmountsIn(path, amountOut);
+        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
+        transferInput(path[0], amountsIn[0], getPairAddress(path[0], path[1]));
+        swap(path, amountsIn, address(this));
+        unwrapTransferETH(to, amountsIn[amountsIn.length - 1]);
+    }
+
+    function swapReserveETHForExactTokens(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external payable override notAfter(deadline) {
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        require(tokenIn == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
+        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
+        transferETHInput(amountIn, jkAddress);
+        swapReserve(amountOut, jkAddress, ikPair, to);
+    }
+
+    function swapReserveTokensForExactETH(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        require(tokenOut == WETH9, 'VSWAP: OUTPUT TOKEN MUST BE WETH9');
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
+        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
+        transferInput(tokenIn, amountIn, jkAddress);
+        swapReserve(amountOut, jkAddress, ikPair, address(this));
+        unwrapTransferETH(to, amountOut);
+    }
+
+    function swapReserveExactTokensForETH(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        require(tokenOut == WETH9, 'VSWAP: OUTPUT TOKEN MUST BE WETH9');
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
+        require(
+            amountOut >= minAmountOut,
+            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
+        );
+        transferInput(tokenIn, amountIn, jkAddress);
+        swapReserve(amountOut, jkAddress, ikPair, address(this));
+        unwrapTransferETH(to, amountOut);
+    }
+
+    function swapReserveExactETHForTokens(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external payable override notAfter(deadline) {
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        require(tokenIn == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
+        require(
+            amountOut >= minAmountOut,
+            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
+        );
+        transferETHInput(amountIn, jkAddress);
+        swapReserve(amountOut, jkAddress, ikPair, to);
+    }
+
+    function swapTokensForExactTokens(
+        address[] memory path,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        uint[] memory amountsIn = getAmountsIn(path, amountOut);
+        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
+        transferInput(path[0], amountsIn[0], getPairAddress(path[0], path[1]));
+        swap(path, amountsIn, to);
+    }
+
+    function swapExactTokensForTokens(
+        address[] memory path,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        uint[] memory amountsOut = getAmountsOut(path, amountIn);
+        require(
+            amountsOut[amountsOut.length - 1] >= minAmountOut,
+            'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
+        );
         transferInput(path[0], amountsOut[0], getPairAddress(path[0], path[1]));
         swap(path, amountsOut, to);
+    }
+
+    function swapReserveTokensForExactTokens(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
+        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
+        transferInput(tokenIn, amountIn, jkAddress);
+        swapReserve(amountOut, jkAddress, ikPair, to);
+    }
+
+    function swapReserveExactTokensForTokens(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external override notAfter(deadline) {
+        (address ik0, address ik1) = IvPair(ikPair).getTokens();
+        address tokenIn = ik0 == commonToken ? ik1 : ik0;
+        address jkAddress = getPairAddress(tokenOut, commonToken);
+        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
+        require(
+            amountOut >= minAmountOut,
+            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
+        );
+        transferInput(tokenIn, amountIn, jkAddress);
+        swapReserve(amountOut, jkAddress, ikPair, to);
+    }
+
+    function transferETHInput(uint amountIn, address pair) internal {
+        require(
+            address(this).balance >= amountIn,
+            'VSWAP: INSUFFICIENT_ETH_INPUT_AMOUNT'
+        );
+        IWETH9(WETH9).deposit{value: amountIn}();
+        SafeERC20.safeTransfer(IERC20(WETH9), pair, amountIn);
+        (bool success, ) = msg.sender.call{value: address(this).balance}('');
+        require(success, 'VSWAP: TRANSFER FAILED');
+    }
+
+    function transferInput(
+        address token,
+        uint amountIn,
+        address pair
+    ) internal {
+        SafeERC20.safeTransferFrom(IERC20(token), msg.sender, pair, amountIn);
     }
 
     function swap(
@@ -139,66 +340,14 @@ contract vRouter is IvRouter, Multicall {
                 amounts[i + 1],
                 path[i + 1],
                 i == path.length - 2
-                    ? (path[i + 1] == WETH9 ? address(this) : to)
+                    ? to
                     : getPairAddress(path[i + 1], path[i + 2]),
                 new bytes(0)
             );
         }
-
-        if (path[path.length - 1] == WETH9) {
-            unwrapTransferETH(to, amounts[amounts.length - 1]);
-        }
-    }
-
-    function swapReserveExactOutput(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        require(
-            tokenIn == WETH9 || msg.value == 0,
-            'VSWAP: ETHER VALUE SHOULD BE ZERO'
-        );
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
-        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
-        transferInput(tokenIn, amountIn, jkAddress);
-        swapReserve(tokenOut, amountOut, jkAddress, ikPair, to);
-    }
-
-    function swapReserveExactInput(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        require(
-            tokenIn == WETH9 || msg.value == 0,
-            'VSWAP: ETHER VALUE SHOULD BE ZERO'
-        );
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
-        require(
-            amountOut >= minAmountOut,
-            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
-        );
-        transferInput(tokenIn, amountIn, jkAddress);
-        swapReserve(tokenOut, amountOut, jkAddress, ikPair, to);
     }
 
     function swapReserve(
-        address tokenOut,
         uint amountOut,
         address jkAddress,
         address ikAddress,
@@ -207,39 +356,9 @@ contract vRouter is IvRouter, Multicall {
         IvPair(jkAddress).swapReserveToNative(
             amountOut,
             ikAddress,
-            tokenOut == WETH9 ? address(this) : to,
+            to,
             new bytes(0)
         );
-
-        if (tokenOut == WETH9) {
-            unwrapTransferETH(to, amountOut);
-        }
-    }
-
-    function transferInput(
-        address tokenIn,
-        uint amountIn,
-        address pair
-    ) internal {
-        if (tokenIn == WETH9) {
-            require(
-                address(this).balance >= amountIn,
-                'VSWAP: INSUFFICIENT_ETH_INPUT_AMOUNT'
-            );
-            IWETH9(WETH9).deposit{value: amountIn}();
-            SafeERC20.safeTransfer(IERC20(WETH9), pair, amountIn);
-            (bool success, ) = msg.sender.call{value: address(this).balance}(
-                ''
-            );
-            require(success, 'VSWAP: TRANSFER FAILED');
-        } else {
-            SafeERC20.safeTransferFrom(
-                IERC20(tokenIn),
-                msg.sender,
-                pair,
-                amountIn
-            );
-        }
     }
 
     function _addLiquidity(

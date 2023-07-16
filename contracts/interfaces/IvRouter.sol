@@ -12,15 +12,7 @@ interface IvRouter {
 
     function WETH9() external view returns (address);
 
-    function swapExactOutput(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external payable;
-
-    function swapExactInput(
+    function swapExactETHForTokens(
         address[] memory path,
         uint256 amountIn,
         uint256 minAmountOut,
@@ -28,7 +20,31 @@ interface IvRouter {
         uint256 deadline
     ) external payable;
 
-    function swapReserveExactOutput(
+    function swapExactTokensForETH(
+        address[] memory path,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapETHForExactTokens(
+        address[] memory path,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external payable;
+
+    function swapTokensForExactETH(
+        address[] memory path,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapReserveETHForExactTokens(
         address tokenOut,
         address commonToken,
         address ikPair,
@@ -38,7 +54,27 @@ interface IvRouter {
         uint256 deadline
     ) external payable;
 
-    function swapReserveExactInput(
+    function swapReserveTokensForExactETH(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapReserveExactTokensForETH(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapReserveExactETHForTokens(
         address tokenOut,
         address commonToken,
         address ikPair,
@@ -47,6 +83,42 @@ interface IvRouter {
         address to,
         uint256 deadline
     ) external payable;
+
+    function swapTokensForExactTokens(
+        address[] memory path,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapExactTokensForTokens(
+        address[] memory path,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapReserveTokensForExactTokens(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountOut,
+        uint256 maxAmountIn,
+        address to,
+        uint256 deadline
+    ) external;
+
+    function swapReserveExactTokensForTokens(
+        address tokenOut,
+        address commonToken,
+        address ikPair,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address to,
+        uint256 deadline
+    ) external;
 
     function addLiquidity(
         address tokenA,
