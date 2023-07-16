@@ -52,8 +52,6 @@ interface IvPair {
 
     event AllowListCountChanged(uint24 _maxAllowListCount);
 
-    event EmergencyDiscountChanged(uint256 _newEmergencyDiscount);
-
     event BlocksDelayChanged(uint256 _newBlocksDelay);
 
     event ReserveRatioWarningThresholdChanged(
@@ -88,6 +86,11 @@ interface IvPair {
         bytes calldata data
     ) external returns (address _token, uint256 _leftovers);
 
+    function liquidateReserve(
+        address reserveToken,
+        address nativePool
+    ) external;
+
     function mint(address to) external returns (uint256 liquidity);
 
     function burn(
@@ -105,8 +108,6 @@ interface IvPair {
     function setMaxReserveThreshold(uint256 threshold) external;
 
     function setReserveRatioWarningThreshold(uint256 threshold) external;
-
-    function setEmergencyDiscount(uint256 discount) external;
 
     function setBlocksDelay(uint128 _newBlocksDelay) external;
 
