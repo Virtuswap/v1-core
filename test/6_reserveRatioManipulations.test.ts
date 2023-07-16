@@ -13,6 +13,8 @@ describe('ExchangeReserves manipulation scenarios', () => {
 
     before(async () => {
         fixture = await loadFixture(reserveRatioManipulation);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
     });
 
     it('Manipulation 1: manipulating pool AB in order to reduce reserve ratio (i.e. making A more expensive)', async () => {

@@ -17,6 +17,10 @@ describe('vRouter 1', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
     });
 
     it('Should quote A to B', async () => {
@@ -1037,6 +1041,7 @@ describe('vRouter: getVirtualPools', () => {
             const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
             const pool = VPair__factory.connect(pairAddr, fixture.owner);
             await pool.setMaxAllowListCount(8);
+            await pool.setBlocksDelay(0);
             await pool.setAllowList(
                 allowList.sort((a, b) => {
                     if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
@@ -1170,6 +1175,9 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
         );
         const abPool = VPair__factory.connect(addr1, fixture.owner);
         const bcPool = VPair__factory.connect(addr2, fixture.owner);
+
+        await abPool.setBlocksDelay(0);
+        await bcPool.setBlocksDelay(0);
 
         return { abPool, bcPool };
     };

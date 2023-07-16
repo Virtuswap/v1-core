@@ -263,7 +263,7 @@ export async function deployPools() {
     const bdPool = VPair__factory.connect(address1, owner);
 
     // whitelist token C
-    await bdPool.setAllowList([tokenC.address]);
+    //await bdPool.setAllowList([tokenC.address]);
 
     const reserve0Pool4 = await bdPool.pairBalance0();
     const reserve1Pool4 = await bdPool.pairBalance1();

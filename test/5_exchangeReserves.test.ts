@@ -14,6 +14,8 @@ describe('ExchangeReserves', () => {
         await fixture.vPairFactoryInstance.setExchangeReservesAddress(
             fixture.exchageReserveInstance.address
         );
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.abPool.setBlocksDelay(0);
     });
 
     it('Should change incentives limit', async () => {

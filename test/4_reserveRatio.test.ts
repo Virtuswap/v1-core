@@ -11,6 +11,10 @@ describe('Reserve Ratio 1', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
     });
 
     it('Should increase reserveRatio and reservesBaseValue of C after adding C for A to pool A/B', async () => {
@@ -557,6 +561,11 @@ describe('Reserve Ratio 2', () => {
         await fixture.vPairFactoryInstance.setExchangeReservesAddress(
             fixture.exchangeReserveInstance.address
         );
+        // TODO
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.acPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
     });
 
     it('Exchange 500000 C to B in pool AB', async () => {
