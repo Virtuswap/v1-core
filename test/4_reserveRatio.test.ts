@@ -39,7 +39,7 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenA.address,
             tokenB.address,
             bcPool.address,
@@ -81,7 +81,7 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenB.address,
             tokenA.address,
             acPool.address,
@@ -131,7 +131,7 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenA.address,
             tokenB.address,
             ikPair,
@@ -181,7 +181,7 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenB.address,
             tokenA.address,
             ikPair,
