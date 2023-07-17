@@ -239,7 +239,7 @@ describe('vRouter 1', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapExactOutput(
+        await vRouterInstance.swapTokensForExactTokens(
             [tokenC.address, tokenA.address],
             amountOut,
             amountIn,
@@ -277,7 +277,7 @@ describe('vRouter 1', () => {
 
         let str = VRouter__factory.getInterface(
             VRouter__factory.abi
-        ).encodeFunctionData('swapExactOutput', [
+        ).encodeFunctionData('swapTokensForExactTokens', [
             [tokenA.address, tokenC.address],
             amountOut,
             amountIn,
@@ -314,7 +314,7 @@ describe('vRouter 1', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapExactInput(
+        await vRouterInstance.swapExactTokensForTokens(
             [tokenC.address, tokenA.address],
             amountIn,
             amountOut,
@@ -350,7 +350,7 @@ describe('vRouter 1', () => {
 
         let str = VRouter__factory.getInterface(
             VRouter__factory.abi
-        ).encodeFunctionData('swapExactInput', [
+        ).encodeFunctionData('swapExactTokensForTokens', [
             [tokenA.address, tokenC.address],
             amountIn,
             amountOut,
@@ -391,7 +391,7 @@ describe('vRouter 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenA.address,
             tokenB.address,
             bcPool.address,
@@ -420,7 +420,7 @@ describe('vRouter 1', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenB.address,
             tokenC.address,
             abPool.address,
@@ -452,7 +452,7 @@ describe('vRouter 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             bcPool.address,
@@ -481,7 +481,7 @@ describe('vRouter 1', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenB.address,
             tokenC.address,
             abPool.address,
@@ -507,7 +507,7 @@ describe('vRouter 1', () => {
 
         let reverted = false;
         try {
-            await vRouterInstance.swapReserveExactInput(
+            await vRouterInstance.swapReserveExactTokensForTokens(
                 tokenC.address,
                 tokenB.address,
                 bcPool.address,
@@ -552,7 +552,7 @@ describe('vRouter 1', () => {
 
         let str = VRouter__factory.getInterface(
             VRouter__factory.abi
-        ).encodeFunctionData('swapExactOutput', [
+        ).encodeFunctionData('swapTokensForExactTokens', [
             [tokenC.address, tokenA.address],
             _amountOut,
             realAmountIn,
@@ -564,7 +564,7 @@ describe('vRouter 1', () => {
 
         str = VRouter__factory.getInterface(
             VRouter__factory.abi
-        ).encodeFunctionData('swapReserveExactOutput', [
+        ).encodeFunctionData('swapReserveTokensForExactTokens', [
             tokenA.address,
             tokenB.address,
             bcPool.address,
@@ -910,9 +910,13 @@ describe('vRouter 2', () => {
 
     before(async function () {
         fixture = await loadFixture(deployPools);
+        await fixture.abPool.setBlocksDelay(0);
+        await fixture.bcPool.setBlocksDelay(0);
+        await fixture.bdPool.setBlocksDelay(0);
+        await fixture.wbPool.setBlocksDelay(0);
     });
 
-    it('Should swap WETH9<>B token', async () => {
+    it('Should swap ETH<> exact B token', async () => {
         const vRouterInstance = fixture.vRouterInstance;
         const WETH9 = await vRouterInstance.WETH9();
         const tokenB = fixture.tokenB;
@@ -933,7 +937,7 @@ describe('vRouter 2', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapExactOutput(
+        await vRouterInstance.swapETHForExactTokens(
             [WETH9, tokenB.address],
             amountOut,
             amountIn,
@@ -949,7 +953,7 @@ describe('vRouter 2', () => {
         expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
     });
 
-    it('Should swap B<>WETH9 token', async () => {
+    it('Should swap B<>exact ETH token', async () => {
         const vRouterInstance = fixture.vRouterInstance;
         const WETH9 = await vRouterInstance.WETH9();
         const tokenB = fixture.tokenB;
@@ -970,7 +974,7 @@ describe('vRouter 2', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapExactOutput(
+        await vRouterInstance.swapTokensForExactETH(
             [tokenB.address, WETH9],
             amountOut,
             amountIn,
@@ -979,6 +983,394 @@ describe('vRouter 2', () => {
         );
         const tokenABalanceAfter = await tokenB.balanceOf(owner.address);
         const tokenBBalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap exact ETH<>B token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+
+        const tokenABalanceBefore = await ethers.provider.getBalance(
+            owner.address
+        );
+        const tokenBBalanceBefore = await tokenB.balanceOf(owner.address);
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getAmountIn(
+            WETH9,
+            tokenB.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapExactETHForTokens(
+            [WETH9, tokenB.address],
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs,
+            { value: amountIn }
+        );
+        const tokenABalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        const tokenBBalanceAfter = await tokenB.balanceOf(owner.address);
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap exact B<>ETH token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+
+        const tokenABalanceBefore = await tokenB.balanceOf(owner.address);
+        const tokenBBalanceBefore = await ethers.provider.getBalance(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getAmountIn(
+            tokenB.address,
+            WETH9,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapExactTokensForETH(
+            [tokenB.address, WETH9],
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs
+        );
+        const tokenABalanceAfter = await tokenB.balanceOf(owner.address);
+        const tokenBBalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap exact WETH9<>B token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        await fixture.WETH9Instance.testSetBalance(owner.address, ethers.utils.parseEther('10000000'));
+        await fixture.WETH9Instance.approve(vRouterInstance.address, ethers.utils.parseEther('10000000'));
+
+        const tokenABalanceBefore = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+        const tokenBBalanceBefore = await tokenB.balanceOf(owner.address);
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getAmountIn(
+            WETH9,
+            tokenB.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapExactTokensForTokens(
+            [WETH9, tokenB.address],
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs
+        );
+        const tokenABalanceAfter = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+        const tokenBBalanceAfter = await tokenB.balanceOf(owner.address);
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap B<> exact WETH9 token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        await fixture.WETH9Instance.testSetBalance(owner.address, ethers.utils.parseEther('10000000'));
+        await fixture.WETH9Instance.approve(vRouterInstance.address, ethers.utils.parseEther('10000000'));
+
+        const tokenABalanceBefore = await tokenB.balanceOf(owner.address);
+        const tokenBBalanceBefore = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getAmountIn(
+            tokenB.address,
+            WETH9,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapExactTokensForTokens(
+            [tokenB.address, WETH9],
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs
+        );
+        const tokenABalanceAfter = await tokenB.balanceOf(owner.address);
+        const tokenBBalanceAfter = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap reserve ETH<> exact A token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+
+        const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceBefore = await ethers.provider.getBalance(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            abPool.address,
+            wbPool.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapReserveETHForExactTokens(
+            tokenA.address,
+            tokenB.address,
+            wbPool.address,
+            amountOut,
+            amountIn,
+            owner.address,
+            futureTs,
+            {value: amountIn},
+        );
+        const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.lessThan(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.above(tokenABalanceBefore);
+    });
+
+    it('Should swap reserve exact ETH<> A token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+
+        const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceBefore = await ethers.provider.getBalance(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            abPool.address,
+            wbPool.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapReserveExactETHForTokens(
+            tokenA.address,
+            tokenB.address,
+            wbPool.address,
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs,
+            {value: amountIn},
+        );
+        const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.lessThan(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.above(tokenABalanceBefore);
+    });
+
+    it('Should swap reserve A<> exact ETH token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+
+        const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceBefore = await ethers.provider.getBalance(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            wbPool.address,
+            abPool.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapReserveTokensForExactETH(
+            WETH9,
+            tokenB.address,
+            abPool.address,
+            amountOut,
+            amountIn,
+            owner.address,
+            futureTs,
+        );
+        const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap reserve exact A<> ETH token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+
+        const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceBefore = await ethers.provider.getBalance(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            wbPool.address,
+            abPool.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapReserveExactTokensForETH(
+            WETH9,
+            tokenB.address,
+            abPool.address,
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs,
+        );
+        const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceAfter = await ethers.provider.getBalance(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap reserve A<> exact WETH9 token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+
+        const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceBefore = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('10');
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            wbPool.address,
+            abPool.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapReserveTokensForExactTokens(
+            WETH9,
+            tokenB.address,
+            abPool.address,
+            amountOut,
+            amountIn,
+            owner.address,
+            futureTs,
+        );
+        const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceAfter = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+        expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
+        expect(tokenABalanceAfter).to.be.lessThan(tokenABalanceBefore);
+    });
+
+    it('Should swap reserve exact A<> WETH9 token', async () => {
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+        const tokenB = fixture.tokenB;
+        const owner = fixture.owner;
+        const wbPool = fixture.wbPool;
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+
+        const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceBefore = await fixture.WETH9Instance.balanceOf(
+            owner.address
+        );
+
+        const amountOut = ethers.utils.parseEther('1');
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            wbPool.address,
+            abPool.address,
+            amountOut
+        );
+        const futureTs = await utils.getFutureBlockTimestamp();
+
+        await vRouterInstance.swapReserveExactTokensForTokens(
+            WETH9,
+            tokenB.address,
+            abPool.address,
+            amountIn,
+            amountOut,
+            owner.address,
+            futureTs,
+        );
+        const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
+        const tokenBBalanceAfter = await fixture.WETH9Instance.balanceOf(
             owner.address
         );
         expect(tokenBBalanceAfter).to.above(tokenBBalanceBefore);
@@ -1198,7 +1590,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.abPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenC.address,
             tokenB.address,
             pools.abPool.address,
@@ -1227,7 +1619,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1256,7 +1648,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1285,7 +1677,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1314,7 +1706,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1344,7 +1736,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             amountIn
         );
 
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1366,7 +1758,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             amountIn
         );
 
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1396,7 +1788,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1416,7 +1808,7 @@ describe('vRouter: getVirtualMaxTradeAmount', () => {
             pools.bcPool.address,
             amountIn
         );
-        await vRouterInstance.swapReserveExactInput(
+        await vRouterInstance.swapReserveExactTokensForTokens(
             tokenA.address,
             tokenB.address,
             pools.bcPool.address,
@@ -1463,7 +1855,7 @@ describe('vRouter: swap with multiple hops', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapExactOutput(
+        await vRouterInstance.swapTokensForExactTokens(
             [tokenC.address, tokenB.address, tokenA.address],
             amountOut,
             amountInCB,
@@ -1501,7 +1893,7 @@ describe('vRouter: swap with multiple hops', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await expect(
-            vRouterInstance.swapExactOutput(
+            vRouterInstance.swapTokensForExactTokens(
                 [tokenC.address, tokenB.address, tokenA.address],
                 amountOut,
                 amountInCB.sub(1),
@@ -1537,7 +1929,7 @@ describe('vRouter: swap with multiple hops', () => {
         );
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapExactInput(
+        await vRouterInstance.swapExactTokensForTokens(
             [tokenC.address, tokenB.address, tokenA.address],
             amountIn,
             amountOutBA,
@@ -1575,7 +1967,7 @@ describe('vRouter: swap with multiple hops', () => {
         const futureTs = await utils.getFutureBlockTimestamp();
 
         await expect(
-            vRouterInstance.swapExactInput(
+            vRouterInstance.swapExactTokensForTokens(
                 [tokenC.address, tokenB.address, tokenA.address],
                 amountIn,
                 amountOutBA.add(1),
