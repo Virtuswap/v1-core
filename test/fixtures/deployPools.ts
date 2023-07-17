@@ -103,7 +103,7 @@ export async function deployPools() {
     );
 
     await vPairFactoryInstance.setDefaultAllowList(
-        [tokenA.address, tokenB.address, tokenC.address, tokenD.address].sort(
+        [tokenA.address, tokenB.address, tokenC.address, tokenD.address, WETH9Instance.address].sort(
             (a, b) => {
                 if (ethers.BigNumber.from(a).lt(ethers.BigNumber.from(b)))
                     return -1;
@@ -323,5 +323,6 @@ export async function deployPools() {
         ],
         vPairFactoryInstance,
         exchageReserveInstance,
+        WETH9Instance,
     };
 }

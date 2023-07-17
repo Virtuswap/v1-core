@@ -40,7 +40,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapExactOutput(
+        await fixture.vRouterInstance.swapTokensForExactTokens(
             [fixture.tokenB.address, fixture.tokenA.address],
             amountOut,
             amountIn,
@@ -85,7 +85,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
                 '%'
         );
 
-        await fixture.vRouterInstance.swapReserveExactOutput(
+        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
             fixture.tokenC.address,
             fixture.tokenA.address,
             ikPair,
@@ -116,7 +116,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapExactOutput(
+        await fixture.vRouterInstance.swapTokensForExactTokens(
             [fixture.tokenA.address, fixture.tokenB.address],
             amountOut,
             amountIn,
@@ -175,7 +175,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
         console.log(JSON.stringify(vPool));
 
-        await fixture.vRouterInstance.swapReserveExactOutput(
+        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
             fixture.tokenC.address,
             fixture.tokenA.address,
             ikPair,
@@ -214,7 +214,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapExactOutput(
+        await fixture.vRouterInstance.swapTokensForExactTokens(
             [fixture.tokenC.address, fixture.tokenA.address],
             amountOut,
             amountIn,
@@ -273,7 +273,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
         console.log(JSON.stringify(vPool));
 
-        await fixture.vRouterInstance.swapReserveExactOutput(
+        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
             fixture.tokenC.address,
             fixture.tokenA.address,
             ikPair,
@@ -312,7 +312,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapExactOutput(
+        await fixture.vRouterInstance.swapTokensForExactTokens(
             [fixture.tokenA.address, fixture.tokenC.address],
             amountOut,
             amountIn,
@@ -371,7 +371,7 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
         console.log(JSON.stringify(vPool));
 
-        await fixture.vRouterInstance.swapReserveExactOutput(
+        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
             fixture.tokenC.address,
             fixture.tokenA.address,
             ikPair,

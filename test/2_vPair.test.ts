@@ -63,9 +63,9 @@ describe('vPair1', () => {
         await fixture.acPool.setBlocksDelay(0);
     });
 
-    it('Should have 4 tokens in allowList', async () => {
+    it('Should have 5 tokens in allowList', async () => {
         const allowListCount = await fixture.abPool.maxAllowListCount();
-        expect(allowListCount).to.be.equal(4);
+        expect(allowListCount).to.be.equal(5);
     });
 
     it('Should swap native A to B on pool A/B', async () => {

@@ -88,7 +88,7 @@ describe('ExchangeReserves', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenA.address,
             tokenB.address,
             bcPool.address,
@@ -127,7 +127,7 @@ describe('ExchangeReserves', () => {
         let tokenAReserve = await bcPool.reservesBaseValue(tokenA.address);
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveExactOutput(
+        await vRouterInstance.swapReserveTokensForExactTokens(
             tokenB.address,
             tokenC.address,
             abPool.address,
