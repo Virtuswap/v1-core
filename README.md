@@ -6,8 +6,8 @@ More in-depth documentation is available at [docs.virtuswap.io](https://docs.vir
 #  Security  #
 
 ### Security Audits
--   [CertiK](https://github.com/Virtuswap/v1-core/blob/main/audits/REP-final-20220915T000103Z.pdf)
--   [Pessimistic](https://github.com/Virtuswap/v1-core/blob/main/audits/VirtuSwap_Security_Analysis_by_Pessimistic.pdfß)
+-   [CertiK](https://github.com/Virtuswap/v1-core/blob/main/audits/REP-final-20230527T214448Z.pdf)
+-   [Pessimistic](https://github.com/Virtuswap/v1-core/blob/main/audits/VirtuSwap_Security_Analysis_by_Pessimistic.pdf)
 
 
 ### Bug Bounty
