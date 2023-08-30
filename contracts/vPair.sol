@@ -556,6 +556,11 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                         reserveBaseValuewlI -
                         ((reserveBaseValuewlI * liquidity) / totalSupply_);
 
+                    unchecked {
+                        reservesBaseValueSum += reservesBaseValue[_wlI];
+                        reservesBaseValueSum -= reserveBaseValuewlI;
+                    }
+
                     reserves[_wlI] = reserveBalance - reserveAmountOut;
                 }
             }
