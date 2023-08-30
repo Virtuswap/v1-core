@@ -683,6 +683,80 @@ describe('vPair2', () => {
             expectedCBalance
         );
     });
+
+    it('Burn -> should update reserve ratio correctly', async () => {
+        const abPool = fixture.abPool;
+        const tokenA = fixture.tokenA;
+        const tokenB = fixture.tokenB;
+        const tokenC = fixture.tokenC;
+        const owner = fixture.owner;
+        const vPairFactoryInstance = fixture.vPairFactoryInstance;
+        const vRouterInstance = fixture.vRouterInstance;
+
+        let AInput = 1000 * fixture.A_PRICE;
+        let BInput = (fixture.B_PRICE / fixture.A_PRICE) * AInput;
+
+        await fixture.tokenA.transfer(
+            abPool.address,
+            ethers.utils.parseEther(AInput.toString())
+        );
+        await fixture.tokenB.transfer(
+            abPool.address,
+            ethers.utils.parseEther(BInput.toString())
+        );
+        await abPool.mint(owner.address);
+
+        let aAmountOut = ethers.utils.parseEther('10');
+
+        let jkAddress = await vPairFactoryInstance.pairs(
+            tokenB.address,
+            tokenA.address
+        );
+
+        let ikAddress = await vPairFactoryInstance.pairs(
+            tokenB.address,
+            tokenC.address
+        );
+
+        let amountIn = await vRouterInstance.getVirtualAmountIn(
+            jkAddress,
+            ikAddress,
+            aAmountOut
+        );
+
+        await tokenC.transfer(abPool.address, amountIn);
+
+        await abPool.swapReserveToNative(
+            aAmountOut,
+            ikAddress,
+            owner.address,
+            []
+        );
+
+        const allowListCount = await abPool.maxAllowListCount();
+        let rbvSumBefore = ethers.BigNumber.from(0);
+        for (let i = 0; i < allowListCount; ++i) {
+            console.log(i);
+            const tokenAddress = await abPool.allowList(i);
+            rbvSumBefore = rbvSumBefore.add(await abPool.reservesBaseValue(tokenAddress)); 
+        }
+        expect(rbvSumBefore).to.be.equal(await abPool.reservesBaseValueSum());
+
+        const lpBalance = await abPool.balanceOf(owner.address);
+        //transfer LP tokens to pool
+        let erc20 = IERC20Metadata__factory.connect(abPool.address, owner);
+        await erc20.transfer(abPool.address, lpBalance);
+        //call burn function
+        await abPool.burn(owner.address);
+
+        let rbvSumAfter = ethers.BigNumber.from(0);
+        for (let i = 0; i < allowListCount; ++i) {
+            console.log(i);
+            const tokenAddress = await abPool.allowList(i);
+            rbvSumAfter = rbvSumAfter.add(await abPool.reservesBaseValue(tokenAddress)); 
+        }
+        expect(rbvSumAfter).to.be.equal(await abPool.reservesBaseValueSum());
+    });
 });
 
 describe('vPair reentrancy guard', () => {
