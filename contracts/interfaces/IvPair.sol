@@ -109,6 +109,8 @@ interface IvPair {
 
     function emergencyToggle() external;
 
+    function allowListLength() external view returns (uint);
+
     function token0() external view returns (address);
 
     function token1() external view returns (address);

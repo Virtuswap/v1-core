@@ -63,11 +63,6 @@ describe('vPair1', () => {
         await fixture.acPool.setBlocksDelay(0);
     });
 
-    it('Should have 5 tokens in allowList', async () => {
-        const allowListCount = await fixture.abPool.maxAllowListCount();
-        expect(allowListCount).to.be.equal(5);
-    });
-
     it('Should swap native A to B on pool A/B', async () => {
         accounts = _.map(fixture.accounts, 'address');
         const abPool = fixture.abPool;
@@ -204,7 +199,9 @@ describe('vPair1', () => {
         let tokenAInACBefore = await tokenA.balanceOf(acPool.address);
         expect(tokenCReserveBefore).to.be.above('0');
         expect(tokenCRbvBefore).to.be.above('0');
-        await abPool.liquidateReserve(tokenC.address, acPool.address, {gasLimit: 1000000});
+        await abPool.liquidateReserve(tokenC.address, acPool.address, {
+            gasLimit: 1000000,
+        });
         let reserveRatioAfter = await abPool.calculateReserveRatio();
         let tokenCInACAfter = await tokenC.balanceOf(acPool.address);
         let tokenAInACAfter = await tokenA.balanceOf(acPool.address);
@@ -292,18 +289,6 @@ describe('vPair1', () => {
         expect(tokenAReserveAfter).to.lessThan(tokenAReserve);
     });*/
 
-    it('Should set max whitelist count', async () => {
-        const abPool = fixture.abPool;
-
-        const maxWhitelist = await abPool.maxAllowListCount();
-
-        await abPool.setMaxAllowListCount(maxWhitelist - 1);
-
-        const maxWhitelistAfter = await abPool.maxAllowListCount();
-
-        expect(maxWhitelist - 1).to.equal(maxWhitelistAfter);
-    });
-
     it('Should set whitelist', async () => {
         const abPool = fixture.abPool;
         const owner = fixture.owner;
@@ -324,7 +309,6 @@ describe('vPair1', () => {
         const abPool = fixture.abPool;
         const owner = fixture.owner;
 
-        await abPool.setMaxAllowListCount(8);
         await abPool.setAllowList(accounts.slice(1, 5).sort());
 
         let response1 = await abPool.allowListMap(accounts[1]);
@@ -367,14 +351,6 @@ describe('vPair1', () => {
         expect(response6).to.be.true;
         expect(response7).to.be.true;
         expect(response8).to.be.true;
-    });
-
-    it('Should not set allowList if list is longer then maxAllowList', async () => {
-        const abPool = fixture.abPool;
-        await abPool.setMaxAllowListCount(8);
-        await expect(
-            abPool.setAllowList(accounts.slice(1, 10))
-        ).to.revertedWith('MW');
     });
 
     it('Should not set allowlist if not admin', async () => {
@@ -733,12 +709,14 @@ describe('vPair2', () => {
             []
         );
 
-        const allowListCount = await abPool.maxAllowListCount();
+        const allowListCount = await abPool.allowListLength();
         let rbvSumBefore = ethers.BigNumber.from(0);
         for (let i = 0; i < allowListCount; ++i) {
             console.log(i);
             const tokenAddress = await abPool.allowList(i);
-            rbvSumBefore = rbvSumBefore.add(await abPool.reservesBaseValue(tokenAddress)); 
+            rbvSumBefore = rbvSumBefore.add(
+                await abPool.reservesBaseValue(tokenAddress)
+            );
         }
         expect(rbvSumBefore).to.be.equal(await abPool.reservesBaseValueSum());
 
@@ -753,7 +731,9 @@ describe('vPair2', () => {
         for (let i = 0; i < allowListCount; ++i) {
             console.log(i);
             const tokenAddress = await abPool.allowList(i);
-            rbvSumAfter = rbvSumAfter.add(await abPool.reservesBaseValue(tokenAddress)); 
+            rbvSumAfter = rbvSumAfter.add(
+                await abPool.reservesBaseValue(tokenAddress)
+            );
         }
         expect(rbvSumAfter).to.be.equal(await abPool.reservesBaseValueSum());
     });

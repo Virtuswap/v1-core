@@ -1066,8 +1066,14 @@ describe('vRouter 2', () => {
         const WETH9 = await vRouterInstance.WETH9();
         const tokenB = fixture.tokenB;
         const owner = fixture.owner;
-        await fixture.WETH9Instance.testSetBalance(owner.address, ethers.utils.parseEther('10000000'));
-        await fixture.WETH9Instance.approve(vRouterInstance.address, ethers.utils.parseEther('10000000'));
+        await fixture.WETH9Instance.testSetBalance(
+            owner.address,
+            ethers.utils.parseEther('10000000')
+        );
+        await fixture.WETH9Instance.approve(
+            vRouterInstance.address,
+            ethers.utils.parseEther('10000000')
+        );
 
         const tokenABalanceBefore = await fixture.WETH9Instance.balanceOf(
             owner.address
@@ -1103,8 +1109,14 @@ describe('vRouter 2', () => {
         const WETH9 = await vRouterInstance.WETH9();
         const tokenB = fixture.tokenB;
         const owner = fixture.owner;
-        await fixture.WETH9Instance.testSetBalance(owner.address, ethers.utils.parseEther('10000000'));
-        await fixture.WETH9Instance.approve(vRouterInstance.address, ethers.utils.parseEther('10000000'));
+        await fixture.WETH9Instance.testSetBalance(
+            owner.address,
+            ethers.utils.parseEther('10000000')
+        );
+        await fixture.WETH9Instance.approve(
+            vRouterInstance.address,
+            ethers.utils.parseEther('10000000')
+        );
 
         const tokenABalanceBefore = await tokenB.balanceOf(owner.address);
         const tokenBBalanceBefore = await fixture.WETH9Instance.balanceOf(
@@ -1166,7 +1178,7 @@ describe('vRouter 2', () => {
             amountIn,
             owner.address,
             futureTs,
-            {value: amountIn},
+            { value: amountIn }
         );
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenBBalanceAfter = await ethers.provider.getBalance(
@@ -1207,7 +1219,7 @@ describe('vRouter 2', () => {
             amountOut,
             owner.address,
             futureTs,
-            {value: amountIn},
+            { value: amountIn }
         );
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenBBalanceAfter = await ethers.provider.getBalance(
@@ -1247,7 +1259,7 @@ describe('vRouter 2', () => {
             amountOut,
             amountIn,
             owner.address,
-            futureTs,
+            futureTs
         );
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenBBalanceAfter = await ethers.provider.getBalance(
@@ -1287,7 +1299,7 @@ describe('vRouter 2', () => {
             amountIn,
             amountOut,
             owner.address,
-            futureTs,
+            futureTs
         );
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenBBalanceAfter = await ethers.provider.getBalance(
@@ -1327,7 +1339,7 @@ describe('vRouter 2', () => {
             amountOut,
             amountIn,
             owner.address,
-            futureTs,
+            futureTs
         );
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenBBalanceAfter = await fixture.WETH9Instance.balanceOf(
@@ -1367,7 +1379,7 @@ describe('vRouter 2', () => {
             amountIn,
             amountOut,
             owner.address,
-            futureTs,
+            futureTs
         );
         const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
         const tokenBBalanceAfter = await fixture.WETH9Instance.balanceOf(
@@ -1432,7 +1444,6 @@ describe('vRouter: getVirtualPools', () => {
         ) {
             const pairAddr = await fixture.vPairFactoryInstance.allPairs(i);
             const pool = VPair__factory.connect(pairAddr, fixture.owner);
-            await pool.setMaxAllowListCount(8);
             await pool.setBlocksDelay(0);
             await pool.setAllowList(
                 allowList.sort((a, b) => {
