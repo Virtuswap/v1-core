@@ -23,7 +23,6 @@ interface IvSwapPoolDeployer {
             address token1,
             uint16 fee,
             uint16 vFee,
-            uint24 maxAllowListCount,
             uint256 maxReserveRatio
         );
 }

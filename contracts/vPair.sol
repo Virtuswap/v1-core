@@ -38,7 +38,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
     address[] public allowList;
     mapping(address => bool) public override allowListMap;
-    uint24 public override maxAllowListCount;
     bool public closed;
 
     mapping(address => uint256) public override reservesBaseValue;
@@ -83,7 +82,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             token1,
             fee,
             vFee,
-            maxAllowListCount,
             maxReserveRatio
         ) = IvSwapPoolDeployer(msg.sender).poolCreationDefaults();
         reserveRatioWarningThreshold = 1900;
@@ -309,6 +307,10 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
             ikPair,
             to
         );
+    }
+
+    function allowListLength() external view returns (uint) {
+        return allowList.length;
     }
 
     function liquidateReserve(
@@ -580,7 +582,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
                 msg.sender == IvPairFactory(factory).emergencyAdmin(),
             'OA'
         );
-        require(_allowList.length <= maxAllowListCount, 'MW');
         for (uint i = 1; i < _allowList.length; ++i) {
             require(
                 _allowList[i] > _allowList[i - 1],
@@ -624,13 +625,6 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
         require(threshold > 0, 'IRT');
         maxReserveRatio = threshold;
         emit ReserveThresholdChanged(threshold);
-    }
-
-    function setMaxAllowListCount(
-        uint24 _maxAllowListCount
-    ) external override onlyFactoryAdmin {
-        maxAllowListCount = _maxAllowListCount;
-        emit AllowListCountChanged(_maxAllowListCount);
     }
 
     function setReserveRatioWarningThreshold(
