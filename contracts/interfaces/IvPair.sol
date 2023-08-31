@@ -50,8 +50,6 @@ interface IvPair {
 
     event ReserveThresholdChanged(uint256 newThreshold);
 
-    event AllowListCountChanged(uint24 _maxAllowListCount);
-
     event BlocksDelayChanged(uint256 _newBlocksDelay);
 
     event ReserveRatioWarningThresholdChanged(
@@ -99,8 +97,6 @@ interface IvPair {
 
     function setAllowList(address[] memory _allowList) external;
 
-    function setMaxAllowListCount(uint24 _maxAllowListCount) external;
-
     function allowListMap(address _token) external view returns (bool allowed);
 
     function calculateReserveRatio() external view returns (uint256 rRatio);
@@ -113,6 +109,8 @@ interface IvPair {
 
     function emergencyToggle() external;
 
+    function allowListLength() external view returns (uint);
+
     function token0() external view returns (address);
 
     function token1() external view returns (address);
@@ -120,8 +118,6 @@ interface IvPair {
     function pairBalance0() external view returns (uint112);
 
     function pairBalance1() external view returns (uint112);
-
-    function maxAllowListCount() external view returns (uint24);
 
     function maxReserveRatio() external view returns (uint256);
 

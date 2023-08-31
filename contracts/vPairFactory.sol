@@ -61,7 +61,6 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
             token1: token1,
             fee: 997,
             vFee: 997,
-            maxAllowListCount: uint24(defaultAllowList.length),
             maxReserveRatio: 2000
         });
 
@@ -147,9 +146,5 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
 
     function allPairsLength() external view override returns (uint256) {
         return allPairs.length;
-    }
-
-    function getInitCodeHash() external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(type(vPair).creationCode));
     }
 }
