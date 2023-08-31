@@ -95,7 +95,7 @@ contract vPair is IvPair, vSwapERC20, ReentrancyGuard {
 
         (pairBalance0, pairBalance1) = (balance0, balance1);
 
-        emit Sync(balance0, balance1);
+        emit vSync(balance0, balance1);
     }
 
     function getBalances()
