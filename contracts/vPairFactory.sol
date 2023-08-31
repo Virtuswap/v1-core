@@ -147,8 +147,4 @@ contract vPairFactory is IvPairFactory, IvSwapPoolDeployer {
     function allPairsLength() external view override returns (uint256) {
         return allPairs.length;
     }
-
-    function getInitCodeHash() external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(type(vPair).creationCode));
-    }
 }
