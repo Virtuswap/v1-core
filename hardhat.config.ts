@@ -11,20 +11,35 @@ const config: HardhatUserConfig = {
         disambiguatePaths: false,
     },
     solidity: {
-        version: '0.8.18',
-        settings: {
-            optimizer: {
-                enabled: true,
-                runs: 833,
+        compilers: [
+            {
+                version: '0.8.18',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 833,
+                    },
+                    metadata: {
+                        // do not include the metadata hash, since this is machine dependent
+                        // and we want all generated code to be deterministic
+                        // https://docs.soliditylang.org/en/v0.7.6/metadata.html
+                        bytecodeHash: 'none',
+                    },
+                },
             },
-
-            metadata: {
-                // do not include the metadata hash, since this is machine dependent
-                // and we want all generated code to be deterministic
-                // https://docs.soliditylang.org/en/v0.7.6/metadata.html
-                bytecodeHash: 'none',
+            {
+                version: '0.8.25',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 1000000,
+                    },
+                    metadata: {
+                        bytecodeHash: 'none',
+                    },
+                },
             },
-        },
+        ],
     },
 };
 
