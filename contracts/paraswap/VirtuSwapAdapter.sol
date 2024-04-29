@@ -30,25 +30,6 @@ contract VirtuSwapAdapter is IAdapter, IBuyAdapter {
         uint256 deadline;
     }
 
-    mapping(bytes4 => bool) private vRouterSwapFunctionsSelectors;
-    mapping(bytes4 => bool) private vRouterSwapReserveFunctionsSelectors;
-
-    constructor() {
-        vRouterSwapFunctionsSelectors[IvRouter.swapExactETHForTokens.selector] = true;
-        vRouterSwapFunctionsSelectors[IvRouter.swapExactTokensForETH.selector] = true;
-        vRouterSwapFunctionsSelectors[IvRouter.swapETHForExactTokens.selector] = true;
-        vRouterSwapFunctionsSelectors[IvRouter.swapTokensForExactETH.selector] = true;
-        vRouterSwapFunctionsSelectors[IvRouter.swapTokensForExactTokens.selector] = true;
-        vRouterSwapFunctionsSelectors[IvRouter.swapExactTokensForTokens.selector] = true;
-
-        vRouterSwapReserveFunctionsSelectors[IvRouter.swapReserveETHForExactTokens.selector] = true;
-        vRouterSwapReserveFunctionsSelectors[IvRouter.swapReserveTokensForExactETH.selector] = true;
-        vRouterSwapReserveFunctionsSelectors[IvRouter.swapReserveExactTokensForETH.selector] = true;
-        vRouterSwapReserveFunctionsSelectors[IvRouter.swapReserveExactETHForTokens.selector] = true;
-        vRouterSwapReserveFunctionsSelectors[IvRouter.swapReserveTokensForExactTokens.selector] = true;
-        vRouterSwapReserveFunctionsSelectors[IvRouter.swapReserveExactTokensForTokens.selector] = true;
-    }
-
     function initialize(bytes calldata) external virtual override(IAdapter, IBuyAdapter) {
         revert("METHOD NOT IMPLEMENTED");
     }
@@ -81,6 +62,24 @@ contract VirtuSwapAdapter is IAdapter, IBuyAdapter {
         buyOnVirtuSwap(fromToken, toToken, maxFromAmount, toAmount, targetExchange, payload);
     }
 
+    function isSwapFunctionSelector(bytes4 functionSelector) internal pure returns (bool) {
+        return functionSelector == IvRouter.swapExactETHForTokens.selector
+            || functionSelector == IvRouter.swapExactTokensForETH.selector
+            || functionSelector == IvRouter.swapETHForExactTokens.selector
+            || functionSelector == IvRouter.swapTokensForExactETH.selector
+            || functionSelector == IvRouter.swapTokensForExactTokens.selector
+            || functionSelector == IvRouter.swapExactTokensForTokens.selector;
+    }
+
+    function isSwapReserveFunctionSelector(bytes4 functionSelector) internal pure returns (bool) {
+        return functionSelector == IvRouter.swapReserveETHForExactTokens.selector
+            || functionSelector == IvRouter.swapReserveTokensForExactETH.selector
+            || functionSelector == IvRouter.swapReserveExactTokensForETH.selector
+            || functionSelector == IvRouter.swapReserveExactETHForTokens.selector
+            || functionSelector == IvRouter.swapReserveTokensForExactTokens.selector
+            || functionSelector == IvRouter.swapReserveExactTokensForTokens.selector;
+    }
+
     function swapOnVirtuSwap(
         IERC20 fromToken,
         IERC20,
@@ -88,11 +87,11 @@ contract VirtuSwapAdapter is IAdapter, IBuyAdapter {
         address router,
         bytes calldata payload
     ) internal {
-        bytes4 functionSelector = bytes4(payload[:4]);
+        bytes4 functionSelector = bytes4(payload);
 
         bytes memory callData;
 
-        if (vRouterSwapFunctionsSelectors[functionSelector]) {
+        if (isSwapFunctionSelector(functionSelector)) {
             VirtuSwapRealPoolData memory data = abi.decode(payload, (VirtuSwapRealPoolData));
 
             address[] memory path = new address[](2);
@@ -107,7 +106,7 @@ contract VirtuSwapAdapter is IAdapter, IBuyAdapter {
                 address(this),
                 data.deadline
             );
-        } else if (vRouterSwapReserveFunctionsSelectors[functionSelector]) {
+        } else if (isSwapReserveFunctionSelector(functionSelector)) {
             VirtuSwapVirtualPoolData memory data = abi.decode(payload, (VirtuSwapVirtualPoolData));
 
             callData = abi.encodeWithSelector(
@@ -145,11 +144,11 @@ contract VirtuSwapAdapter is IAdapter, IBuyAdapter {
         address router,
         bytes calldata payload
     ) internal {
-        bytes4 functionSelector = bytes4(payload[:4]);
+        bytes4 functionSelector = bytes4(payload);
 
         bytes memory callData;
 
-        if (vRouterSwapFunctionsSelectors[functionSelector]) {
+        if (isSwapFunctionSelector(functionSelector)) {
             VirtuSwapRealPoolData memory data = abi.decode(payload, (VirtuSwapRealPoolData));
 
             address[] memory path = new address[](2);
@@ -164,7 +163,7 @@ contract VirtuSwapAdapter is IAdapter, IBuyAdapter {
                 address(this),
                 data.deadline
             );
-        } else if (vRouterSwapReserveFunctionsSelectors[functionSelector]) {
+        } else if (isSwapReserveFunctionSelector(functionSelector)) {
             VirtuSwapVirtualPoolData memory data = abi.decode(payload, (VirtuSwapVirtualPoolData));
 
             callData = abi.encodeWithSelector(

@@ -57,6 +57,29 @@ describe('VirtuSwapAdapter', function () {
             ).to.revertedWith('Index not supported');
         });
 
+        it('Should revert if wrong selector', async function() {
+            const { adapter } = fixture;
+
+            await expect(
+                adapter.connect(accounts[0]).swap(
+                    fixture.tokenA.address,
+                    fixture.tokenB.address,
+                    ethers.utils.parseEther('10'),
+                    ethers.utils.parseEther('10'),
+                    [{
+                        index: 1,
+                        targetExchange: fixture.vRouterMock.address,
+                        percent: 10000,
+                        payload: '0xffffffff',
+                        networkFee: 0,
+                    }],
+                    {
+                        value: 0,
+                    }
+                )
+            ).to.revertedWith('Unsupported function selector');
+        });
+
         describe('Real pools', function() {
             const functions = [
                 'swapExactETHForTokens',
@@ -174,6 +197,22 @@ describe('VirtuSwapAdapter', function () {
                     '0x00'
                 )
             ).to.revertedWith('Index not supported');
+        });
+
+        it('Should revert if wrong selector', async function() {
+            const { adapter, vRouterMock } = fixture;
+
+            await expect(
+                adapter.connect(accounts[0]).buy(
+                    1,
+                    fixture.tokenA.address,
+                    fixture.tokenB.address,
+                    ethers.utils.parseEther('10'),
+                    ethers.utils.parseEther('10'),
+                    vRouterMock.address,
+                    '0xffffffff'
+                )
+            ).to.revertedWith('Unsupported function selector');
         });
 
         describe('Real pools', function() {
