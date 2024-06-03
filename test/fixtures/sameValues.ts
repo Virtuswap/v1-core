@@ -1,4 +1,4 @@
-import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { time, setNonce } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers } from 'hardhat';
 import {
     ERC20PresetFixedSupply__factory,
@@ -23,6 +23,9 @@ export async function sameValues() {
 
     // Contracts are deployed using the first signer/account by default
     const [owner] = await ethers.getSigners();
+
+    // hotfix for tests: looks like tests depend on addresses, set nonce to get valid order
+    await setNonce(owner.address, 42);
 
     const A_PRICE = 1;
     const B_PRICE = 1;

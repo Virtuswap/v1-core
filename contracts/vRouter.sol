@@ -4,11 +4,11 @@ pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/utils/Multicall.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import './types.sol';
 import './vPair.sol';
+import './base/Multicall.sol';
 import './libraries/PoolAddress.sol';
 import './libraries/vSwapLibrary.sol';
 import './interfaces/IvRouter.sol';
@@ -318,6 +318,9 @@ contract vRouter is IvRouter, Multicall {
         );
         IWETH9(WETH9).deposit{value: amountIn}();
         SafeERC20.safeTransfer(IERC20(WETH9), pair, amountIn);
+    }
+
+    function refundETH() external payable {
         (bool success, ) = msg.sender.call{value: address(this).balance}('');
         require(success, 'VSWAP: TRANSFER FAILED');
     }

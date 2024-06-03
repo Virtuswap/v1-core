@@ -21,6 +21,8 @@ describe('vRouter 1', () => {
         await fixture.bcPool.setBlocksDelay(0);
         await fixture.bdPool.setBlocksDelay(0);
         await fixture.acPool.setBlocksDelay(0);
+        await fixture.wbPool.setBlocksDelay(0);
+        await fixture.wcPool.setBlocksDelay(0);
     });
 
     it('Should quote A to B', async () => {
@@ -577,6 +579,70 @@ describe('vRouter 1', () => {
         multiData.push(str);
 
         await vRouterInstance.multicall(multiData);
+    });
+
+    it('Should Total Pool swap -> 1. ETH to B on pool WETH9/B   2. ETH to B on pool B/C', async () => {
+        const tokenB = fixture.tokenB;
+        const tokenC = fixture.tokenC;
+        const wcPool = fixture.wcPool;
+        const bcPool = fixture.bcPool;
+        const owner = fixture.owner;
+
+        const vRouterInstance = fixture.vRouterInstance;
+        const WETH9 = await vRouterInstance.WETH9();
+
+        const _amountOut = ethers.utils.parseEther('10');
+
+        let realAmountIn = await vRouterInstance.getAmountIn(
+            WETH9,
+            tokenB.address,
+            _amountOut
+        );
+
+        let virtualIn = await vRouterInstance.getVirtualAmountIn(
+            bcPool.address,
+            wcPool.address,
+            _amountOut
+        );
+
+        const futureTs = await utils.getFutureBlockTimestamp();
+        let multiData = [];
+
+        let str = VRouter__factory.getInterface(
+            VRouter__factory.abi
+        ).encodeFunctionData('swapETHForExactTokens', [
+            [WETH9, tokenB.address],
+            _amountOut,
+            realAmountIn,
+            owner.address,
+            futureTs,
+        ]);
+
+        multiData.push(str);
+
+        str = VRouter__factory.getInterface(
+            VRouter__factory.abi
+        ).encodeFunctionData('swapReserveETHForExactTokens', [
+            tokenB.address,
+            tokenC.address,
+            wcPool.address,
+            _amountOut,
+            virtualIn,
+            owner.address,
+            futureTs,
+        ]);
+
+        multiData.push(str);
+
+        str = VRouter__factory.getInterface(
+            VRouter__factory.abi
+        ).encodeFunctionData('refundETH');
+
+        multiData.push(str);
+
+        const amountIn = realAmountIn.add(virtualIn);
+
+        await vRouterInstance.multicall(multiData, { value: amountIn });
     });
 
     it('Should revert on swap A to C on pool A/C with insuficient input amount', async () => {

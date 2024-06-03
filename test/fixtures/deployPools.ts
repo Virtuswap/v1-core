@@ -73,7 +73,7 @@ export async function deployPools() {
     const WETH9ContractFactory = await ethers.getContractFactory('WETH9');
     const WETH9Instance = await WETH9ContractFactory.deploy();
 
-    await WETH9Instance.deposit({ value: ethers.utils.parseEther('1000') });
+    await WETH9Instance.deposit({ value: ethers.utils.parseEther('2000') });
 
     const vPairContractFactory = await ethers.getContractFactory(
         'vPairFactory'
@@ -195,6 +195,20 @@ export async function deployPools() {
         futureTs
     );
 
+    // create pool WETH9/C
+    CInput = (C_PRICE / B_PRICE) * BInput;
+
+    await vRouterInstance.addLiquidity(
+        WETH9Instance.address,
+        tokenC.address,
+        ethers.utils.parseEther(WETH9Input.toString()),
+        ethers.utils.parseEther(CInput.toString()),
+        ethers.utils.parseEther(WETH9Input.toString()),
+        ethers.utils.parseEther(CInput.toString()),
+        owner.address,
+        futureTs
+    );
+
     // whitelist tokens in pools
 
     // pool 1
@@ -287,6 +301,20 @@ export async function deployPools() {
 
     console.log('pool5: WETH9/B: ' + pool5Reserve0 + '/' + pool5Reserve1);
 
+    const address6 = await vPairFactoryInstance.pairs(
+        WETH9Instance.address,
+        tokenC.address
+    );
+    console.log('WETH9C address: ' + address6);
+    const wcPool = VPair__factory.connect(address6, owner);
+    const reserve0Pool6 = await wcPool.pairBalance0();
+    const reserve1Pool6 = await wcPool.pairBalance1();
+
+    const pool6Reserve0 = ethers.utils.formatEther(reserve0Pool6);
+    const pool6Reserve1 = ethers.utils.formatEther(reserve1Pool6);
+
+    console.log('pool6: WETH9/C: ' + pool6Reserve0 + '/' + pool6Reserve1);
+
     return {
         tokenA,
         tokenB,
@@ -301,6 +329,7 @@ export async function deployPools() {
         acPool,
         bdPool,
         wbPool,
+        wcPool,
         pool1Reserve0,
         pool1Reserve1,
         pool2Reserve0,
