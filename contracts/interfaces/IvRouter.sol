@@ -12,112 +12,60 @@ interface IvRouter {
 
     function WETH9() external view returns (address);
 
-    function swapExactETHForTokens(
-        address[] memory path,
-        uint256 amountIn,
-        uint256 minAmountOut,
+    function multiSwapExactTokensForTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
+        address tokenOut,
         address to,
-        uint256 deadline
+        uint256 minAmountOut
+    ) external;
+
+    function multiSwapExactETHForTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenOut,
+        address to,
+        uint256 minAmountOut
     ) external payable;
 
-    function swapExactTokensForETH(
-        address[] memory path,
-        uint256 amountIn,
-        uint256 minAmountOut,
+    function multiSwapExactTokensForETH(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
         address to,
-        uint256 deadline
+        uint256 minAmountOut
     ) external;
 
-    function swapETHForExactTokens(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
+    function multiSwapTokensForExactTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
+        address tokenOut,
         address to,
-        uint256 deadline
+        uint256 maxAmountIn
+    ) external;
+
+    function multiSwapETHForExactTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenOut,
+        address to,
+        uint256 maxAmountIn
     ) external payable;
 
-    function swapTokensForExactETH(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
+    function multiSwapTokensForExactETH(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
         address to,
-        uint256 deadline
-    ) external;
-
-    function swapReserveETHForExactTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external payable;
-
-    function swapReserveTokensForExactETH(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external;
-
-    function swapReserveExactTokensForETH(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external;
-
-    function swapReserveExactETHForTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external payable;
-
-    function swapTokensForExactTokens(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external;
-
-    function swapExactTokensForTokens(
-        address[] memory path,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external;
-
-    function swapReserveTokensForExactTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external;
-
-    function swapReserveExactTokensForTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
+        uint256 maxAmountIn
     ) external;
 
     function addLiquidity(

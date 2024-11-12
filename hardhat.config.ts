@@ -1,5 +1,9 @@
 import { HardhatUserConfig } from 'hardhat/config';
-import '@nomicfoundation/hardhat-toolbox';
+import '@nomiclabs/hardhat-ethers';
+import '@typechain/hardhat';
+import 'hardhat-gas-reporter';
+import '@nomiclabs/hardhat-etherscan';
+import '@nomicfoundation/hardhat-chai-matchers';
 import './tasks/compile';
 
 import 'hardhat-contract-sizer';

@@ -40,12 +40,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapTokensForExactTokens(
-            [fixture.tokenB.address, fixture.tokenA.address],
-            amountOut,
-            amountIn,
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getRealRouteData(0, 0, amountOut)],
+            [],
+            fixture.tokenB.address,
+            fixture.tokenA.address,
             fixture.owner.address,
-            futureTs
+            amountIn
         );
 
         console.log('===========================================');
@@ -85,14 +87,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
                 '%'
         );
 
-        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs2,
+            [utils.getVirtualRouteData(0, amountCOut)],
+            [fixture.tokenA.address],
+            fixture.tokenB.address,
             fixture.tokenC.address,
-            fixture.tokenA.address,
-            ikPair,
-            amountCOut,
-            amountBIn,
             fixture.owner.address,
-            futureTs2
+            amountBIn
         );
 
         let reserveRatioAfter = await jkPairInstance.calculateReserveRatio();
@@ -116,12 +118,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapTokensForExactTokens(
-            [fixture.tokenA.address, fixture.tokenB.address],
-            amountOut,
-            amountIn,
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getRealRouteData(0, 0, amountOut)],
+            [],
+            fixture.tokenA.address,
+            fixture.tokenB.address,
             fixture.owner.address,
-            futureTs
+            amountIn
         );
 
         console.log('===========================================');
@@ -175,14 +179,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
         console.log(JSON.stringify(vPool));
 
-        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs2,
+            [utils.getVirtualRouteData(0, amountCOut)],
+            [fixture.tokenA.address],
+            fixture.tokenB.address,
             fixture.tokenC.address,
-            fixture.tokenA.address,
-            ikPair,
-            amountCOut,
-            amountBIn,
             fixture.owner.address,
-            futureTs2
+            amountBIn
         );
 
         let cBalanceAfter = await fixture.tokenC.balanceOf(jkPair);
@@ -214,12 +218,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapTokensForExactTokens(
-            [fixture.tokenC.address, fixture.tokenA.address],
-            amountOut,
-            amountIn,
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getRealRouteData(0, 0, amountOut)],
+            [],
+            fixture.tokenC.address,
+            fixture.tokenA.address,
             fixture.owner.address,
-            futureTs
+            amountIn
         );
 
         console.log('===========================================');
@@ -273,14 +279,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
         console.log(JSON.stringify(vPool));
 
-        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs2,
+            [utils.getVirtualRouteData(0, amountCOut)],
+            [fixture.tokenA.address],
+            fixture.tokenB.address,
             fixture.tokenC.address,
-            fixture.tokenA.address,
-            ikPair,
-            amountCOut,
-            amountBIn,
             fixture.owner.address,
-            futureTs2
+            amountBIn
         );
 
         let cBalanceAfter = await fixture.tokenC.balanceOf(jkPair);
@@ -312,12 +318,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
 
         const futureTs = await utils.getFutureBlockTimestamp();
-        await fixture.vRouterInstance.swapTokensForExactTokens(
-            [fixture.tokenA.address, fixture.tokenC.address],
-            amountOut,
-            amountIn,
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getRealRouteData(0, 0, amountOut)],
+            [],
+            fixture.tokenA.address,
+            fixture.tokenC.address,
             fixture.owner.address,
-            futureTs
+            amountIn
         );
 
         console.log('===========================================');
@@ -371,14 +379,14 @@ describe('ExchangeReserves manipulation scenarios', () => {
         );
         console.log(JSON.stringify(vPool));
 
-        await fixture.vRouterInstance.swapReserveTokensForExactTokens(
+        await fixture.vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs2,
+            [utils.getVirtualRouteData(0, amountCOut)],
+            [fixture.tokenA.address],
+            fixture.tokenB.address,
             fixture.tokenC.address,
-            fixture.tokenA.address,
-            ikPair,
-            amountCOut,
-            amountBIn,
             fixture.owner.address,
-            futureTs2
+            amountBIn
         );
 
         let cBalanceAfter = await fixture.tokenC.balanceOf(jkPair);

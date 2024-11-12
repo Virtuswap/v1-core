@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/utils/Multicall.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import './types.sol';
@@ -17,7 +16,7 @@ import './interfaces/IvPoolManager.sol';
 import './interfaces/IvPair.sol';
 import './interfaces/external/IWETH9.sol';
 
-contract vRouter is IvRouter, Multicall {
+contract vRouter is IvRouter, IvFlashSwapCallback {
     address public override factory;
     address public immutable override WETH9;
 
@@ -50,13 +49,6 @@ contract vRouter is IvRouter, Multicall {
         return PoolAddress.computeAddress(factory, tokenA, tokenB);
     }
 
-    function getPair(
-        address tokenA,
-        address tokenB
-    ) internal view returns (IvPair) {
-        return IvPair(getPairAddress(tokenA, tokenB));
-    }
-
     function unwrapTransferETH(address to, uint256 amount) internal {
         IWETH9(WETH9).withdraw(amount);
         (bool success, ) = to.call{value: amount}('');
@@ -67,10 +59,13 @@ contract vRouter is IvRouter, Multicall {
         address[] memory path,
         uint256 amountOut
     ) public view returns (uint[] memory amountsIn) {
-        amountsIn = new uint[](path.length);
-        amountsIn[amountsIn.length - 1] = amountOut;
-        for (uint i = path.length - 1; i > 0; --i) {
-            amountsIn[i - 1] = getAmountIn(path[i - 1], path[i], amountsIn[i]);
+        unchecked {
+            amountsIn = new uint[](path.length);
+            amountsIn[amountsIn.length - 1] = amountOut;
+            for (uint i = path.length - 1; i > 0; --i) {
+                uint prevI = i - 1;
+                amountsIn[prevI] = getAmountIn(path[prevI], path[i], amountsIn[i]);
+            }
         }
     }
 
@@ -80,284 +75,776 @@ contract vRouter is IvRouter, Multicall {
     ) public view returns (uint[] memory amountsOut) {
         amountsOut = new uint[](path.length);
         amountsOut[0] = amountIn;
-        for (uint i = 1; i < amountsOut.length; ++i) {
-            amountsOut[i] = getAmountOut(
-                path[i - 1],
-                path[i],
-                amountsOut[i - 1]
-            );
+        unchecked {
+            for (uint i = 1; i < amountsOut.length; ++i) {
+                uint prevI = i - 1;
+                amountsOut[i] = getAmountOut(
+                    path[prevI],
+                    path[i],
+                    amountsOut[prevI]
+                );
+            }
         }
     }
 
-    function swapExactETHForTokens(
-        address[] memory path,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        require(path[0] == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
-        uint[] memory amountsOut = getAmountsOut(path, amountIn);
-        require(
-            amountsOut[amountsOut.length - 1] >= minAmountOut,
-            'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
-        );
-        transferETHInput(amountsOut[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsOut, to);
+    function unwrapRoute(
+        RouteData route
+    ) internal pure returns (uint256 transitStartIndex, uint256 transitLength, uint256 amount) {
+        uint256 data = RouteData.unwrap(route);
+        transitStartIndex = uint64(data >> 192);
+        transitLength = uint64(data >> 128); // if transitLength = type(uint64).max => virtual route
+        amount = uint128(data);
     }
 
-    function swapExactTokensForETH(
-        address[] memory path,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        require(
-            path[path.length - 1] == WETH9,
-            'VSWAP: OUTPUT TOKEN MUST BE WETH9'
-        );
-        uint[] memory amountsOut = getAmountsOut(path, amountIn);
-        require(
-            amountsOut[amountsOut.length - 1] >= minAmountOut,
-            'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
-        );
-        transferInput(path[0], amountsOut[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsOut, address(this));
-        unwrapTransferETH(to, amountsOut[amountsOut.length - 1]);
+    function vFlashSwapCallback(
+        address tokenIn,
+        address tokenOut,
+        uint256 requiredAmountIn,
+        bytes calldata data
+    ) external override {
+        PoolCallbackData memory decodedData = abi.decode(data, (PoolCallbackData));
+
+        address pairAddress = getPairAddress(decodedData.poolToken, tokenOut);
+        require(msg.sender == pairAddress, 'VSWAP: INVALID_CALLER');
+
+        if (decodedData.from == address(this)) {
+            SafeERC20.safeTransfer(IERC20(tokenIn), pairAddress, requiredAmountIn);
+        } else {
+            SafeERC20.safeTransferFrom(IERC20(tokenIn), decodedData.from, pairAddress, requiredAmountIn);
+        }
     }
 
-    function swapETHForExactTokens(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
+    function swapExactIn(
+        address tokenIn,
+        address tokenOut,
+        address[] calldata transitTokens,
+        address from,
         address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        require(path[0] == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
-        uint[] memory amountsIn = getAmountsIn(path, amountOut);
-        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
-        transferETHInput(amountsIn[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsIn, to);
-    }
+        uint256 transitStartIndex,
+        uint256 transitLength,
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
+        address transitToken = transitTokens[transitStartIndex];
+        address transitPairAddress = getPairAddress(tokenIn, transitToken);
 
-    function swapTokensForExactETH(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        require(
-            path[path.length - 1] == WETH9,
-            'VSWAP: OUTPUT TOKEN MUST BE WETH9'
+        amountOut = getAmountOutByPair(
+            tokenIn,
+            transitPairAddress,
+            amountIn
         );
-        uint[] memory amountsIn = getAmountsIn(path, amountOut);
-        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
-        transferInput(path[0], amountsIn[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsIn, address(this));
-        unwrapTransferETH(to, amountsIn[amountsIn.length - 1]);
+
+        if (from == address(this)) {
+            SafeERC20.safeTransfer(IERC20(tokenIn), transitPairAddress, amountIn);
+        } else {
+            SafeERC20.safeTransferFrom(IERC20(tokenIn), from, transitPairAddress, amountIn);
+        }
+
+
+        for (uint j = 1; j < transitLength; ++j) {
+            address nextTransitToken = transitTokens[transitStartIndex + j];
+            address nextTransitPairAddress = getPairAddress(transitToken, nextTransitToken);
+            IvPair(transitPairAddress).swapNative(
+                amountOut,
+                transitToken,
+                nextTransitPairAddress,
+                new bytes(0)
+            );
+            amountOut = getAmountOutByPair(
+                transitToken,
+                nextTransitPairAddress,
+                amountOut
+            );
+            transitPairAddress = nextTransitPairAddress;
+            transitToken = nextTransitToken;
+        }
+
+        address lastTransitPairAddress = getPairAddress(transitToken, tokenOut);
+
+        IvPair(transitPairAddress).swapNative(
+            amountOut,
+            transitToken,
+            lastTransitPairAddress,
+            new bytes(0)
+        );
+
+        amountOut = getAmountOutByPair(
+            transitToken,
+            lastTransitPairAddress,
+            amountOut
+        );
+
+        IvPair(lastTransitPairAddress).swapNative(
+            amountOut,
+            tokenOut,
+            to,
+            new bytes(0)
+        );
     }
 
-    function swapReserveETHForExactTokens(
+    function trySwapReserveExactIn(
+        address tokenIn,
         address tokenOut,
         address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
+        address from,
         address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        require(tokenIn == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
-        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
-        transferETHInput(amountIn, jkAddress);
-        swapReserve(amountOut, jkAddress, ikPair, to);
-    }
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
+        address ikPairAddress = getPairAddress(tokenIn, commonToken);
+        address jkPairAddress = getPairAddress(commonToken, tokenOut);
 
-    function swapReserveTokensForExactETH(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        require(tokenOut == WETH9, 'VSWAP: OUTPUT TOKEN MUST BE WETH9');
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
-        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
-        transferInput(tokenIn, amountIn, jkAddress);
-        swapReserve(amountOut, jkAddress, ikPair, address(this));
-        unwrapTransferETH(to, amountOut);
-    }
+        try IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .getVirtualPool(jkPairAddress, ikPairAddress) returns (VirtualPoolModel memory vPool) {
+            amountOut = vSwapLibrary.getAmountOut(
+                amountIn,
+                vPool.balance0,
+                vPool.balance1,
+                vPool.fee
+            );
+            try IvPair(jkPairAddress).swapReserveToNative(
+                amountOut,
+                ikPairAddress,
+                to,
+                abi.encode(
+                    PoolCallbackData({
+                        from: from,
+                        poolToken: commonToken
+                    })
+                )
+            ) { } catch {
+                amountOut = 0;
+            }
+        } catch {
+            amountOut = 0;
+        }
 
-    function swapReserveExactTokensForETH(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        require(tokenOut == WETH9, 'VSWAP: OUTPUT TOKEN MUST BE WETH9');
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
-        require(
-            amountOut >= minAmountOut,
-            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
-        );
-        transferInput(tokenIn, amountIn, jkAddress);
-        swapReserve(amountOut, jkAddress, ikPair, address(this));
-        unwrapTransferETH(to, amountOut);
-    }
+        if (amountOut == 0) {
+            uint256 commonAmount = getAmountOutByPair(
+                tokenIn,
+                ikPairAddress,
+                amountIn
+            );
 
-    function swapReserveExactETHForTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external payable override notAfter(deadline) {
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        require(tokenIn == WETH9, 'VSWAP: INPUT TOKEN MUST BE WETH9');
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
-        require(
-            amountOut >= minAmountOut,
-            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
-        );
-        transferETHInput(amountIn, jkAddress);
-        swapReserve(amountOut, jkAddress, ikPair, to);
-    }
+            if (from == address(this)) {
+                SafeERC20.safeTransfer(IERC20(tokenIn), ikPairAddress, amountIn);
+            } else {
+                SafeERC20.safeTransferFrom(IERC20(tokenIn), from, ikPairAddress, amountIn);
+            }
 
-    function swapTokensForExactTokens(
-        address[] memory path,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        uint[] memory amountsIn = getAmountsIn(path, amountOut);
-        require(amountsIn[0] <= maxAmountIn, 'VSWAP: REQUIRED_AMOUNT_EXCEEDS');
-        transferInput(path[0], amountsIn[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsIn, to);
-    }
+            IvPair(ikPairAddress).swapNative(
+                commonAmount,
+                commonToken,
+                jkPairAddress,
+                new bytes(0)
+            );
 
-    function swapExactTokensForTokens(
-        address[] memory path,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        uint[] memory amountsOut = getAmountsOut(path, amountIn);
-        require(
-            amountsOut[amountsOut.length - 1] >= minAmountOut,
-            'VSWAP: INSUFFICIENT_INPUT_AMOUNT'
-        );
-        transferInput(path[0], amountsOut[0], getPairAddress(path[0], path[1]));
-        swap(path, amountsOut, to);
-    }
+            amountOut = getAmountOutByPair(
+                commonToken,
+                jkPairAddress,
+                commonAmount
+            );
 
-    function swapReserveTokensForExactTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountIn = getVirtualAmountIn(jkAddress, ikPair, amountOut);
-        require(amountIn <= maxAmountIn, 'VSWAP: REQUIRED_VINPUT_EXCEED');
-        transferInput(tokenIn, amountIn, jkAddress);
-        swapReserve(amountOut, jkAddress, ikPair, to);
-    }
-
-    function swapReserveExactTokensForTokens(
-        address tokenOut,
-        address commonToken,
-        address ikPair,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address to,
-        uint256 deadline
-    ) external override notAfter(deadline) {
-        (address ik0, address ik1) = IvPair(ikPair).getTokens();
-        address tokenIn = ik0 == commonToken ? ik1 : ik0;
-        address jkAddress = getPairAddress(tokenOut, commonToken);
-        uint256 amountOut = getVirtualAmountOut(jkAddress, ikPair, amountIn);
-        require(
-            amountOut >= minAmountOut,
-            'VSWAP: INSUFFICIENT_VOUTPUT_AMOUNT'
-        );
-        transferInput(tokenIn, amountIn, jkAddress);
-        swapReserve(amountOut, jkAddress, ikPair, to);
-    }
-
-    function transferETHInput(uint amountIn, address pair) internal {
-        require(
-            address(this).balance >= amountIn,
-            'VSWAP: INSUFFICIENT_ETH_INPUT_AMOUNT'
-        );
-        IWETH9(WETH9).deposit{value: amountIn}();
-        SafeERC20.safeTransfer(IERC20(WETH9), pair, amountIn);
-        (bool success, ) = msg.sender.call{value: address(this).balance}('');
-        require(success, 'VSWAP: TRANSFER FAILED');
-    }
-
-    function transferInput(
-        address token,
-        uint amountIn,
-        address pair
-    ) internal {
-        SafeERC20.safeTransferFrom(IERC20(token), msg.sender, pair, amountIn);
-    }
-
-    function swap(
-        address[] memory path,
-        uint[] memory amounts,
-        address to
-    ) internal {
-        for (uint i = 0; i < path.length - 1; ++i) {
-            getPair(path[i], path[i + 1]).swapNative(
-                amounts[i + 1],
-                path[i + 1],
-                i == path.length - 2
-                    ? to
-                    : getPairAddress(path[i + 1], path[i + 2]),
+            IvPair(jkPairAddress).swapNative(
+                amountOut,
+                tokenOut,
+                to,
                 new bytes(0)
             );
         }
     }
 
-    function swapReserve(
-        uint amountOut,
-        address jkAddress,
-        address ikAddress,
-        address to
-    ) internal {
-        IvPair(jkAddress).swapReserveToNative(
-            amountOut,
-            ikAddress,
+    function multiSwapExactTokensForTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
+        address tokenOut,
+        address to,
+        uint256 minAmountOut
+    ) external {
+        {
+            require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
+        }
+
+        uint256 totalAmountOut = 0;
+
+        unchecked {
+            for (uint i = 0; i < routeData.length; ++i) {
+                (uint256 transitStartIndex, uint256 transitLength, uint256 amountIn) = unwrapRoute(routeData[i]);
+
+                if (transitLength < type(uint64).max) {
+                    if (transitLength == 0) {
+                        address directPairAddress = getPairAddress(tokenIn, tokenOut);
+
+                        uint256 amountOut = getAmountOutByPair(
+                            tokenIn,
+                            directPairAddress,
+                            amountIn
+                        );
+
+                        SafeERC20.safeTransferFrom(IERC20(tokenIn), msg.sender, directPairAddress, amountIn);
+
+                        IvPair(directPairAddress).swapNative(
+                            amountOut,
+                            tokenOut,
+                            to,
+                            new bytes(0)
+                        );
+
+                        totalAmountOut += amountOut;
+                    } else {
+                        totalAmountOut += swapExactIn(
+                            tokenIn,
+                            tokenOut,
+                            transitTokens,
+                            msg.sender,
+                            to,
+                            transitStartIndex,
+                            transitLength,
+                            amountIn
+                        );
+                    }
+                } else {
+                    address commonToken = transitTokens[transitStartIndex];
+
+                    totalAmountOut += trySwapReserveExactIn(
+                        tokenIn,
+                        tokenOut,
+                        commonToken,
+                        msg.sender,
+                        to,
+                        amountIn
+                    );
+                }
+            }
+        }
+
+        require(
+            totalAmountOut >= minAmountOut,
+            'VSWAP: INSUFFICIENT_OUTPUT_AMOUNT'
+        );
+    }
+
+    function multiSwapExactETHForTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenOut,
+        address to,
+        uint256 minAmountOut
+    ) external payable {
+        {
+            require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
+        }
+
+        uint256 totalAmountOut = 0;
+
+        unchecked {
+            address tokenIn = WETH9;
+
+            {
+                uint256 totalAmountIn = 0;
+                for (uint i = 0; i < routeData.length; ++i) {
+                    totalAmountIn += uint128(RouteData.unwrap(routeData[i]));
+                }
+
+                IWETH9(tokenIn).deposit{value: totalAmountIn}();
+            }
+
+            for (uint i = 0; i < routeData.length; ++i) {
+                (uint256 transitStartIndex, uint256 transitLength, uint256 amountIn) = unwrapRoute(routeData[i]);
+
+                if (transitLength < type(uint64).max) {
+                    if (transitLength == 0) {
+                        address directPairAddress = getPairAddress(tokenIn, tokenOut);
+
+                        uint256 amountOut = getAmountOutByPair(
+                            tokenIn,
+                            directPairAddress,
+                            amountIn
+                        );
+
+                        SafeERC20.safeTransfer(IERC20(tokenIn), directPairAddress, amountIn);
+
+                        IvPair(directPairAddress).swapNative(
+                            amountOut,
+                            tokenOut,
+                            to,
+                            new bytes(0)
+                        );
+
+                        totalAmountOut += amountOut;
+                    } else {
+                        totalAmountOut += swapExactIn(
+                            tokenIn,
+                            tokenOut,
+                            transitTokens,
+                            address(this),
+                            to,
+                            transitStartIndex,
+                            transitLength,
+                            amountIn
+                        );
+                    }
+                } else {
+                    address commonToken = transitTokens[transitStartIndex];
+
+                    totalAmountOut += trySwapReserveExactIn(
+                        tokenIn,
+                        tokenOut,
+                        commonToken,
+                        address(this),
+                        to,
+                        amountIn
+                    );
+                }
+            }
+        }
+
+        {
+            uint256 leftover = address(this).balance;
+            if (leftover > 0) {
+                (bool success, ) = to.call{value: leftover}('');
+                require(success, 'VSWAP: TRANSFER FAILED');
+            }
+        }
+
+        require(
+            totalAmountOut >= minAmountOut,
+            'VSWAP: INSUFFICIENT_OUTPUT_AMOUNT'
+        );
+    }
+
+    function multiSwapExactTokensForETH(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
+        address to,
+        uint256 minAmountOut
+    ) external {
+        {
+            require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
+        }
+
+        uint256 totalAmountOut = 0;
+
+        unchecked {
+            address tokenOut = WETH9;
+
+            for (uint i = 0; i < routeData.length; ++i) {
+                (uint256 transitStartIndex, uint256 transitLength, uint256 amountIn) = unwrapRoute(routeData[i]);
+
+                if (transitLength < type(uint64).max) {
+                    if (transitLength == 0) {
+                        address directPairAddress = getPairAddress(tokenIn, tokenOut);
+
+                        uint256 amountOut = getAmountOutByPair(
+                            tokenIn,
+                            directPairAddress,
+                            amountIn
+                        );
+
+                        SafeERC20.safeTransferFrom(IERC20(tokenIn), msg.sender, directPairAddress, amountIn);
+
+                        IvPair(directPairAddress).swapNative(
+                            amountOut,
+                            tokenOut,
+                            address(this),
+                            new bytes(0)
+                        );
+
+                        totalAmountOut += amountOut;
+                    } else {
+                        totalAmountOut += swapExactIn(
+                            tokenIn,
+                            tokenOut,
+                            transitTokens,
+                            msg.sender,
+                            address(this),
+                            transitStartIndex,
+                            transitLength,
+                            amountIn
+                        );
+                    }
+                } else {
+                    address commonToken = transitTokens[transitStartIndex];
+
+                    totalAmountOut += trySwapReserveExactIn(
+                        tokenIn,
+                        tokenOut,
+                        commonToken,
+                        msg.sender,
+                        address(this),
+                        amountIn
+                    );
+                }
+            }
+
+            IWETH9(tokenOut).withdraw(totalAmountOut);
+            (bool success, ) = to.call{value: totalAmountOut}('');
+            require(success, 'VSWAP: TRANSFER FAILED');
+        }
+
+        require(
+            totalAmountOut >= minAmountOut,
+            'VSWAP: INSUFFICIENT_OUTPUT_AMOUNT'
+        );
+    }
+
+    function swapExactOut(
+        address tokenIn,
+        address tokenOut,
+        address[] calldata transitTokens,
+        address from,
+        address to,
+        uint256 transitStartIndex,
+        uint256 transitLength,
+        uint256 amountOut
+    ) internal returns (uint256 amountIn) {
+
+        address[] memory path = new address[](transitLength + 2);
+        path[0] = tokenIn;
+        for (uint j = 0; j < transitLength; ++j) {
+            path[j + 1] = transitTokens[transitStartIndex + j];
+        }
+        path[transitLength + 1] = tokenOut;
+
+        uint256[] memory amounts = getAmountsIn(path, amountOut);
+        amountIn = amounts[0];
+
+        address transitPairAddress = getPairAddress(tokenIn, path[1]);
+
+        if (from == address(this)) {
+            SafeERC20.safeTransfer(IERC20(tokenIn), transitPairAddress, amountIn);
+        } else {
+            SafeERC20.safeTransferFrom(IERC20(tokenIn), from, transitPairAddress, amountIn);
+        }
+
+        for (uint j = 0; j < transitLength; ++j) {
+            uint jNext = j + 1;
+            address nextTransitPairAddress = getPairAddress(path[jNext], path[j + 2]);
+            IvPair(transitPairAddress).swapNative(
+                amounts[jNext],
+                path[jNext],
+                nextTransitPairAddress,
+                new bytes(0)
+            );
+            transitPairAddress = nextTransitPairAddress;
+        }
+
+        uint256 lastPathIndex = transitLength + 1;
+        IvPair(transitPairAddress).swapNative(
+            amounts[lastPathIndex],
+            path[lastPathIndex],
             to,
             new bytes(0)
+        );
+    }
+
+    function trySwapReserveExactOut(
+        address tokenIn,
+        address tokenOut,
+        address commonToken,
+        address from,
+        address to,
+        uint256 amountOut
+    ) internal returns (uint256 amountIn) {
+        address ikPairAddress = getPairAddress(tokenIn, commonToken);
+        address jkPairAddress = getPairAddress(commonToken, tokenOut);
+
+        try IvPoolManager(IvPairFactory(factory).vPoolManager())
+            .getVirtualPool(jkPairAddress, ikPairAddress) returns (VirtualPoolModel memory vPool) {
+            amountIn = vSwapLibrary.getAmountIn(
+                amountOut,
+                vPool.balance0,
+                vPool.balance1,
+                vPool.fee
+            );
+            try IvPair(jkPairAddress).swapReserveToNative(
+                amountOut,
+                ikPairAddress,
+                to,
+                abi.encode(
+                    PoolCallbackData({
+                        from: from,
+                        poolToken: commonToken
+                    })
+                )
+            ) { } catch {
+                amountIn = 0;
+            }
+        } catch {
+            amountIn = 0;
+        }
+        
+        if (amountIn == 0) {
+            uint256 commonAmount = getAmountInByPair(
+                commonToken,
+                jkPairAddress,
+                amountOut
+            );
+
+            amountIn = getAmountInByPair(
+                tokenIn,
+                ikPairAddress,
+                commonAmount
+            );
+
+            if (from == address(this)) {
+                SafeERC20.safeTransfer(IERC20(tokenIn), ikPairAddress, amountIn);
+            } else {
+                SafeERC20.safeTransferFrom(IERC20(tokenIn), from, ikPairAddress, amountIn);
+            }
+
+            IvPair(ikPairAddress).swapNative(
+                commonAmount,
+                commonToken,
+                jkPairAddress,
+                new bytes(0)
+            );
+
+            IvPair(jkPairAddress).swapNative(
+                amountOut,
+                tokenOut,
+                to,
+                new bytes(0)
+            );
+        }
+    }
+
+    function multiSwapTokensForExactTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
+        address tokenOut,
+        address to,
+        uint256 maxAmountIn
+    ) external {
+        {
+            require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
+        }
+
+        uint256 totalAmountIn = 0;
+
+        unchecked {
+            for (uint i = 0; i < routeData.length; ++i) {
+                (uint256 transitStartIndex, uint256 transitLength, uint256 amountOut) = unwrapRoute(routeData[i]);
+
+                if (transitLength < type(uint64).max) {
+                    if (transitLength == 0) {
+                        address directPairAddress = getPairAddress(tokenIn, tokenOut);
+
+                        uint256 amountIn = getAmountInByPair(
+                            tokenIn,
+                            directPairAddress,
+                            amountOut
+                        );
+
+                        SafeERC20.safeTransferFrom(IERC20(tokenIn), msg.sender, directPairAddress, amountIn);
+
+                        IvPair(directPairAddress).swapNative(
+                            amountOut,
+                            tokenOut,
+                            to,
+                            new bytes(0)
+                        );
+
+                        totalAmountIn += amountIn;
+                    } else {
+                        totalAmountIn += swapExactOut(
+                            tokenIn,
+                            tokenOut,
+                            transitTokens,
+                            msg.sender,
+                            to,
+                            transitStartIndex,
+                            transitLength,
+                            amountOut
+                        );
+                    }
+                } else {
+                    address commonToken = transitTokens[transitStartIndex];
+
+                    totalAmountIn += trySwapReserveExactOut(
+                        tokenIn,
+                        tokenOut,
+                        commonToken,
+                        msg.sender,
+                        to,
+                        amountOut
+                    );
+                }
+            }
+        }
+
+        require(
+            totalAmountIn <= maxAmountIn,
+            'VSWAP: REQUIRED_AMOUNT_EXCEEDS'
+        );
+    }
+
+    function multiSwapETHForExactTokens(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenOut,
+        address to,
+        uint256 maxAmountIn
+    ) external payable {
+        {
+            require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
+        }
+
+        uint256 totalAmountIn = 0;
+        uint256 leftover = address(this).balance;
+
+        unchecked {
+            address tokenIn = WETH9;
+
+            {
+                IWETH9(tokenIn).deposit{value: leftover}();
+            }
+
+            for (uint i = 0; i < routeData.length; ++i) {
+                (uint256 transitStartIndex, uint256 transitLength, uint256 amountOut) = unwrapRoute(routeData[i]);
+
+                if (transitLength < type(uint64).max) {
+                    if (transitLength == 0) {
+                        address directPairAddress = getPairAddress(tokenIn, tokenOut);
+
+                        uint256 amountIn = getAmountInByPair(
+                            tokenIn,
+                            directPairAddress,
+                            amountOut
+                        );
+
+                        SafeERC20.safeTransfer(IERC20(tokenIn), directPairAddress, amountIn);
+
+                        IvPair(directPairAddress).swapNative(
+                            amountOut,
+                            tokenOut,
+                            to,
+                            new bytes(0)
+                        );
+
+                        totalAmountIn += amountIn;
+                    } else {
+                        totalAmountIn += swapExactOut(
+                            tokenIn,
+                            tokenOut,
+                            transitTokens,
+                            address(this),
+                            to,
+                            transitStartIndex,
+                            transitLength,
+                            amountOut
+                        );
+                    }
+                } else {
+                    address commonToken = transitTokens[transitStartIndex];
+
+                    totalAmountIn += trySwapReserveExactOut(
+                        tokenIn,
+                        tokenOut,
+                        commonToken,
+                        address(this),
+                        to,
+                        amountOut
+                    );
+                }
+            }
+
+            leftover = leftover - totalAmountIn;
+            if (leftover > 0) {
+                IWETH9(tokenIn).withdraw(leftover);
+                (bool success, ) = to.call{value: leftover}('');
+                require(success, 'VSWAP: TRANSFER FAILED');
+            }
+        }
+
+        require(
+            totalAmountIn <= maxAmountIn,
+            'VSWAP: REQUIRED_AMOUNT_EXCEEDS'
+        );
+    }
+
+    function multiSwapTokensForExactETH(
+        uint256 deadline,
+        RouteData[] calldata routeData,
+        address[] calldata transitTokens,
+        address tokenIn,
+        address to,
+        uint256 maxAmountIn
+    ) external {
+        {
+            require(deadline >= block.timestamp, 'VSWAP:EXPIRED');
+        }
+
+        uint256 totalAmountIn = 0;
+
+        unchecked {
+            uint256 totalAmountOut = 0;
+            address tokenOut = WETH9;
+
+            for (uint i = 0; i < routeData.length; ++i) {
+                (uint256 transitStartIndex, uint256 transitLength, uint256 amountOut) = unwrapRoute(routeData[i]);
+                totalAmountOut += amountOut;
+
+                if (transitLength < type(uint64).max) {
+                    if (transitLength == 0) {
+                        address directPairAddress = getPairAddress(tokenIn, tokenOut);
+
+                        uint256 amountIn = getAmountInByPair(
+                            tokenIn,
+                            directPairAddress,
+                            amountOut
+                        );
+
+                        SafeERC20.safeTransferFrom(IERC20(tokenIn), msg.sender, directPairAddress, amountIn);
+
+                        IvPair(directPairAddress).swapNative(
+                            amountOut,
+                            tokenOut,
+                            address(this),
+                            new bytes(0)
+                        );
+
+                        totalAmountIn += amountIn;
+                    } else {
+                        totalAmountIn += swapExactOut(
+                            tokenIn,
+                            tokenOut,
+                            transitTokens,
+                            msg.sender,
+                            address(this),
+                            transitStartIndex,
+                            transitLength,
+                            amountOut
+                        );
+                    }
+                } else {
+                    address commonToken = transitTokens[transitStartIndex];
+
+                    totalAmountIn += trySwapReserveExactOut(
+                        tokenIn,
+                        tokenOut,
+                        commonToken,
+                        msg.sender,
+                        address(this),
+                        amountOut
+                    );
+                }
+            }
+
+            IWETH9(tokenOut).withdraw(totalAmountOut);
+            (bool success, ) = to.call{value: totalAmountOut}('');
+            require(success, 'VSWAP: TRANSFER FAILED');
+        }
+
+        require(
+            totalAmountIn <= maxAmountIn,
+            'VSWAP: REQUIRED_AMOUNT_EXCEEDS'
         );
     }
 
@@ -494,7 +981,7 @@ contract vRouter is IvRouter, Multicall {
         address jkPair,
         address ikPair,
         uint256 amountOut
-    ) public view override returns (uint256 amountIn) {
+    ) external view override returns (uint256 amountIn) {
         VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
 
         amountIn = vSwapLibrary.getAmountIn(
@@ -509,7 +996,7 @@ contract vRouter is IvRouter, Multicall {
         address jkPair,
         address ikPair,
         uint256 amountIn
-    ) public view override returns (uint256 amountOut) {
+    ) external view override returns (uint256 amountOut) {
         VirtualPoolModel memory vPool = getVirtualPool(jkPair, ikPair);
 
         amountOut = vSwapLibrary.getAmountOut(
@@ -541,7 +1028,7 @@ contract vRouter is IvRouter, Multicall {
         address outputToken,
         uint256 amountIn
     ) external view override returns (uint256 amountOut) {
-        IvPair pair = getPair(inputToken, outputToken);
+        IvPair pair = IvPair(getPairAddress(inputToken, outputToken));
 
         (uint256 balance0, uint256 balance1) = pair.getBalances();
 
@@ -555,12 +1042,12 @@ contract vRouter is IvRouter, Multicall {
         amountOut = vSwapLibrary.quote(amountIn, balance0, balance1);
     }
 
-    function getAmountOut(
+    function getAmountOutByPair(
         address tokenIn,
-        address tokenOut,
+        address pairAddress,
         uint256 amountIn
-    ) public view virtual override returns (uint256 amountOut) {
-        IvPair pair = getPair(tokenIn, tokenOut);
+    ) internal view returns (uint256 amountOut) {
+        IvPair pair = IvPair(pairAddress);
 
         (uint256 balance0, uint256 balance1) = pair.getBalances();
 
@@ -579,13 +1066,25 @@ contract vRouter is IvRouter, Multicall {
         );
     }
 
-    function getAmountIn(
+    function getAmountOut(
         address tokenIn,
         address tokenOut,
+        uint256 amountIn
+    ) public view virtual override returns (uint256 amountOut) {
+        return getAmountOutByPair(
+            tokenIn,
+            getPairAddress(tokenIn, tokenOut),
+            amountIn
+        );
+    }
+
+    function getAmountInByPair(
+        address tokenIn,
+        address pairAddress,
         uint256 amountOut
-    ) public view virtual override returns (uint256 amountIn) {
-        IvPair pair = getPair(tokenIn, tokenOut);
-        (uint256 balance0, uint256 balance1) = IvPair(pair).getBalances();
+    ) internal view returns (uint256 amountIn) {
+        IvPair pair = IvPair(pairAddress);
+        (uint256 balance0, uint256 balance1) = pair.getBalances();
 
         (balance0, balance1) = vSwapLibrary.sortBalances(
             tokenIn,
@@ -599,6 +1098,18 @@ contract vRouter is IvRouter, Multicall {
             balance0,
             balance1,
             pair.fee()
+        );
+    }
+
+    function getAmountIn(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountOut
+    ) public view virtual override returns (uint256 amountIn) {
+        return getAmountInByPair(
+            tokenIn,
+            getPairAddress(tokenIn, tokenOut),
+            amountOut
         );
     }
 

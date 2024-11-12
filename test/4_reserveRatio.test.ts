@@ -39,14 +39,14 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveTokensForExactTokens(
+        await vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getVirtualRouteData(0, amountOut)],
+            [tokenB.address],
+            tokenC.address,
             tokenA.address,
-            tokenB.address,
-            bcPool.address,
-            amountOut,
-            amountIn,
             owner.address,
-            futureTs
+            amountIn
         );
 
         let reserveRatioAfter = await abPool.calculateReserveRatio();
@@ -81,14 +81,14 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveTokensForExactTokens(
+        await vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getVirtualRouteData(0, amountOut)],
+            [tokenA.address],
+            tokenC.address,
             tokenB.address,
-            tokenA.address,
-            acPool.address,
-            amountOut,
-            amountIn,
             owner.address,
-            futureTs
+            amountIn
         );
 
         let reserveRatioAfter = await abPool.calculateReserveRatio();
@@ -131,14 +131,14 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveTokensForExactTokens(
+        await vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getVirtualRouteData(0, amountOut)],
+            [tokenB.address],
+            tokenC.address,
             tokenA.address,
-            tokenB.address,
-            ikPair,
-            amountOut,
-            amountIn,
             owner.address,
-            futureTs
+            amountIn
         );
 
         let reserveRatioAfter = await abPool.calculateReserveRatio();
@@ -181,14 +181,14 @@ describe('Reserve Ratio 1', () => {
 
         const futureTs = await utils.getFutureBlockTimestamp();
 
-        await vRouterInstance.swapReserveTokensForExactTokens(
+        await vRouterInstance.multiSwapTokensForExactTokens(
+            futureTs,
+            [utils.getVirtualRouteData(0, amountOut)],
+            [tokenA.address],
+            tokenC.address,
             tokenB.address,
-            tokenA.address,
-            ikPair,
-            amountOut,
-            amountIn,
             owner.address,
-            futureTs
+            amountIn
         );
 
         let reserveRatioAfter = await abPool.calculateReserveRatio();

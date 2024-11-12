@@ -2,6 +2,13 @@
 
 pragma solidity 0.8.18;
 
+type RouteData is uint256;
+
+struct PoolCallbackData {
+    address from;
+    address poolToken;
+}
+
 struct MaxTradeAmountParams {
     uint256 fee;
     uint256 balance0;
