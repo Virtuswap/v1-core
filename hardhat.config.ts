@@ -15,7 +15,7 @@ const config: HardhatUserConfig = {
         disambiguatePaths: false,
     },
     solidity: {
-        version: '0.8.18',
+        version: '0.8.28',
         settings: {
             optimizer: {
                 enabled: true,

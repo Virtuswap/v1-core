@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.28;
 
 /// @title Provides functions for deriving a pool address from the factory and token
 library PoolAddress {
